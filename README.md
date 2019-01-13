@@ -1,2 +1,2 @@
 # skylark-ui-imager
-The skylark image editor widget
+The skylark image editor widget, in development.
