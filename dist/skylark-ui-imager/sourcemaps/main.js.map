@@ -1,1 +1,0 @@
-{"version":3,"sources":["main.js"],"names":["define","Imager"],"mappings":";;;;;;;AAAAA,QACI,WACA,oBACA,iBACA,mBACA,kBACD,SAASC,GACR,MAAOA","file":"../main.js","sourcesContent":["define([\r\n    \"./Imager\",\r\n    \"./plugins/history\",\r\n    \"./plugins/crop\",\r\n    \"./plugins/rotate\",\r\n    \"./plugins/save\"\r\n], function(Imager) {\r\n    return Imager;\r\n})\r\n"]}
