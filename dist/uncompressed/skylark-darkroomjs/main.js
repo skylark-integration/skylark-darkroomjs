@@ -1,9 +1,9 @@
 define([
-    "./Imager",
+    "./Darkroom",
     "./plugins/history",
     "./plugins/crop",
     "./plugins/rotate",
     "./plugins/save"
-], function(Imager) {
-    return Imager;
+], function(Darkroom) {
+    return Darkroom;
 })

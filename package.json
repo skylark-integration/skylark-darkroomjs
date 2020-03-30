@@ -20,10 +20,10 @@
   },
   "license": "MIT",
   "dependencies": {
-    "skylark-langx": "https://github.com/skylarklangx/skylark-langx#master",
-    "skylark-utils-dom": "https://github.com/skylarkutils/skylark-utils-dom#master",
-    "skylark-graphics-canvas2d": "https://github.com/skylark-graphics/skylark-graphics-canvas2d#master",
-    "skylark-ui-swt": "https://github.com/skylarkui/skylark-ui-swt#master"
+    "skylark-langx": "https://github.com/skylark-langx/skylark-langx#master",
+    "skylark-fabric": "https://github.com/skylark-integration/skylark-fabric#master",
+    "skylark-domx-images": "https://github.com/skylark-domx/skylark-domx-images#master",
+    "skylark-widgets-base": "https://github.com/skylark-widgets/skylark-widgets-base#master"
   },
   "engines": {
     "node": ">=0.10.1"

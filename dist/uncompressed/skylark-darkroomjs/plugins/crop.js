@@ -1,11 +1,11 @@
 define([
   "skylark-langx/langx",
-  "skylark-utils-dom/noder",
-  "skylark-utils-dom/images",
-  "skylark-utils-dom/query",
-  "skylark-graphics-canvas2d",
-  '../Imager',
-],function(langx,noder, images,$, canvas2d,Imager) {
+  "skylark-domx-noder",
+  "skylark-domx-images",
+  "skylark-domx-query",
+  "skylark-fabric",
+  '../Darkroom',
+],function(langx,noder, images,$, fabric,Darkroom) {
   'use strict';
 
   function computeImageViewPort(image) {
@@ -14,13 +14,13 @@ define([
     //  width : image.width
     //};
     return {
-      height: Math.abs(image.getWidth() * (Math.sin(image.getAngle() * Math.PI/180))) + Math.abs(image.getHeight() * (Math.cos(image.getAngle() * Math.PI/180))),
-      width: Math.abs(image.getHeight() * (Math.sin(image.getAngle() * Math.PI/180))) + Math.abs(image.getWidth() * (Math.cos(image.getAngle() * Math.PI/180))),
+      height: Math.abs(image.getScaledWidth() * (Math.sin(image.get("angle") * Math.PI/180))) + Math.abs(image.getScaledHeight() * (Math.cos(image.get("angle") * Math.PI/180))),
+      width: Math.abs(image.getScaledHeight() * (Math.sin(image.get("angle") * Math.PI/180))) + Math.abs(image.getScaledWidth() * (Math.cos(image.get("angle") * Math.PI/180))),
     }
   }
   
 
-  var Crop = Imager.Transformation.inherit({
+  var Crop = Darkroom.Transformation.inherit({
     applyTransformation: function(canvas, image, next) {
       // Snapshot the image delimited by the crop zone
       var snapshot = new Image();
@@ -46,7 +46,7 @@ define([
         if (height < 1 || width < 1)
           return;
 
-        var imgInstance = new canvas2d.Image(snapshot, {
+        var imgInstance = new fabric.Image(snapshot, {
           // options to make the image static
           selectable: false,
           evented: false,
@@ -68,7 +68,7 @@ define([
         canvas.setHeight(height);
 
         // Add image
-        image.remove();
+        canvas.remove(image);
         canvas.add(imgInstance);
 
         next(imgInstance);
@@ -76,7 +76,7 @@ define([
     }
   });
 
-  var CropZone = canvas2d.util.createClass(canvas2d.Rect, {
+  var CropZone = fabric.util.createClass(fabric.Rect, {
     _render: function(ctx) {
       this.callSuper('_render', ctx);
 
@@ -92,7 +92,7 @@ define([
       ctx.scale(scaleX, scaleY);
 
       // Overlay rendering
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+      //ctx.fillStyle = 'rgba(0, 0, 0, 0.5)'; //modifeied by lwf
       this._renderOverlay(ctx);
 
       // Set dashed borders
@@ -134,15 +134,15 @@ define([
       // y3 +------------------------+
       //
 
-      var x0 = Math.ceil(-this.getWidth() / 2 - this.getLeft());
-      var x1 = Math.ceil(-this.getWidth() / 2);
-      var x2 = Math.ceil(this.getWidth() / 2);
-      var x3 = Math.ceil(this.getWidth() / 2 + (canvas.width - this.getWidth() - this.getLeft()));
+      var x0 = Math.ceil(-this.getScaledWidth() / 2 - this.left);
+      var x1 = Math.ceil(-this.getScaledWidth() / 2);
+      var x2 = Math.ceil(this.getScaledWidth() / 2);
+      var x3 = Math.ceil(this.getScaledWidth() / 2 + (canvas.width - this.getScaledWidth() - this.left));
 
-      var y0 = Math.ceil(-this.getHeight() / 2 - this.getTop());
-      var y1 = Math.ceil(-this.getHeight() / 2);
-      var y2 = Math.ceil(this.getHeight() / 2);
-      var y3 = Math.ceil(this.getHeight() / 2 + (canvas.height - this.getHeight() - this.getTop()));
+      var y0 = Math.ceil(-this.getScaledHeight() / 2 - this.top);
+      var y1 = Math.ceil(-this.getScaledHeight() / 2);
+      var y2 = Math.ceil(this.getScaledHeight() / 2);
+      var y3 = Math.ceil(this.getScaledHeight() / 2 + (canvas.height - this.getScaledHeight() - this.top));
 
       ctx.beginPath();
       
@@ -168,38 +168,38 @@ define([
 
     _renderBorders: function(ctx) {
       ctx.beginPath();
-      ctx.moveTo(-this.getWidth()/2, -this.getHeight()/2); // upper left
-      ctx.lineTo(this.getWidth()/2, -this.getHeight()/2); // upper right
-      ctx.lineTo(this.getWidth()/2, this.getHeight()/2); // down right
-      ctx.lineTo(-this.getWidth()/2, this.getHeight()/2); // down left
-      ctx.lineTo(-this.getWidth()/2, -this.getHeight()/2); // upper left
+      ctx.moveTo(-this.getScaledWidth()/2, -this.getScaledHeight()/2); // upper left
+      ctx.lineTo(this.getScaledWidth()/2, -this.getScaledHeight()/2); // upper right
+      ctx.lineTo(this.getScaledWidth()/2, this.getScaledHeight()/2); // down right
+      ctx.lineTo(-this.getScaledWidth()/2, this.getScaledHeight()/2); // down left
+      ctx.lineTo(-this.getScaledWidth()/2, -this.getScaledHeight()/2); // upper left
       ctx.stroke();
     },
 
     _renderGrid: function(ctx) {
-      return;
+      
       // Vertical lines
       ctx.beginPath();
-      ctx.moveTo(-this.getWidth()/2 + 1/3 * this.getWidth(), -this.getHeight()/2);
-      ctx.lineTo(-this.getWidth()/2 + 1/3 * this.getWidth(), this.getHeight()/2);
+      ctx.moveTo(-this.getScaledWidth()/2 + 1/3 * this.getScaledWidth(), -this.getScaledHeight()/2);
+      ctx.lineTo(-this.getScaledWidth()/2 + 1/3 * this.getScaledWidth(), this.getScaledHeight()/2);
       ctx.stroke();
       ctx.beginPath();
-      ctx.moveTo(-this.getWidth()/2 + 2/3 * this.getWidth(), -this.getHeight()/2);
-      ctx.lineTo(-this.getWidth()/2 + 2/3 * this.getWidth(), this.getHeight()/2);
+      ctx.moveTo(-this.getScaledWidth()/2 + 2/3 * this.getScaledWidth(), -this.getScaledHeight()/2);
+      ctx.lineTo(-this.getScaledWidth()/2 + 2/3 * this.getScaledWidth(), this.getScaledHeight()/2);
       ctx.stroke();
       // Horizontal lines
       ctx.beginPath();
-      ctx.moveTo(-this.getWidth()/2, -this.getHeight()/2 + 1/3 * this.getHeight());
-      ctx.lineTo(this.getWidth()/2, -this.getHeight()/2 + 1/3 * this.getHeight());
+      ctx.moveTo(-this.getScaledWidth()/2, -this.getScaledHeight()/2 + 1/3 * this.getScaledHeight());
+      ctx.lineTo(this.getScaledWidth()/2, -this.getScaledHeight()/2 + 1/3 * this.getScaledHeight());
       ctx.stroke();
       ctx.beginPath();
-      ctx.moveTo(-this.getWidth()/2, -this.getHeight()/2 + 2/3 * this.getHeight());
-      ctx.lineTo(this.getWidth()/2, -this.getHeight()/2 + 2/3 * this.getHeight());
+      ctx.moveTo(-this.getScaledWidth()/2, -this.getScaledHeight()/2 + 2/3 * this.getScaledHeight());
+      ctx.lineTo(this.getScaledWidth()/2, -this.getScaledHeight()/2 + 2/3 * this.getScaledHeight());
       ctx.stroke();
     }
   });
 
-  var CropPlugin = Imager.Plugin.inherit({
+  var CropPlugin = Darkroom.Plugin.inherit({
     // Init point
     startX: null,
     startY: null,
@@ -219,9 +219,9 @@ define([
       quickCropKey: false
     },
 
-     init : function(imager,options) {
-      this.overrided(imager,options);
-      var buttonGroup = this.imager.toolbar.createButtonGroup();
+     init : function(Darkroom,options) {
+      this.overrided(Darkroom,options);
+      var buttonGroup = this.Darkroom.toolbar.createButtonGroup();
 
       this.cropButton = buttonGroup.createButton({
         image: 'crop'
@@ -243,16 +243,16 @@ define([
       this.cancelButton.addEventListener('click', this.releaseFocus.bind(this));
 
       // Canvas events
-      this.imager.canvas.on('mouse:down', this.onMouseDown.bind(this));
-      this.imager.canvas.on('mouse:move', this.onMouseMove.bind(this));
-      this.imager.canvas.on('mouse:up', this.onMouseUp.bind(this));
-      this.imager.canvas.on('object:moving', this.onObjectMoving.bind(this));
-      this.imager.canvas.on('object:scaling', this.onObjectScaling.bind(this));
+      this.Darkroom.canvas.on('mouse:down', this.onMouseDown.bind(this));
+      this.Darkroom.canvas.on('mouse:move', this.onMouseMove.bind(this));
+      this.Darkroom.canvas.on('mouse:up', this.onMouseUp.bind(this));
+      this.Darkroom.canvas.on('object:moving', this.onObjectMoving.bind(this));
+      this.Darkroom.canvas.on('object:scaling', this.onObjectScaling.bind(this));
 
-      canvas2d.util.addListener(document, 'keydown', this.onKeyDown.bind(this));
-      canvas2d.util.addListener(document, 'keyup', this.onKeyUp.bind(this));
+      fabric.util.addListener(document, 'keydown', this.onKeyDown.bind(this));
+      fabric.util.addListener(document, 'keyup', this.onKeyUp.bind(this));
 
-      this.imager.addEventListener('core:transformation', this.releaseFocus.bind(this));
+      this.Darkroom.addEventListener('core:transformation', this.releaseFocus.bind(this));
     },
 
     // Avoid crop zone to go beyond the canvas edges
@@ -265,9 +265,9 @@ define([
       if (currentObject !== this.cropZone)
         return;
 
-      var canvas = this.imager.canvas;
-      var x = currentObject.getLeft(), y = currentObject.getTop();
-      var w = currentObject.getWidth(), h = currentObject.getHeight();
+      var canvas = this.Darkroom.canvas;
+      var x = currentObject.left, y = currentObject.top;
+      var w = currentObject.getScaledWidth(), h = currentObject.getScaledHeight();
       var maxX = canvas.getWidth() - w;
       var maxY = canvas.getHeight() - h;
 
@@ -280,7 +280,7 @@ define([
       if (y > maxY)
         currentObject.set('top', maxY);
 
-      this.imager.dispatchEvent('crop:update');
+      this.Darkroom.dispatchEvent('crop:update');
     },
 
     // Prevent crop zone from going beyond the canvas edges (like mouseMove)
@@ -294,15 +294,15 @@ define([
       if (currentObject !== this.cropZone)
         return;
 
-      var canvas = this.imager.canvas;
+      var canvas = this.Darkroom.canvas;
       var pointer = canvas.getPointer(event.e);
       var x = pointer.x;
       var y = pointer.y;
 
-      var minX = currentObject.getLeft();
-      var minY = currentObject.getTop();
-      var maxX = currentObject.getLeft() + currentObject.getWidth();
-      var maxY = currentObject.getTop() + currentObject.getHeight();
+      var minX = currentObject.left;
+      var minY = currentObject.top;
+      var maxX = currentObject.left + currentObject.getScaledWidth();
+      var maxY = currentObject.top + currentObject.getScaledHeight();
 
       if (null !== this.options.ratio) {
         if (minX < 0 || maxX > canvas.getWidth() || minY < 0 || maxY > canvas.getHeight()) {
@@ -326,17 +326,17 @@ define([
         currentObject.setTop(0);
       }
 
-      if (currentObject.getWidth() < this.options.minWidth) {
+      if (currentObject.get("width") < this.options.minWidth) {
         currentObject.scaleToWidth(this.options.minWidth);
       }
-      if (currentObject.getHeight() < this.options.minHeight) {
+      if (currentObject.get("height") < this.options.minHeight) {
         currentObject.scaleToHeight(this.options.minHeight);
       }
 
-      this.lastScaleX = currentObject.getScaleX();
-      this.lastScaleY = currentObject.getScaleY();
+      this.lastScaleX = currentObject.get("scaleX");
+      this.lastScaleY = currentObject.get("scaleY");
 
-      this.imager.dispatchEvent('crop:update');
+      this.Darkroom.dispatchEvent('crop:update');
     },
 
     // Init crop zone
@@ -345,14 +345,14 @@ define([
         return;
       }
 
-      var canvas = this.imager.canvas;
+      var canvas = this.Darkroom.canvas;
 
       // recalculate offset, in case canvas was manipulated since last `calcOffset`
       canvas.calcOffset();
       var pointer = canvas.getPointer(event.e);
       var x = pointer.x;
       var y = pointer.y;
-      var point = new canvas2d.Point(x, y);
+      var point = new fabric.Point(x, y);
 
       // Check if user want to scale or drag the crop zone.
       var activeObject = canvas.getActiveObject();
@@ -361,10 +361,10 @@ define([
       }
 
       canvas.discardActiveObject();
-      this.cropZone.setWidth(0);
-      this.cropZone.setHeight(0);
-      this.cropZone.setScaleX(1);
-      this.cropZone.setScaleY(1);
+      this.cropZone.set("width",0);
+      this.cropZone.set("height",0);
+      this.cropZone.set("scaleX",1);
+      this.cropZone.set("scaleY",1);
 
       this.startX = x;
       this.startY = y;
@@ -380,7 +380,7 @@ define([
         return;
       }
 
-      var canvas = this.imager.canvas;
+      var canvas = this.Darkroom.canvas;
       var pointer = canvas.getPointer(event.e);
       var x = pointer.x;
       var y = pointer.y;
@@ -389,7 +389,7 @@ define([
     },
 
     onMouseMoveKeyCrop: function(event) {
-      var canvas = this.imager.canvas;
+      var canvas = this.Darkroom.canvas;
       var zone = this.cropZone;
 
       var pointer = canvas.getPointer(event.e);
@@ -397,8 +397,8 @@ define([
       var y = pointer.y;
 
       if (!zone.left || !zone.top) {
-        zone.setTop(y);
-        zone.setLeft(x);
+        zone.set("top",y);
+        zone.set("left",x);
       }
 
       this.isKeyLeft =  x < zone.left + zone.width / 2 ;
@@ -418,7 +418,7 @@ define([
         return;
       }
 
-      var canvas = this.imager.canvas;
+      var canvas = this.Darkroom.canvas;
       this.cropZone.setCoords();
       canvas.setActiveObject(this.cropZone);
       canvas.calcOffset();
@@ -433,13 +433,13 @@ define([
 
       // Active quick crop flow
       this.isKeyCroping = true ;
-      this.imager.canvas.discardActiveObject();
-      this.cropZone.setWidth(0);
-      this.cropZone.setHeight(0);
-      this.cropZone.setScaleX(1);
-      this.cropZone.setScaleY(1);
-      this.cropZone.setTop(0);
-      this.cropZone.setLeft(0);
+      this.Darkroom.canvas.discardActiveObject();
+      this.cropZone.set("width",0);
+      this.cropZone.set("height",0);
+      this.cropZone.set("scaleX",1);
+      this.cropZone.set("scaleY",1);
+      this.cropZone.set("top",0);
+      this.cropZone.set("left",0);
     },
 
     onKeyUp: function(event) {
@@ -468,13 +468,13 @@ define([
         });
       }
 
-      var canvas = this.imager.canvas;
+      var canvas = this.Darkroom.canvas;
       canvas.bringToFront(this.cropZone);
       this.cropZone.setCoords();
       canvas.setActiveObject(this.cropZone);
       canvas.calcOffset();
 
-      this.imager.dispatchEvent('crop:update');
+      this.Darkroom.dispatchEvent('crop:update');
     },
 
     toggleCrop: function() {
@@ -492,13 +492,13 @@ define([
       if (this.cropZone.width < 1 && this.cropZone.height < 1)
         return;
 
-      var image = this.imager.image;
+      var image = this.Darkroom.image;
 
       // Compute crop zone dimensions
-      var top = this.cropZone.getTop() - image.getTop();
-      var left = this.cropZone.getLeft() - image.getLeft();
-      var width = this.cropZone.getWidth();
-      var height = this.cropZone.getHeight();
+      var top = this.cropZone.get("top") - image.get("top");
+      var left = this.cropZone.get("left") - image.get("left");
+      var width = this.cropZone.get("width");
+      var height = this.cropZone.get("height");
 
       // Adjust dimensions to image only
       if (top < 0) {
@@ -514,11 +514,11 @@ define([
       // Apply crop transformation.
       // Make sure to use relative dimension since the crop will be applied
       // on the source image.
-      this.imager.applyTransformation(new Crop({
-        top: top / image.getHeight(),
-        left: left / image.getWidth(),
-        width: width / image.getWidth(),
-        height: height / image.getHeight(),
+      this.Darkroom.applyTransformation(new Crop({
+        top: top / image.getScaledHeight(),
+        left: left / image.getScaledWidth(),
+        width: width / image.getScaledWidth(),
+        height: height / image.getScaledHeight(),
       }));
     },
 
@@ -548,8 +548,8 @@ define([
         this.cropZone.set('lockUniScaling', true);
       }
 
-      this.imager.canvas.add(this.cropZone);
-      this.imager.canvas.defaultCursor = 'crosshair';
+      this.Darkroom.canvas.add(this.cropZone);
+      this.Darkroom.canvas.defaultCursor = 'crosshair';
 
       this.cropButton.active(true);
       this.okButton.hide(false);
@@ -561,20 +561,20 @@ define([
       if (undefined === this.cropZone)
         return;
 
-      this.cropZone.remove();
+      this.cropZone.canvas.remove(this.cropZone);
       this.cropZone = undefined;
 
       this.cropButton.active(false);
       this.okButton.hide(true);
       this.cancelButton.hide(true);
 
-      this.imager.canvas.defaultCursor = 'default';
+      this.Darkroom.canvas.defaultCursor = 'default';
 
-      this.imager.dispatchEvent('crop:update');
+      this.Darkroom.dispatchEvent('crop:update');
     },
 
     _renderCropZone: function(fromX, fromY, toX, toY) {
-      var canvas = this.imager.canvas;
+      var canvas = this.Darkroom.canvas;
 
       var isRight = (toX > fromX);
       var isLeft = !isRight;
@@ -690,9 +690,9 @@ define([
       this.cropZone.width = width;
       this.cropZone.height = height;
 
-      this.imager.canvas.bringToFront(this.cropZone);
+      this.Darkroom.canvas.bringToFront(this.cropZone);
 
-      this.imager.dispatchEvent('crop:update');
+      this.Darkroom.dispatchEvent('crop:update');
     }
   });
 
@@ -701,7 +701,7 @@ define([
     ctor : CropPlugin
   };
 
-  Imager.installPlugin(pluginInfo);
+  Darkroom.installPlugin(pluginInfo);
 
   return pluginInfo;
 

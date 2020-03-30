@@ -1,24 +1,24 @@
 define([
   "skylark-langx/langx",
-  "skylark-utils-dom/noder",
-  "skylark-utils-dom/query",
-  "skylark-graphics-canvas2d",
-  '../Imager',
-],function(langx,noder, $, canvas2d,Imager) {
+  "skylark-domx-noder",
+  "skylark-domx-query",
+  "skylark-fabric",
+  '../Darkroom',
+],function(langx,noder, $, fabric,Darkroom) {
   'use strict';
 
-  var SavePlugin= Imager.Plugin.inherit({
+  var SavePlugin= Darkroom.Plugin.inherit({
 
     defaults: {
       callback: function() {
-        this.imager.selfDestroy();
+        this.Darkroom.selfDestroy();
       }
     },
 
-    init: function(imager,options) {
-      this.overrided(imager,options);
+    init: function(Darkroom,options) {
+      this.overrided(Darkroom,options);
 
-      var buttonGroup = this.imager.toolbar.createButtonGroup();
+      var buttonGroup = this.Darkroom.toolbar.createButtonGroup();
 
       this.destroyButton = buttonGroup.createButton({
         image: 'save'
@@ -33,7 +33,7 @@ define([
     ctor : SavePlugin
   };
 
-  Imager.installPlugin(pluginInfo);
+  Darkroom.installPlugin(pluginInfo);
 
   return pluginInfo;  
 

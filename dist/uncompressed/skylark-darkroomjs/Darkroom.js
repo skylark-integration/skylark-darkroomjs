@@ -1,11 +1,11 @@
 define([
     "skylark-langx/skylark",
     "skylark-langx/langx",
-    "skylark-utils-dom/noder",
-    "skylark-utils-dom/finder",
-    "skylark-ui-swt/Widget",
-    "skylark-graphics-canvas2d"
-], function(skylark, langx, noder,finder,Widget,canvas2d) {
+    "skylark-domx-noder",
+    "skylark-domx-finder",
+    "skylark-widgets-base/Widget",
+    "skylark-fabric"
+], function(skylark, langx, noder,finder,Widget,fabric) {
   'use strict';
 
   var Plugins = {};
@@ -16,8 +16,8 @@ define([
     //  width : image.width
     //};
     return {
-      height: Math.abs(image.getWidth() * (Math.sin(image.getAngle() * Math.PI/180))) + Math.abs(image.getHeight() * (Math.cos(image.getAngle() * Math.PI/180))),
-      width: Math.abs(image.getHeight() * (Math.sin(image.getAngle() * Math.PI/180))) + Math.abs(image.getWidth() * (Math.cos(image.getAngle() * Math.PI/180))),
+      height: Math.abs(image.getScaledWidth() * (Math.sin(image.angle * Math.PI/180))) + Math.abs(image.getScaledHeight() * (Math.cos(image.angle * Math.PI/180))),
+      width: Math.abs(image.getScaledHeight() * (Math.sin(image.angle * Math.PI/180))) + Math.abs(image.getScaledWidth() * (Math.cos(image.angle * Math.PI/180))),
     }
   }
 
@@ -102,8 +102,8 @@ define([
     }
   };
 
-  var Imager = Widget.inherit({
-    klassName : "Imager",
+  var Darkroom = Widget.inherit({
+    klassName : "Darkroom",
 
     /*
      * @param {Element} el The container element. 
@@ -122,7 +122,7 @@ define([
 
 //      var image = new Image();
 //      image.onload = function() {
-        // Initialize the DOM/canvas2d elements
+        // Initialize the DOM/fabric elements
         this._initializeImage();
 
         // Then initialize the plugins
@@ -143,16 +143,16 @@ define([
     // Reference to the main container element
     containerElement: null,
 
-    // Reference to the canvas2d canvas object
+    // Reference to the fabric canvas object
     canvas: null,
 
-    // Reference to the canvas2d image object
+    // Reference to the fabric image object
     image: null,
 
-    // Reference to the canvas2d source canvas object
+    // Reference to the fabric source canvas object
     sourceCanvas: null,
 
-    // Reference to the canvas2d source image object
+    // Reference to the fabric source image object
     sourceImage: null,
 
     // Track of the original image element
@@ -216,7 +216,7 @@ define([
     refresh: function(next) {
       var clone = new Image();
       clone.onload = function() {
-        this._replaceCurrentImage(new canvas2d.Image(clone));
+        this._replaceCurrentImage(new fabric.Image(clone));
 
         if (next) next();
       }.bind(this);
@@ -225,7 +225,7 @@ define([
 
     _replaceCurrentImage: function(newImage) {
       if (this.image) {
-        this.image.remove();
+        this.image.canvas.remove(this.image);
       }
 
       this.image = newImage;
@@ -277,8 +277,8 @@ define([
       canvasHeight *= scale;
 
       // Finally place the image in the center of the canvas
-      this.image.setScaleX(1 * scale);
-      this.image.setScaleY(1 * scale);
+      this.image.scaleX = (1 * scale);
+      this.image.scaleY = (1 * scale);
       this.canvas.add(this.image);
       this.canvas.setWidth(canvasWidth);
       this.canvas.setHeight(canvasHeight);
@@ -311,7 +311,7 @@ define([
     // Initialize image from original element plus re-apply every
     // transformations.
     reinitializeImage: function() {
-      this.sourceImage.remove();
+      this.canvas.remove(this.sourceImage);
       this._initializeImage();
       this._popTransformation(this.transformations.slice())
     },
@@ -337,7 +337,7 @@ define([
       );
     },
 
-    // Create the DOM elements and instanciate the canvas2d canvas.
+    // Create the DOM elements and instanciate the fabric canvas.
     // The image element is replaced by a new `div` element.
     // However the original image is re-injected in order to keep a trace of it.
     _initializeDOM: function(imageElement) {
@@ -378,21 +378,21 @@ define([
 
     },
 
-    // Instanciate the canvas2d image object.
+    // Instanciate the fabric image object.
     // The image is created as a static element with no control,
-    // then it is add in the canvas2d canvas object.
+    // then it is add in the fabric canvas object.
     _initializeImage: function() {
-      this.canvas = new canvas2d.Canvas(this.canvasElement, {
+      this.canvas = new fabric.Canvas(this.canvasElement, {
         selection: false,
         backgroundColor: this.options.backgroundColor
       });
 
-      this.sourceCanvas = new canvas2d.Canvas(this.sourceCanvasElement, {
+      this.sourceCanvas = new fabric.Canvas(this.sourceCanvasElement, {
         selection: false,
         backgroundColor: this.options.backgroundColor
       });
  
-      this.sourceImage = new canvas2d.Image(this.originalImageElement, {
+      this.sourceImage = new fabric.Image(this.originalImageElement, {
         // Some options to make the image static
         selectable: false,
         evented: false,
@@ -442,20 +442,20 @@ define([
   });
 
 
-  Imager.Plugin = langx.Evented.inherit({
+  Darkroom.Plugin = langx.Evented.inherit({
     klassName : "Plugin",
 
     defaults: {},
 
-    init : function(imager,options) {
-      this.imager = imager;
+    init : function(Darkroom,options) {
+      this.Darkroom = Darkroom;
       this.options = langx.mixin({},this.defaults,options);
 
     }
   });
 
 
-  Imager.Transformation = langx.Evented.inherit({
+  Darkroom.Transformation = langx.Evented.inherit({
     klassName : "Transformation",
 
     init : function(options) {
@@ -464,13 +464,13 @@ define([
   });
 
 
-  Imager.installPlugin = function(setting) {
+  Darkroom.installPlugin = function(setting) {
 
     //Plugins.push(setting);
     Plugins[setting.name] = setting;
   };
 
-  return skylark.attach("itg.darkroomjs.Imager",Imager);
+  return skylark.attach("intg.Darkroom",Darkroom);
 
 });
 

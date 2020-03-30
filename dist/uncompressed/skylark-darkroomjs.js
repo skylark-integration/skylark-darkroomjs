@@ -86,14 +86,14 @@
 
 })(function(define,require) {
 
-define('skylark-darkroomjs/Imager',[
+define('skylark-darkroomjs/Darkroom',[
     "skylark-langx/skylark",
     "skylark-langx/langx",
-    "skylark-utils-dom/noder",
-    "skylark-utils-dom/finder",
-    "skylark-ui-swt/Widget",
-    "skylark-graphics-canvas2d"
-], function(skylark, langx, noder,finder,Widget,canvas2d) {
+    "skylark-domx-noder",
+    "skylark-domx-finder",
+    "skylark-widgets-base/Widget",
+    "skylark-fabric"
+], function(skylark, langx, noder,finder,Widget,fabric) {
   'use strict';
 
   var Plugins = {};
@@ -104,8 +104,8 @@ define('skylark-darkroomjs/Imager',[
     //  width : image.width
     //};
     return {
-      height: Math.abs(image.getWidth() * (Math.sin(image.getAngle() * Math.PI/180))) + Math.abs(image.getHeight() * (Math.cos(image.getAngle() * Math.PI/180))),
-      width: Math.abs(image.getHeight() * (Math.sin(image.getAngle() * Math.PI/180))) + Math.abs(image.getWidth() * (Math.cos(image.getAngle() * Math.PI/180))),
+      height: Math.abs(image.getScaledWidth() * (Math.sin(image.angle * Math.PI/180))) + Math.abs(image.getScaledHeight() * (Math.cos(image.angle * Math.PI/180))),
+      width: Math.abs(image.getScaledHeight() * (Math.sin(image.angle * Math.PI/180))) + Math.abs(image.getScaledWidth() * (Math.cos(image.angle * Math.PI/180))),
     }
   }
 
@@ -190,8 +190,8 @@ define('skylark-darkroomjs/Imager',[
     }
   };
 
-  var Imager = Widget.inherit({
-    klassName : "Imager",
+  var Darkroom = Widget.inherit({
+    klassName : "Darkroom",
 
     /*
      * @param {Element} el The container element. 
@@ -210,7 +210,7 @@ define('skylark-darkroomjs/Imager',[
 
 //      var image = new Image();
 //      image.onload = function() {
-        // Initialize the DOM/canvas2d elements
+        // Initialize the DOM/fabric elements
         this._initializeImage();
 
         // Then initialize the plugins
@@ -231,16 +231,16 @@ define('skylark-darkroomjs/Imager',[
     // Reference to the main container element
     containerElement: null,
 
-    // Reference to the canvas2d canvas object
+    // Reference to the fabric canvas object
     canvas: null,
 
-    // Reference to the canvas2d image object
+    // Reference to the fabric image object
     image: null,
 
-    // Reference to the canvas2d source canvas object
+    // Reference to the fabric source canvas object
     sourceCanvas: null,
 
-    // Reference to the canvas2d source image object
+    // Reference to the fabric source image object
     sourceImage: null,
 
     // Track of the original image element
@@ -304,7 +304,7 @@ define('skylark-darkroomjs/Imager',[
     refresh: function(next) {
       var clone = new Image();
       clone.onload = function() {
-        this._replaceCurrentImage(new canvas2d.Image(clone));
+        this._replaceCurrentImage(new fabric.Image(clone));
 
         if (next) next();
       }.bind(this);
@@ -313,7 +313,7 @@ define('skylark-darkroomjs/Imager',[
 
     _replaceCurrentImage: function(newImage) {
       if (this.image) {
-        this.image.remove();
+        this.image.canvas.remove(this.image);
       }
 
       this.image = newImage;
@@ -365,8 +365,8 @@ define('skylark-darkroomjs/Imager',[
       canvasHeight *= scale;
 
       // Finally place the image in the center of the canvas
-      this.image.setScaleX(1 * scale);
-      this.image.setScaleY(1 * scale);
+      this.image.scaleX = (1 * scale);
+      this.image.scaleY = (1 * scale);
       this.canvas.add(this.image);
       this.canvas.setWidth(canvasWidth);
       this.canvas.setHeight(canvasHeight);
@@ -399,7 +399,7 @@ define('skylark-darkroomjs/Imager',[
     // Initialize image from original element plus re-apply every
     // transformations.
     reinitializeImage: function() {
-      this.sourceImage.remove();
+      this.canvas.remove(this.sourceImage);
       this._initializeImage();
       this._popTransformation(this.transformations.slice())
     },
@@ -425,7 +425,7 @@ define('skylark-darkroomjs/Imager',[
       );
     },
 
-    // Create the DOM elements and instanciate the canvas2d canvas.
+    // Create the DOM elements and instanciate the fabric canvas.
     // The image element is replaced by a new `div` element.
     // However the original image is re-injected in order to keep a trace of it.
     _initializeDOM: function(imageElement) {
@@ -466,21 +466,21 @@ define('skylark-darkroomjs/Imager',[
 
     },
 
-    // Instanciate the canvas2d image object.
+    // Instanciate the fabric image object.
     // The image is created as a static element with no control,
-    // then it is add in the canvas2d canvas object.
+    // then it is add in the fabric canvas object.
     _initializeImage: function() {
-      this.canvas = new canvas2d.Canvas(this.canvasElement, {
+      this.canvas = new fabric.Canvas(this.canvasElement, {
         selection: false,
         backgroundColor: this.options.backgroundColor
       });
 
-      this.sourceCanvas = new canvas2d.Canvas(this.sourceCanvasElement, {
+      this.sourceCanvas = new fabric.Canvas(this.sourceCanvasElement, {
         selection: false,
         backgroundColor: this.options.backgroundColor
       });
  
-      this.sourceImage = new canvas2d.Image(this.originalImageElement, {
+      this.sourceImage = new fabric.Image(this.originalImageElement, {
         // Some options to make the image static
         selectable: false,
         evented: false,
@@ -530,20 +530,20 @@ define('skylark-darkroomjs/Imager',[
   });
 
 
-  Imager.Plugin = langx.Evented.inherit({
+  Darkroom.Plugin = langx.Evented.inherit({
     klassName : "Plugin",
 
     defaults: {},
 
-    init : function(imager,options) {
-      this.imager = imager;
+    init : function(Darkroom,options) {
+      this.Darkroom = Darkroom;
       this.options = langx.mixin({},this.defaults,options);
 
     }
   });
 
 
-  Imager.Transformation = langx.Evented.inherit({
+  Darkroom.Transformation = langx.Evented.inherit({
     klassName : "Transformation",
 
     init : function(options) {
@@ -552,46 +552,46 @@ define('skylark-darkroomjs/Imager',[
   });
 
 
-  Imager.installPlugin = function(setting) {
+  Darkroom.installPlugin = function(setting) {
 
     //Plugins.push(setting);
     Plugins[setting.name] = setting;
   };
 
-  return skylark.attach("itg.darkroomjs.Imager",Imager);
+  return skylark.attach("intg.Darkroom",Darkroom);
 
 });
 
 
 define('skylark-darkroomjs/plugins/history',[
   "skylark-langx/langx",
-  "skylark-utils-dom/noder",
-  "skylark-utils-dom/query",
-  "skylark-graphics-canvas2d",
-  '../Imager',
-],function(langx,noder, $, canvas2d,Imager) {
+  "skylark-domx-noder",
+  "skylark-domx-query",
+  "skylark-fabric",
+  '../Darkroom',
+],function(langx,noder, $, fabric,Darkroom) {
   'use strict';
 
-  var HistoryPlugin= Imager.Plugin.inherit({
+  var HistoryPlugin= Darkroom.Plugin.inherit({
      undoTransformations: null,
 
-     init : function(imager,options) {
-      this.overrided(imager,options);
+     init : function(Darkroom,options) {
+      this.overrided(Darkroom,options);
       this.undoTransformations = [];
       this._initButtons();
 
-      this.imager.addEventListener('core:transformation', this._onTranformationApplied.bind(this));
+      this.Darkroom.addEventListener('core:transformation', this._onTranformationApplied.bind(this));
     },
 
     undo: function() {
-      if (this.imager.transformations.length === 0) {
+      if (this.Darkroom.transformations.length === 0) {
         return;
       }
 
-      var lastTransformation = this.imager.transformations.pop();
+      var lastTransformation = this.Darkroom.transformations.pop();
       this.undoTransformations.unshift(lastTransformation);
 
-      this.imager.reinitializeImage();
+      this.Darkroom.reinitializeImage();
       this._updateButtons();
     },
 
@@ -601,14 +601,14 @@ define('skylark-darkroomjs/plugins/history',[
       }
 
       var cancelTransformation = this.undoTransformations.shift();
-      this.imager.transformations.push(cancelTransformation);
+      this.Darkroom.transformations.push(cancelTransformation);
 
-      this.imager.reinitializeImage();
+      this.Darkroom.reinitializeImage();
       this._updateButtons();
     },
 
     _initButtons: function() {
-      var buttonGroup = this.imager.toolbar.createButtonGroup();
+      var buttonGroup = this.Darkroom.toolbar.createButtonGroup();
 
       this.backButton = buttonGroup.createButton({
         image: 'undo',
@@ -627,7 +627,7 @@ define('skylark-darkroomjs/plugins/history',[
     },
 
     _updateButtons: function() {
-      this.backButton.disable((this.imager.transformations.length === 0))
+      this.backButton.disable((this.Darkroom.transformations.length === 0))
       this.forwardButton.disable((this.undoTransformations.length === 0))
     },
 
@@ -642,7 +642,7 @@ define('skylark-darkroomjs/plugins/history',[
     ctor : HistoryPlugin
   };
 
-  Imager.installPlugin(pluginInfo);
+  Darkroom.installPlugin(pluginInfo);
 
   return pluginInfo;
 
@@ -651,12 +651,12 @@ define('skylark-darkroomjs/plugins/history',[
 
 define('skylark-darkroomjs/plugins/crop',[
   "skylark-langx/langx",
-  "skylark-utils-dom/noder",
-  "skylark-utils-dom/images",
-  "skylark-utils-dom/query",
-  "skylark-graphics-canvas2d",
-  '../Imager',
-],function(langx,noder, images,$, canvas2d,Imager) {
+  "skylark-domx-noder",
+  "skylark-domx-images",
+  "skylark-domx-query",
+  "skylark-fabric",
+  '../Darkroom',
+],function(langx,noder, images,$, fabric,Darkroom) {
   'use strict';
 
   function computeImageViewPort(image) {
@@ -665,13 +665,13 @@ define('skylark-darkroomjs/plugins/crop',[
     //  width : image.width
     //};
     return {
-      height: Math.abs(image.getWidth() * (Math.sin(image.getAngle() * Math.PI/180))) + Math.abs(image.getHeight() * (Math.cos(image.getAngle() * Math.PI/180))),
-      width: Math.abs(image.getHeight() * (Math.sin(image.getAngle() * Math.PI/180))) + Math.abs(image.getWidth() * (Math.cos(image.getAngle() * Math.PI/180))),
+      height: Math.abs(image.getScaledWidth() * (Math.sin(image.get("angle") * Math.PI/180))) + Math.abs(image.getScaledHeight() * (Math.cos(image.get("angle") * Math.PI/180))),
+      width: Math.abs(image.getScaledHeight() * (Math.sin(image.get("angle") * Math.PI/180))) + Math.abs(image.getScaledWidth() * (Math.cos(image.get("angle") * Math.PI/180))),
     }
   }
   
 
-  var Crop = Imager.Transformation.inherit({
+  var Crop = Darkroom.Transformation.inherit({
     applyTransformation: function(canvas, image, next) {
       // Snapshot the image delimited by the crop zone
       var snapshot = new Image();
@@ -697,7 +697,7 @@ define('skylark-darkroomjs/plugins/crop',[
         if (height < 1 || width < 1)
           return;
 
-        var imgInstance = new canvas2d.Image(snapshot, {
+        var imgInstance = new fabric.Image(snapshot, {
           // options to make the image static
           selectable: false,
           evented: false,
@@ -719,7 +719,7 @@ define('skylark-darkroomjs/plugins/crop',[
         canvas.setHeight(height);
 
         // Add image
-        image.remove();
+        canvas.remove(image);
         canvas.add(imgInstance);
 
         next(imgInstance);
@@ -727,7 +727,7 @@ define('skylark-darkroomjs/plugins/crop',[
     }
   });
 
-  var CropZone = canvas2d.util.createClass(canvas2d.Rect, {
+  var CropZone = fabric.util.createClass(fabric.Rect, {
     _render: function(ctx) {
       this.callSuper('_render', ctx);
 
@@ -743,7 +743,7 @@ define('skylark-darkroomjs/plugins/crop',[
       ctx.scale(scaleX, scaleY);
 
       // Overlay rendering
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+      //ctx.fillStyle = 'rgba(0, 0, 0, 0.5)'; //modifeied by lwf
       this._renderOverlay(ctx);
 
       // Set dashed borders
@@ -785,15 +785,15 @@ define('skylark-darkroomjs/plugins/crop',[
       // y3 +------------------------+
       //
 
-      var x0 = Math.ceil(-this.getWidth() / 2 - this.getLeft());
-      var x1 = Math.ceil(-this.getWidth() / 2);
-      var x2 = Math.ceil(this.getWidth() / 2);
-      var x3 = Math.ceil(this.getWidth() / 2 + (canvas.width - this.getWidth() - this.getLeft()));
+      var x0 = Math.ceil(-this.getScaledWidth() / 2 - this.left);
+      var x1 = Math.ceil(-this.getScaledWidth() / 2);
+      var x2 = Math.ceil(this.getScaledWidth() / 2);
+      var x3 = Math.ceil(this.getScaledWidth() / 2 + (canvas.width - this.getScaledWidth() - this.left));
 
-      var y0 = Math.ceil(-this.getHeight() / 2 - this.getTop());
-      var y1 = Math.ceil(-this.getHeight() / 2);
-      var y2 = Math.ceil(this.getHeight() / 2);
-      var y3 = Math.ceil(this.getHeight() / 2 + (canvas.height - this.getHeight() - this.getTop()));
+      var y0 = Math.ceil(-this.getScaledHeight() / 2 - this.top);
+      var y1 = Math.ceil(-this.getScaledHeight() / 2);
+      var y2 = Math.ceil(this.getScaledHeight() / 2);
+      var y3 = Math.ceil(this.getScaledHeight() / 2 + (canvas.height - this.getScaledHeight() - this.top));
 
       ctx.beginPath();
       
@@ -819,38 +819,38 @@ define('skylark-darkroomjs/plugins/crop',[
 
     _renderBorders: function(ctx) {
       ctx.beginPath();
-      ctx.moveTo(-this.getWidth()/2, -this.getHeight()/2); // upper left
-      ctx.lineTo(this.getWidth()/2, -this.getHeight()/2); // upper right
-      ctx.lineTo(this.getWidth()/2, this.getHeight()/2); // down right
-      ctx.lineTo(-this.getWidth()/2, this.getHeight()/2); // down left
-      ctx.lineTo(-this.getWidth()/2, -this.getHeight()/2); // upper left
+      ctx.moveTo(-this.getScaledWidth()/2, -this.getScaledHeight()/2); // upper left
+      ctx.lineTo(this.getScaledWidth()/2, -this.getScaledHeight()/2); // upper right
+      ctx.lineTo(this.getScaledWidth()/2, this.getScaledHeight()/2); // down right
+      ctx.lineTo(-this.getScaledWidth()/2, this.getScaledHeight()/2); // down left
+      ctx.lineTo(-this.getScaledWidth()/2, -this.getScaledHeight()/2); // upper left
       ctx.stroke();
     },
 
     _renderGrid: function(ctx) {
-      return;
+      
       // Vertical lines
       ctx.beginPath();
-      ctx.moveTo(-this.getWidth()/2 + 1/3 * this.getWidth(), -this.getHeight()/2);
-      ctx.lineTo(-this.getWidth()/2 + 1/3 * this.getWidth(), this.getHeight()/2);
+      ctx.moveTo(-this.getScaledWidth()/2 + 1/3 * this.getScaledWidth(), -this.getScaledHeight()/2);
+      ctx.lineTo(-this.getScaledWidth()/2 + 1/3 * this.getScaledWidth(), this.getScaledHeight()/2);
       ctx.stroke();
       ctx.beginPath();
-      ctx.moveTo(-this.getWidth()/2 + 2/3 * this.getWidth(), -this.getHeight()/2);
-      ctx.lineTo(-this.getWidth()/2 + 2/3 * this.getWidth(), this.getHeight()/2);
+      ctx.moveTo(-this.getScaledWidth()/2 + 2/3 * this.getScaledWidth(), -this.getScaledHeight()/2);
+      ctx.lineTo(-this.getScaledWidth()/2 + 2/3 * this.getScaledWidth(), this.getScaledHeight()/2);
       ctx.stroke();
       // Horizontal lines
       ctx.beginPath();
-      ctx.moveTo(-this.getWidth()/2, -this.getHeight()/2 + 1/3 * this.getHeight());
-      ctx.lineTo(this.getWidth()/2, -this.getHeight()/2 + 1/3 * this.getHeight());
+      ctx.moveTo(-this.getScaledWidth()/2, -this.getScaledHeight()/2 + 1/3 * this.getScaledHeight());
+      ctx.lineTo(this.getScaledWidth()/2, -this.getScaledHeight()/2 + 1/3 * this.getScaledHeight());
       ctx.stroke();
       ctx.beginPath();
-      ctx.moveTo(-this.getWidth()/2, -this.getHeight()/2 + 2/3 * this.getHeight());
-      ctx.lineTo(this.getWidth()/2, -this.getHeight()/2 + 2/3 * this.getHeight());
+      ctx.moveTo(-this.getScaledWidth()/2, -this.getScaledHeight()/2 + 2/3 * this.getScaledHeight());
+      ctx.lineTo(this.getScaledWidth()/2, -this.getScaledHeight()/2 + 2/3 * this.getScaledHeight());
       ctx.stroke();
     }
   });
 
-  var CropPlugin = Imager.Plugin.inherit({
+  var CropPlugin = Darkroom.Plugin.inherit({
     // Init point
     startX: null,
     startY: null,
@@ -870,9 +870,9 @@ define('skylark-darkroomjs/plugins/crop',[
       quickCropKey: false
     },
 
-     init : function(imager,options) {
-      this.overrided(imager,options);
-      var buttonGroup = this.imager.toolbar.createButtonGroup();
+     init : function(Darkroom,options) {
+      this.overrided(Darkroom,options);
+      var buttonGroup = this.Darkroom.toolbar.createButtonGroup();
 
       this.cropButton = buttonGroup.createButton({
         image: 'crop'
@@ -894,16 +894,16 @@ define('skylark-darkroomjs/plugins/crop',[
       this.cancelButton.addEventListener('click', this.releaseFocus.bind(this));
 
       // Canvas events
-      this.imager.canvas.on('mouse:down', this.onMouseDown.bind(this));
-      this.imager.canvas.on('mouse:move', this.onMouseMove.bind(this));
-      this.imager.canvas.on('mouse:up', this.onMouseUp.bind(this));
-      this.imager.canvas.on('object:moving', this.onObjectMoving.bind(this));
-      this.imager.canvas.on('object:scaling', this.onObjectScaling.bind(this));
+      this.Darkroom.canvas.on('mouse:down', this.onMouseDown.bind(this));
+      this.Darkroom.canvas.on('mouse:move', this.onMouseMove.bind(this));
+      this.Darkroom.canvas.on('mouse:up', this.onMouseUp.bind(this));
+      this.Darkroom.canvas.on('object:moving', this.onObjectMoving.bind(this));
+      this.Darkroom.canvas.on('object:scaling', this.onObjectScaling.bind(this));
 
-      canvas2d.util.addListener(document, 'keydown', this.onKeyDown.bind(this));
-      canvas2d.util.addListener(document, 'keyup', this.onKeyUp.bind(this));
+      fabric.util.addListener(document, 'keydown', this.onKeyDown.bind(this));
+      fabric.util.addListener(document, 'keyup', this.onKeyUp.bind(this));
 
-      this.imager.addEventListener('core:transformation', this.releaseFocus.bind(this));
+      this.Darkroom.addEventListener('core:transformation', this.releaseFocus.bind(this));
     },
 
     // Avoid crop zone to go beyond the canvas edges
@@ -916,9 +916,9 @@ define('skylark-darkroomjs/plugins/crop',[
       if (currentObject !== this.cropZone)
         return;
 
-      var canvas = this.imager.canvas;
-      var x = currentObject.getLeft(), y = currentObject.getTop();
-      var w = currentObject.getWidth(), h = currentObject.getHeight();
+      var canvas = this.Darkroom.canvas;
+      var x = currentObject.left, y = currentObject.top;
+      var w = currentObject.getScaledWidth(), h = currentObject.getScaledHeight();
       var maxX = canvas.getWidth() - w;
       var maxY = canvas.getHeight() - h;
 
@@ -931,7 +931,7 @@ define('skylark-darkroomjs/plugins/crop',[
       if (y > maxY)
         currentObject.set('top', maxY);
 
-      this.imager.dispatchEvent('crop:update');
+      this.Darkroom.dispatchEvent('crop:update');
     },
 
     // Prevent crop zone from going beyond the canvas edges (like mouseMove)
@@ -945,15 +945,15 @@ define('skylark-darkroomjs/plugins/crop',[
       if (currentObject !== this.cropZone)
         return;
 
-      var canvas = this.imager.canvas;
+      var canvas = this.Darkroom.canvas;
       var pointer = canvas.getPointer(event.e);
       var x = pointer.x;
       var y = pointer.y;
 
-      var minX = currentObject.getLeft();
-      var minY = currentObject.getTop();
-      var maxX = currentObject.getLeft() + currentObject.getWidth();
-      var maxY = currentObject.getTop() + currentObject.getHeight();
+      var minX = currentObject.left;
+      var minY = currentObject.top;
+      var maxX = currentObject.left + currentObject.getScaledWidth();
+      var maxY = currentObject.top + currentObject.getScaledHeight();
 
       if (null !== this.options.ratio) {
         if (minX < 0 || maxX > canvas.getWidth() || minY < 0 || maxY > canvas.getHeight()) {
@@ -977,17 +977,17 @@ define('skylark-darkroomjs/plugins/crop',[
         currentObject.setTop(0);
       }
 
-      if (currentObject.getWidth() < this.options.minWidth) {
+      if (currentObject.get("width") < this.options.minWidth) {
         currentObject.scaleToWidth(this.options.minWidth);
       }
-      if (currentObject.getHeight() < this.options.minHeight) {
+      if (currentObject.get("height") < this.options.minHeight) {
         currentObject.scaleToHeight(this.options.minHeight);
       }
 
-      this.lastScaleX = currentObject.getScaleX();
-      this.lastScaleY = currentObject.getScaleY();
+      this.lastScaleX = currentObject.get("scaleX");
+      this.lastScaleY = currentObject.get("scaleY");
 
-      this.imager.dispatchEvent('crop:update');
+      this.Darkroom.dispatchEvent('crop:update');
     },
 
     // Init crop zone
@@ -996,14 +996,14 @@ define('skylark-darkroomjs/plugins/crop',[
         return;
       }
 
-      var canvas = this.imager.canvas;
+      var canvas = this.Darkroom.canvas;
 
       // recalculate offset, in case canvas was manipulated since last `calcOffset`
       canvas.calcOffset();
       var pointer = canvas.getPointer(event.e);
       var x = pointer.x;
       var y = pointer.y;
-      var point = new canvas2d.Point(x, y);
+      var point = new fabric.Point(x, y);
 
       // Check if user want to scale or drag the crop zone.
       var activeObject = canvas.getActiveObject();
@@ -1012,10 +1012,10 @@ define('skylark-darkroomjs/plugins/crop',[
       }
 
       canvas.discardActiveObject();
-      this.cropZone.setWidth(0);
-      this.cropZone.setHeight(0);
-      this.cropZone.setScaleX(1);
-      this.cropZone.setScaleY(1);
+      this.cropZone.set("width",0);
+      this.cropZone.set("height",0);
+      this.cropZone.set("scaleX",1);
+      this.cropZone.set("scaleY",1);
 
       this.startX = x;
       this.startY = y;
@@ -1031,7 +1031,7 @@ define('skylark-darkroomjs/plugins/crop',[
         return;
       }
 
-      var canvas = this.imager.canvas;
+      var canvas = this.Darkroom.canvas;
       var pointer = canvas.getPointer(event.e);
       var x = pointer.x;
       var y = pointer.y;
@@ -1040,7 +1040,7 @@ define('skylark-darkroomjs/plugins/crop',[
     },
 
     onMouseMoveKeyCrop: function(event) {
-      var canvas = this.imager.canvas;
+      var canvas = this.Darkroom.canvas;
       var zone = this.cropZone;
 
       var pointer = canvas.getPointer(event.e);
@@ -1048,8 +1048,8 @@ define('skylark-darkroomjs/plugins/crop',[
       var y = pointer.y;
 
       if (!zone.left || !zone.top) {
-        zone.setTop(y);
-        zone.setLeft(x);
+        zone.set("top",y);
+        zone.set("left",x);
       }
 
       this.isKeyLeft =  x < zone.left + zone.width / 2 ;
@@ -1069,7 +1069,7 @@ define('skylark-darkroomjs/plugins/crop',[
         return;
       }
 
-      var canvas = this.imager.canvas;
+      var canvas = this.Darkroom.canvas;
       this.cropZone.setCoords();
       canvas.setActiveObject(this.cropZone);
       canvas.calcOffset();
@@ -1084,13 +1084,13 @@ define('skylark-darkroomjs/plugins/crop',[
 
       // Active quick crop flow
       this.isKeyCroping = true ;
-      this.imager.canvas.discardActiveObject();
-      this.cropZone.setWidth(0);
-      this.cropZone.setHeight(0);
-      this.cropZone.setScaleX(1);
-      this.cropZone.setScaleY(1);
-      this.cropZone.setTop(0);
-      this.cropZone.setLeft(0);
+      this.Darkroom.canvas.discardActiveObject();
+      this.cropZone.set("width",0);
+      this.cropZone.set("height",0);
+      this.cropZone.set("scaleX",1);
+      this.cropZone.set("scaleY",1);
+      this.cropZone.set("top",0);
+      this.cropZone.set("left",0);
     },
 
     onKeyUp: function(event) {
@@ -1119,13 +1119,13 @@ define('skylark-darkroomjs/plugins/crop',[
         });
       }
 
-      var canvas = this.imager.canvas;
+      var canvas = this.Darkroom.canvas;
       canvas.bringToFront(this.cropZone);
       this.cropZone.setCoords();
       canvas.setActiveObject(this.cropZone);
       canvas.calcOffset();
 
-      this.imager.dispatchEvent('crop:update');
+      this.Darkroom.dispatchEvent('crop:update');
     },
 
     toggleCrop: function() {
@@ -1143,13 +1143,13 @@ define('skylark-darkroomjs/plugins/crop',[
       if (this.cropZone.width < 1 && this.cropZone.height < 1)
         return;
 
-      var image = this.imager.image;
+      var image = this.Darkroom.image;
 
       // Compute crop zone dimensions
-      var top = this.cropZone.getTop() - image.getTop();
-      var left = this.cropZone.getLeft() - image.getLeft();
-      var width = this.cropZone.getWidth();
-      var height = this.cropZone.getHeight();
+      var top = this.cropZone.get("top") - image.get("top");
+      var left = this.cropZone.get("left") - image.get("left");
+      var width = this.cropZone.get("width");
+      var height = this.cropZone.get("height");
 
       // Adjust dimensions to image only
       if (top < 0) {
@@ -1165,11 +1165,11 @@ define('skylark-darkroomjs/plugins/crop',[
       // Apply crop transformation.
       // Make sure to use relative dimension since the crop will be applied
       // on the source image.
-      this.imager.applyTransformation(new Crop({
-        top: top / image.getHeight(),
-        left: left / image.getWidth(),
-        width: width / image.getWidth(),
-        height: height / image.getHeight(),
+      this.Darkroom.applyTransformation(new Crop({
+        top: top / image.getScaledHeight(),
+        left: left / image.getScaledWidth(),
+        width: width / image.getScaledWidth(),
+        height: height / image.getScaledHeight(),
       }));
     },
 
@@ -1199,8 +1199,8 @@ define('skylark-darkroomjs/plugins/crop',[
         this.cropZone.set('lockUniScaling', true);
       }
 
-      this.imager.canvas.add(this.cropZone);
-      this.imager.canvas.defaultCursor = 'crosshair';
+      this.Darkroom.canvas.add(this.cropZone);
+      this.Darkroom.canvas.defaultCursor = 'crosshair';
 
       this.cropButton.active(true);
       this.okButton.hide(false);
@@ -1212,20 +1212,20 @@ define('skylark-darkroomjs/plugins/crop',[
       if (undefined === this.cropZone)
         return;
 
-      this.cropZone.remove();
+      this.cropZone.canvas.remove(this.cropZone);
       this.cropZone = undefined;
 
       this.cropButton.active(false);
       this.okButton.hide(true);
       this.cancelButton.hide(true);
 
-      this.imager.canvas.defaultCursor = 'default';
+      this.Darkroom.canvas.defaultCursor = 'default';
 
-      this.imager.dispatchEvent('crop:update');
+      this.Darkroom.dispatchEvent('crop:update');
     },
 
     _renderCropZone: function(fromX, fromY, toX, toY) {
-      var canvas = this.imager.canvas;
+      var canvas = this.Darkroom.canvas;
 
       var isRight = (toX > fromX);
       var isLeft = !isRight;
@@ -1341,9 +1341,9 @@ define('skylark-darkroomjs/plugins/crop',[
       this.cropZone.width = width;
       this.cropZone.height = height;
 
-      this.imager.canvas.bringToFront(this.cropZone);
+      this.Darkroom.canvas.bringToFront(this.cropZone);
 
-      this.imager.dispatchEvent('crop:update');
+      this.Darkroom.dispatchEvent('crop:update');
     }
   });
 
@@ -1352,7 +1352,7 @@ define('skylark-darkroomjs/plugins/crop',[
     ctor : CropPlugin
   };
 
-  Imager.installPlugin(pluginInfo);
+  Darkroom.installPlugin(pluginInfo);
 
   return pluginInfo;
 
@@ -1360,22 +1360,22 @@ define('skylark-darkroomjs/plugins/crop',[
 
 define('skylark-darkroomjs/plugins/rotate',[
   "skylark-langx/langx",
-  "skylark-utils-dom/noder",
-  "skylark-utils-dom/query",
-  "skylark-graphics-canvas2d",
-  '../Imager',
-],function(langx,noder, $, canvas2d,Imager) {
+  "skylark-domx-noder",
+  "skylark-domx-query",
+  "skylark-fabric",
+  '../Darkroom',
+],function(langx,noder, $, fabric,Darkroom) {
   'use strict';
 
-var Rotation = Imager.Transformation.inherit({
+var Rotation = Darkroom.Transformation.inherit({
 
   applyTransformation: function(canvas, image, next) {
-    var angle = (image.getAngle() + this.options.angle) % 360;
+    var angle = (image.angle + this.options.angle) % 360;
     image.rotate(angle);
 
     var width, height;
-    height = Math.abs(image.getWidth()*(Math.sin(angle*Math.PI/180)))+Math.abs(image.getHeight()*(Math.cos(angle*Math.PI/180)));
-    width = Math.abs(image.getHeight()*(Math.sin(angle*Math.PI/180)))+Math.abs(image.getWidth()*(Math.cos(angle*Math.PI/180)));
+    height = Math.abs(image.getScaledWidth()*(Math.sin(angle*Math.PI/180)))+Math.abs(image.getScaledHeight()*(Math.cos(angle*Math.PI/180)));
+    width = Math.abs(image.getScaledHeight()*(Math.sin(angle*Math.PI/180)))+Math.abs(image.getScaledWidth()*(Math.cos(angle*Math.PI/180)));
 
     canvas.setWidth(width);
     canvas.setHeight(height);
@@ -1389,10 +1389,10 @@ var Rotation = Imager.Transformation.inherit({
 });
 
 
-  var RotatePlugin = Imager.Plugin.inherit({
-    init: function(imager,options) {
-      this.overrided(imager,options);
-      var buttonGroup = this.imager.toolbar.createButtonGroup();
+  var RotatePlugin = Darkroom.Plugin.inherit({
+    init: function(Darkroom,options) {
+      this.overrided(Darkroom,options);
+      var buttonGroup = this.Darkroom.toolbar.createButtonGroup();
 
       var leftButton = buttonGroup.createButton({
         image: 'rotate-left'
@@ -1415,7 +1415,7 @@ var Rotation = Imager.Transformation.inherit({
     },
 
     rotate: function rotate(angle) {
-      this.imager.applyTransformation(
+      this.Darkroom.applyTransformation(
         new Rotation({angle: angle})
       );
     }
@@ -1426,7 +1426,7 @@ var Rotation = Imager.Transformation.inherit({
     ctor : RotatePlugin
   };
 
-  Imager.installPlugin(pluginInfo);
+  Darkroom.installPlugin(pluginInfo);
 
   return pluginInfo;
 
@@ -1434,25 +1434,25 @@ var Rotation = Imager.Transformation.inherit({
 
 define('skylark-darkroomjs/plugins/save',[
   "skylark-langx/langx",
-  "skylark-utils-dom/noder",
-  "skylark-utils-dom/query",
-  "skylark-graphics-canvas2d",
-  '../Imager',
-],function(langx,noder, $, canvas2d,Imager) {
+  "skylark-domx-noder",
+  "skylark-domx-query",
+  "skylark-fabric",
+  '../Darkroom',
+],function(langx,noder, $, fabric,Darkroom) {
   'use strict';
 
-  var SavePlugin= Imager.Plugin.inherit({
+  var SavePlugin= Darkroom.Plugin.inherit({
 
     defaults: {
       callback: function() {
-        this.imager.selfDestroy();
+        this.Darkroom.selfDestroy();
       }
     },
 
-    init: function(imager,options) {
-      this.overrided(imager,options);
+    init: function(Darkroom,options) {
+      this.overrided(Darkroom,options);
 
-      var buttonGroup = this.imager.toolbar.createButtonGroup();
+      var buttonGroup = this.Darkroom.toolbar.createButtonGroup();
 
       this.destroyButton = buttonGroup.createButton({
         image: 'save'
@@ -1467,20 +1467,20 @@ define('skylark-darkroomjs/plugins/save',[
     ctor : SavePlugin
   };
 
-  Imager.installPlugin(pluginInfo);
+  Darkroom.installPlugin(pluginInfo);
 
   return pluginInfo;  
 
 });
 
 define('skylark-darkroomjs/main',[
-    "./Imager",
+    "./Darkroom",
     "./plugins/history",
     "./plugins/crop",
     "./plugins/rotate",
     "./plugins/save"
-], function(Imager) {
-    return Imager;
+], function(Darkroom) {
+    return Darkroom;
 })
 ;
 define('skylark-darkroomjs', ['skylark-darkroomjs/main'], function (main) { return main; });

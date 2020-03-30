@@ -5,5 +5,5 @@
  * @link https://github.com/skylark-integration/skylark-darkroomjs/
  * @license MIT
  */
-define(["./Imager","./plugins/history","./plugins/crop","./plugins/rotate","./plugins/save"],function(n){return n});
+define(["./Darkroom","./plugins/history","./plugins/crop","./plugins/rotate","./plugins/save"],function(n){return n});
 //# sourceMappingURL=sourcemaps/main.js.map

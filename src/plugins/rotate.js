@@ -1,21 +1,21 @@
 define([
   "skylark-langx/langx",
-  "skylark-utils-dom/noder",
-  "skylark-utils-dom/query",
-  "skylark-graphics-canvas2d",
-  '../Imager',
-],function(langx,noder, $, canvas2d,Imager) {
+  "skylark-domx-noder",
+  "skylark-domx-query",
+  "skylark-fabric",
+  '../Darkroom',
+],function(langx,noder, $, fabric,Darkroom) {
   'use strict';
 
-var Rotation = Imager.Transformation.inherit({
+var Rotation = Darkroom.Transformation.inherit({
 
   applyTransformation: function(canvas, image, next) {
-    var angle = (image.getAngle() + this.options.angle) % 360;
+    var angle = (image.angle + this.options.angle) % 360;
     image.rotate(angle);
 
     var width, height;
-    height = Math.abs(image.getWidth()*(Math.sin(angle*Math.PI/180)))+Math.abs(image.getHeight()*(Math.cos(angle*Math.PI/180)));
-    width = Math.abs(image.getHeight()*(Math.sin(angle*Math.PI/180)))+Math.abs(image.getWidth()*(Math.cos(angle*Math.PI/180)));
+    height = Math.abs(image.getScaledWidth()*(Math.sin(angle*Math.PI/180)))+Math.abs(image.getScaledHeight()*(Math.cos(angle*Math.PI/180)));
+    width = Math.abs(image.getScaledHeight()*(Math.sin(angle*Math.PI/180)))+Math.abs(image.getScaledWidth()*(Math.cos(angle*Math.PI/180)));
 
     canvas.setWidth(width);
     canvas.setHeight(height);
@@ -29,10 +29,10 @@ var Rotation = Imager.Transformation.inherit({
 });
 
 
-  var RotatePlugin = Imager.Plugin.inherit({
-    init: function(imager,options) {
-      this.overrided(imager,options);
-      var buttonGroup = this.imager.toolbar.createButtonGroup();
+  var RotatePlugin = Darkroom.Plugin.inherit({
+    init: function(Darkroom,options) {
+      this.overrided(Darkroom,options);
+      var buttonGroup = this.Darkroom.toolbar.createButtonGroup();
 
       var leftButton = buttonGroup.createButton({
         image: 'rotate-left'
@@ -55,7 +55,7 @@ var Rotation = Imager.Transformation.inherit({
     },
 
     rotate: function rotate(angle) {
-      this.imager.applyTransformation(
+      this.Darkroom.applyTransformation(
         new Rotation({angle: angle})
       );
     }
@@ -66,7 +66,7 @@ var Rotation = Imager.Transformation.inherit({
     ctor : RotatePlugin
   };
 
-  Imager.installPlugin(pluginInfo);
+  Darkroom.installPlugin(pluginInfo);
 
   return pluginInfo;
 

@@ -5,5 +5,5 @@
  * @link https://github.com/skylark-integration/skylark-darkroomjs/
  * @license MIT
  */
-define(["skylark-langx/langx","skylark-utils-dom/noder","skylark-utils-dom/query","skylark-graphics-canvas2d","../Imager"],function(t,i,a,e,r){"use strict";var s={name:"save",ctor:r.Plugin.inherit({defaults:{callback:function(){this.imager.selfDestroy()}},init:function(t,i){this.overrided(t,i);var a=this.imager.toolbar.createButtonGroup();this.destroyButton=a.createButton({image:"save"}),this.destroyButton.addEventListener("click",this.options.callback.bind(this))}})};return r.installPlugin(s),s});
+define(["skylark-langx/langx","skylark-domx-noder","skylark-domx-query","skylark-fabric","../Darkroom"],function(t,r,a,i,o){"use strict";var e={name:"save",ctor:o.Plugin.inherit({defaults:{callback:function(){this.Darkroom.selfDestroy()}},init:function(t,r){this.overrided(t,r);var a=this.Darkroom.toolbar.createButtonGroup();this.destroyButton=a.createButton({image:"save"}),this.destroyButton.addEventListener("click",this.options.callback.bind(this))}})};return o.installPlugin(e),e});
 //# sourceMappingURL=../sourcemaps/plugins/save.js.map

@@ -1,32 +1,32 @@
 define([
   "skylark-langx/langx",
-  "skylark-utils-dom/noder",
-  "skylark-utils-dom/query",
-  "skylark-graphics-canvas2d",
-  '../Imager',
-],function(langx,noder, $, canvas2d,Imager) {
+  "skylark-domx-noder",
+  "skylark-domx-query",
+  "skylark-fabric",
+  '../Darkroom',
+],function(langx,noder, $, fabric,Darkroom) {
   'use strict';
 
-  var HistoryPlugin= Imager.Plugin.inherit({
+  var HistoryPlugin= Darkroom.Plugin.inherit({
      undoTransformations: null,
 
-     init : function(imager,options) {
-      this.overrided(imager,options);
+     init : function(Darkroom,options) {
+      this.overrided(Darkroom,options);
       this.undoTransformations = [];
       this._initButtons();
 
-      this.imager.addEventListener('core:transformation', this._onTranformationApplied.bind(this));
+      this.Darkroom.addEventListener('core:transformation', this._onTranformationApplied.bind(this));
     },
 
     undo: function() {
-      if (this.imager.transformations.length === 0) {
+      if (this.Darkroom.transformations.length === 0) {
         return;
       }
 
-      var lastTransformation = this.imager.transformations.pop();
+      var lastTransformation = this.Darkroom.transformations.pop();
       this.undoTransformations.unshift(lastTransformation);
 
-      this.imager.reinitializeImage();
+      this.Darkroom.reinitializeImage();
       this._updateButtons();
     },
 
@@ -36,14 +36,14 @@ define([
       }
 
       var cancelTransformation = this.undoTransformations.shift();
-      this.imager.transformations.push(cancelTransformation);
+      this.Darkroom.transformations.push(cancelTransformation);
 
-      this.imager.reinitializeImage();
+      this.Darkroom.reinitializeImage();
       this._updateButtons();
     },
 
     _initButtons: function() {
-      var buttonGroup = this.imager.toolbar.createButtonGroup();
+      var buttonGroup = this.Darkroom.toolbar.createButtonGroup();
 
       this.backButton = buttonGroup.createButton({
         image: 'undo',
@@ -62,7 +62,7 @@ define([
     },
 
     _updateButtons: function() {
-      this.backButton.disable((this.imager.transformations.length === 0))
+      this.backButton.disable((this.Darkroom.transformations.length === 0))
       this.forwardButton.disable((this.undoTransformations.length === 0))
     },
 
@@ -77,7 +77,7 @@ define([
     ctor : HistoryPlugin
   };
 
-  Imager.installPlugin(pluginInfo);
+  Darkroom.installPlugin(pluginInfo);
 
   return pluginInfo;
 

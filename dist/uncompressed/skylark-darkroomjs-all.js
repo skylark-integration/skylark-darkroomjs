@@ -86,7 +86,7 @@
 
 })(function(define,require) {
 
-define('skylark-langx/_attach',[],function(){
+define('skylark-langx-ns/_attach',[],function(){
     return  function attach(obj1,path,obj2) {
         if (typeof path == "string") {
             path = path.split(".");//[path]
@@ -104,7 +104,7 @@ define('skylark-langx/_attach',[],function(){
         return ns[name] = obj2;
     }
 });
-define('skylark-langx/skylark',[
+define('skylark-langx-ns/ns',[
     "./_attach"
 ], function(_attach) {
     var skylark = {
@@ -115,8 +115,22 @@ define('skylark-langx/skylark',[
     return skylark;
 });
 
-define('skylark-langx/types',[
-],function(){
+define('skylark-langx-ns/main',[
+	"./ns"
+],function(skylark){
+	return skylark;
+});
+define('skylark-langx-ns', ['skylark-langx-ns/main'], function (main) { return main; });
+
+define('skylark-langx/skylark',[
+    "skylark-langx-ns"
+], function(ns) {
+	return ns;
+});
+
+define('skylark-langx-types/types',[
+    "skylark-langx-ns"
+],function(skylark){
     var toString = {}.toString;
     
     var type = (function() {
@@ -296,7 +310,7 @@ define('skylark-langx/types',[
       return value === undefined
     }
 
-    return {
+    return skylark.attach("langx.types",{
 
         isArray: isArray,
 
@@ -337,12 +351,20 @@ define('skylark-langx/types',[
         isWindow: isWindow,
 
         type: type
-    };
+    });
 
 });
-define('skylark-langx/numbers',[
+define('skylark-langx-types/main',[
 	"./types"
 ],function(types){
+	return types;
+});
+define('skylark-langx-types', ['skylark-langx-types/main'], function (main) { return main; });
+
+define('skylark-langx-numbers/numbers',[
+    "skylark-langx-ns",
+    "skylark-langx-types"
+],function(skylark,types){
 	var isObject = types.isObject,
 		isSymbol = types.isSymbol;
 
@@ -479,17 +501,25 @@ define('skylark-langx/numbers',[
 	    : (reIsBadHex.test(value) ? NAN : +value);
 	}
 
-	return  {
+	return  skylark.attach("langx.numbers",{
 		toFinite : toFinite,
 		toNumber : toNumber,
 		toInteger : toInteger
-	}
+	});
 });
-define('skylark-langx/objects',[
-    "./_attach",
-	"./types",
-    "./numbers"
-],function(_attach,types,numbers){
+define('skylark-langx-numbers/main',[
+	"./numbers"
+],function(numbers){
+	return numbers;
+});
+define('skylark-langx-numbers', ['skylark-langx-numbers/main'], function (main) { return main; });
+
+define('skylark-langx-objects/objects',[
+    "skylark-langx-ns/ns",
+    "skylark-langx-ns/_attach",
+	"skylark-langx-types",
+    "skylark-langx-numbers"
+],function(skylark,_attach,types,numbers){
 	var hasOwnProperty = Object.prototype.hasOwnProperty,
         slice = Array.prototype.slice,
         isBoolean = types.isBoolean,
@@ -926,7 +956,7 @@ define('skylark-langx/objects',[
 
     }
 
-    return {
+    return skylark.attach("langx.objects",{
         allKeys: allKeys,
 
         attach : _attach,
@@ -962,17 +992,25 @@ define('skylark-langx/objects',[
         safeMixin: safeMixin,
 
         values: values
-    };
-
+    });
 
 
 });
-define('skylark-langx/arrays',[
-	"./types",
-  "./objects"
-],function(types,objects){
-	var filter = Array.prototype.filter,
-		isArrayLike = types.isArrayLike;
+define('skylark-langx-objects/main',[
+	"./objects"
+],function(objects){
+	return objects;
+});
+define('skylark-langx-objects', ['skylark-langx-objects/main'], function (main) { return main; });
+
+define('skylark-langx-arrays/arrays',[
+  "skylark-langx-ns/ns",
+  "skylark-langx-types",
+  "skylark-langx-objects"
+],function(skylark,types,objects){
+  var filter = Array.prototype.filter,
+      find = Array.prototype.find,
+    isArrayLike = types.isArrayLike;
 
     /**
      * The base implementation of `_.findIndex` and `_.findLastIndex` without
@@ -1155,7 +1193,11 @@ define('skylark-langx/arrays',[
         })
     }
 
-    return {
+    function find2(array,func) {
+      return find.call(array,func);
+    }
+
+    return skylark.attach("langx.arrays",{
         baseFindIndex: baseFindIndex,
 
         baseIndexOf : baseIndexOf,
@@ -1171,6 +1213,8 @@ define('skylark-langx/arrays',[
         },
 
         filter : filter2,
+
+        find : find2,
         
         flatten: flatten,
 
@@ -1190,13 +1234,26 @@ define('skylark-langx/arrays',[
 
         uniq : uniq
 
-    }
+    });
 });
-define('skylark-langx/klass',[
-    "./arrays",
-    "./objects",
-    "./types"
-],function(arrays,objects,types){
+define('skylark-langx-arrays/main',[
+	"./arrays"
+],function(arrays){
+	return arrays;
+});
+define('skylark-langx-arrays', ['skylark-langx-arrays/main'], function (main) { return main; });
+
+define('skylark-langx/arrays',[
+	"skylark-langx-arrays"
+],function(arrays){
+  return arrays;
+});
+define('skylark-langx-klass/klass',[
+  "skylark-langx-ns/ns",
+  "skylark-langx-types",
+  "skylark-langx-objects",
+  "skylark-langx-arrays",
+],function(skylark,types,objects,arrays){
     var uniq = arrays.uniq,
         has = objects.has,
         mixin = objects.mixin,
@@ -1440,7 +1497,19 @@ let longEar = klass({
 
     var createClass = f1();
 
-    return createClass;
+    return skylark.attach("langx.klass",createClass);
+});
+define('skylark-langx-klass/main',[
+	"./klass"
+],function(klass){
+	return klass;
+});
+define('skylark-langx-klass', ['skylark-langx-klass/main'], function (main) { return main; });
+
+define('skylark-langx/klass',[
+    "skylark-langx-klass"
+],function(klass){
+    return klass;
 });
 define('skylark-langx/ArrayStore',[
     "./klass"
@@ -1786,8 +1855,9 @@ define('skylark-langx/ArrayStore',[
 
 	return ArrayStore;
 });
-define('skylark-langx/aspect',[
-],function(){
+define('skylark-langx-aspect/aspect',[
+    "skylark-langx-ns"
+],function(skylark){
 
   var undefined, nextId = 0;
     function advise(dispatcher, type, advice, receiveArguments){
@@ -1903,18 +1973,31 @@ define('skylark-langx/aspect',[
         };
     }
 
-    return {
+    return skylark.attach("langx.aspect",{
         after: aspect("after"),
  
         around: aspect("around"),
         
         before: aspect("before")
-    };
+    });
 });
-define('skylark-langx/funcs',[
-    "./objects",
-	"./types"
-],function(objects,types){
+define('skylark-langx-aspect/main',[
+	"./aspect"
+],function(aspect){
+	return aspect;
+});
+define('skylark-langx-aspect', ['skylark-langx-aspect/main'], function (main) { return main; });
+
+define('skylark-langx/aspect',[
+    "skylark-langx-aspect"
+],function(aspect){
+  return aspect;
+});
+define('skylark-langx-funcs/funcs',[
+  "skylark-langx-ns/ns",
+  "skylark-langx-types",
+  "skylark-langx-objects"
+],function(skylark,types,objects){
 	var mixin = objects.mixin,
         slice = Array.prototype.slice,
         isFunction = types.isFunction,
@@ -1978,76 +2061,133 @@ define('skylark-langx/funcs',[
         };
     })();
 
-  var templateSettings = {
-    evaluate: /<%([\s\S]+?)%>/g,
-    interpolate: /<%=([\s\S]+?)%>/g,
-    escape: /<%-([\s\S]+?)%>/g
-  };
 
-
-  function template(text, settings, oldSettings) {
-    if (!settings && oldSettings) settings = oldSettings;
-    settings = objects.defaults({}, settings,templateSettings);
-
-    // Combine delimiters into one regular expression via alternation.
-    var matcher = RegExp([
-      (settings.escape || noMatch).source,
-      (settings.interpolate || noMatch).source,
-      (settings.evaluate || noMatch).source
-    ].join('|') + '|$', 'g');
-
-    // Compile the template source, escaping string literals appropriately.
-    var index = 0;
-    var source = "__p+='";
-    text.replace(matcher, function(match, escape, interpolate, evaluate, offset) {
-      source += text.slice(index, offset).replace(escapeRegExp, escapeChar);
-      index = offset + match.length;
-
-      if (escape) {
-        source += "'+\n((__t=(" + escape + "))==null?'':_.escape(__t))+\n'";
-      } else if (interpolate) {
-        source += "'+\n((__t=(" + interpolate + "))==null?'':__t)+\n'";
-      } else if (evaluate) {
-        source += "';\n" + evaluate + "\n__p+='";
-      }
-
-      // Adobe VMs need the match returned to produce the correct offset.
-      return match;
-    });
-    source += "';\n";
-
-    // If a variable is not specified, place data values in local scope.
-    if (!settings.variable) source = 'with(obj||{}){\n' + source + '}\n';
-
-    source = "var __t,__p='',__j=Array.prototype.join," +
-      "print=function(){__p+=__j.call(arguments,'');};\n" +
-      source + 'return __p;\n';
-
-    var render;
-    try {
-      render = new Function(settings.variable || 'obj', '_', source);
-    } catch (e) {
-      e.source = source;
-      throw e;
-    }
-
-    var template = function(data) {
-      return render.call(this, data, _);
+    // By default, Underscore uses ERB-style template delimiters, change the
+    // following template settings to use alternative delimiters.
+    var templateSettings = {
+        evaluate: /<%([\s\S]+?)%>/g,
+        interpolate: /<%=([\s\S]+?)%>/g,
+        escape: /<%-([\s\S]+?)%>/g
     };
 
-    // Provide the compiled source as a convenience for precompilation.
-    var argument = settings.variable || 'obj';
-    template.source = 'function(' + argument + '){\n' + source + '}';
+    // When customizing `templateSettings`, if you don't want to define an
+    // interpolation, evaluation or escaping regex, we need one that is
+    // guaranteed not to match.
+    var noMatch = /(.)^/;
 
-    return template;
-  };
 
-    return {
+    // Certain characters need to be escaped so that they can be put into a
+    // string literal.
+    var escapes = {
+      "'":      "'",
+      '\\':     '\\',
+      '\r':     'r',
+      '\n':     'n',
+      '\t':     't',
+      '\u2028': 'u2028',
+      '\u2029': 'u2029'
+    };
+
+    var escaper = /\\|'|\r|\n|\t|\u2028|\u2029/g;
+
+
+    function template(text, data, settings) {
+        var render;
+        settings = objects.defaults({}, settings,templateSettings);
+
+        // Combine delimiters into one regular expression via alternation.
+        var matcher = RegExp([
+          (settings.escape || noMatch).source,
+          (settings.interpolate || noMatch).source,
+          (settings.evaluate || noMatch).source
+        ].join('|') + '|$', 'g');
+
+        // Compile the template source, escaping string literals appropriately.
+        var index = 0;
+        var source = "__p+='";
+        text.replace(matcher, function(match, escape, interpolate, evaluate, offset) {
+          source += text.slice(index, offset)
+              .replace(escaper, function(match) { return '\\' + escapes[match]; });
+
+          if (escape) {
+            source += "'+\n((__t=(" + escape + "))==null?'':_.escape(__t))+\n'";
+          }
+          if (interpolate) {
+            source += "'+\n((__t=(" + interpolate + "))==null?'':__t)+\n'";
+          }
+          if (evaluate) {
+            source += "';\n" + evaluate + "\n__p+='";
+          }
+          index = offset + match.length;
+          return match;
+        });
+        source += "';\n";
+
+        // If a variable is not specified, place data values in local scope.
+        if (!settings.variable) source = 'with(obj||{}){\n' + source + '}\n';
+
+        source = "var __t,__p='',__j=Array.prototype.join," +
+          "print=function(){__p+=__j.call(arguments,'');};\n" +
+          source + 'return __p;\n';
+
+        try {
+          render = new Function(settings.variable || 'obj', '_', source);
+        } catch (e) {
+          e.source = source;
+          throw e;
+        }
+
+        if (data) {
+          return render(data,this)
+        }
+        var template = proxy(function(data) {
+          return render.call(this, data,this);
+        },this);
+
+        // Provide the compiled source as a convenience for precompilation.
+        var argument = settings.variable || 'obj';
+        template.source = 'function(' + argument + '){\n' + source + '}';
+
+        return template;
+    }
+
+
+    /**
+     * Creates a function that negates the result of the predicate `func`. The
+     * `func` predicate is invoked with the `this` binding and arguments of the
+     * created function.
+     * @category Function
+     * @param {Function} predicate The predicate to negate.
+     * @returns {Function} Returns the new negated function.
+     * @example
+     *
+     * function isEven(n) {
+     *   return n % 2 == 0
+     * }
+     *
+     * filter([1, 2, 3, 4, 5, 6], negate(isEven))
+     * // => [1, 3, 5]
+     */
+    function negate(predicate) {
+      if (typeof predicate !== 'function') {
+        throw new TypeError('Expected a function')
+      }
+      return function(...args) {
+        return !predicate.apply(this, args)
+      }
+    }
+
+
+    return skylark.attach("langx.funcs",{
+        bind : proxy,
+        
         debounce: debounce,
 
         delegate: delegate,
 
         defer: defer,
+
+        negate: negate,
 
         noop : noop,
 
@@ -2063,12 +2203,19 @@ define('skylark-langx/funcs',[
 
         templateSettings : templateSettings,
         template : template
-    };
+    });
 });
-define('skylark-langx/Deferred',[
-    "./arrays",
-	"./funcs",
-    "./objects"
+define('skylark-langx-funcs/main',[
+	"./funcs"
+],function(funcs){
+	return funcs;
+});
+define('skylark-langx-funcs', ['skylark-langx-funcs/main'], function (main) { return main; });
+
+define('skylark-langx-async/Deferred',[
+    "skylark-langx-arrays",
+	"skylark-langx-funcs",
+    "skylark-langx-objects"
 ],function(arrays,funcs,objects){
     "use strict";
     
@@ -2291,13 +2438,16 @@ define('skylark-langx/Deferred',[
 
     return Deferred;
 });
-define('skylark-langx/async',[
-    "./Deferred",
-    "./objects"
-],function(Deferred,objects){
+define('skylark-langx-async/async',[
+    "skylark-langx-ns",
+    "skylark-langx-objects",
+    "./Deferred"
+],function(skylark,objects,Deferred){
     var each = objects.each;
     
     var async = {
+        Deferred : Deferred,
+
         parallel : function(arr,args,ctx) {
             var rets = [];
             ctx = ctx || null;
@@ -2345,9 +2495,23 @@ define('skylark-langx/async',[
         }
     };
 
-	return async;	
+	return skylark.attach("langx.async",async);	
 });
-define('skylark-langx/datetimes',[],function(){
+define('skylark-langx-async/main',[
+	"./async"
+],function(async){
+	return async;
+});
+define('skylark-langx-async', ['skylark-langx-async/main'], function (main) { return main; });
+
+define('skylark-langx/async',[
+    "skylark-langx-async"
+],function(async){
+    return async;
+});
+define('skylark-langx-datetimes/datetimes',[
+    "skylark-langx-ns"
+],function(skylark){
      function parseMilliSeconds(str) {
 
         var strs = str.split(' ');
@@ -2406,16 +2570,34 @@ define('skylark-langx/datetimes',[],function(){
         }
     };
 	
-	return {
+	return skylark.attach("langx.datetimes",{
 		parseMilliSeconds
-	};
+	});
 });
-define('skylark-langx/Evented',[
-    "./klass",
-    "./arrays",
-    "./objects",
-    "./types"
-],function(klass,arrays,objects,types){
+define('skylark-langx-datetimes/main',[
+	"./datetimes"
+],function(datetimes){
+	return datetimes;
+});
+define('skylark-langx-datetimes', ['skylark-langx-datetimes/main'], function (main) { return main; });
+
+define('skylark-langx/datetimes',[
+    "skylark-langx-datetimes"
+],function(datetimes){
+    return datetimes;
+});
+define('skylark-langx/Deferred',[
+    "skylark-langx-async/Deferred"
+],function(Deferred){
+    return Deferred;
+});
+define('skylark-langx-emitter/Emitter',[
+  "skylark-langx-ns/ns",
+  "skylark-langx-types",
+  "skylark-langx-objects",
+  "skylark-langx-arrays",
+  "skylark-langx-klass"
+],function(skylark,types,objects,arrays,klass){
     var slice = Array.prototype.slice,
         compact = arrays.compact,
         isDefined = types.isDefined,
@@ -2423,7 +2605,8 @@ define('skylark-langx/Evented',[
         isFunction = types.isFunction,
         isString = types.isString,
         isEmptyObject = types.isEmptyObject,
-        mixin = objects.mixin;
+        mixin = objects.mixin,
+        safeMixin = objects.safeMixin;
 
     function parse(event) {
         var segs = ("" + event).split(".");
@@ -2433,7 +2616,7 @@ define('skylark-langx/Evented',[
         };
     }
 
-    var Evented = klass({
+    var Emitter = klass({
         on: function(events, selector, data, callback, ctx, /*used internally*/ one) {
             var self = this,
                 _hub = this._hub || (this._hub = {});
@@ -2485,7 +2668,7 @@ define('skylark-langx/Evented',[
             return this.on(events, selector, data, callback, ctx, 1);
         },
 
-        trigger: function(e /*,argument list*/ ) {
+        emit: function(e /*,argument list*/ ) {
             if (!this._hub) {
                 return this;
             }
@@ -2686,14 +2869,53 @@ define('skylark-langx/Evented',[
             }
 
             return this;
+        },
+
+        trigger  : function() {
+            return this.emit.apply(this,arguments);
         }
     });
 
-    return Evented;
+    Emitter.createEvent = function (type,props) {
+        var e = new CustomEvent(type,props);
+        return safeMixin(e, props);
+    };
+
+    return skylark.attach("langx.Emitter",Emitter);
 
 });
-define('skylark-langx/hoster',[
-],function(){
+define('skylark-langx-emitter/Evented',[
+  "skylark-langx-ns/ns",
+	"./Emitter"
+],function(skylark,Emitter){
+	return skylark.attach("langx.Evented",Emitter);
+});
+define('skylark-langx-emitter/main',[
+	"./Emitter",
+	"./Evented"
+],function(Emitter){
+	return Emitter;
+});
+define('skylark-langx-emitter', ['skylark-langx-emitter/main'], function (main) { return main; });
+
+define('skylark-langx/Emitter',[
+    "skylark-langx-emitter"
+],function(Evented){
+    return Evented;
+});
+define('skylark-langx/Evented',[
+    "skylark-langx-emitter"
+],function(Evented){
+    return Evented;
+});
+define('skylark-langx/funcs',[
+    "skylark-langx-funcs"
+],function(funcs){
+    return funcs;
+});
+define('skylark-langx-hoster/hoster',[
+    "skylark-langx-ns"
+],function(skylark){
 	// The javascript host environment, brower and nodejs are supported.
 	var hoster = {
 		"isBrowser" : true, // default
@@ -2770,10 +2992,33 @@ define('skylark-langx/hoster',[
 	    }
 	}
 
-	return  hoster;
+	return  skylark.attach("langx.hoster",hoster);
 });
-define('skylark-langx/strings',[
-],function(){
+define('skylark-langx-hoster/main',[
+	"./hoster"
+],function(hoster){
+	return hoster;
+});
+define('skylark-langx-hoster', ['skylark-langx-hoster/main'], function (main) { return main; });
+
+define('skylark-langx/hoster',[
+	"skylark-langx-hoster"
+],function(hoster){
+	return hoster;
+});
+define('skylark-langx/numbers',[
+	"skylark-langx-numbers"
+],function(numbers){
+	return numbers;
+});
+define('skylark-langx/objects',[
+    "skylark-langx-objects"
+],function(objects){
+    return objects;
+});
+define('skylark-langx-strings/strings',[
+    "skylark-langx-ns"
+],function(skylark){
     // add default escape function for escaping HTML entities
     var escapeCharMap = Object.freeze({
         '&': '&amp;',
@@ -2984,9 +3229,9 @@ define('skylark-langx/strings',[
         }
 
         // Remove invalid chars
-        str = str.replace(/[^a-z0-9 -]/g, '') 
+        //str = str.replace(/[^a-z0-9 -]/g, '') 
         // Collapse whitespace and replace by -
-        .replace(/\s+/g, '-') 
+        str = str.replace(/\s+/g, '-') 
         // Collapse dashes
         .replace(/-+/g, '-'); 
 
@@ -3018,7 +3263,7 @@ define('skylark-langx/strings',[
         return str;
     }
 
-	return {
+	return skylark.attach("langx.strings",{
         camelCase: function(str) {
             return str.replace(/-([\da-z])/g, function(a) {
                 return a.toUpperCase().replace('-', '');
@@ -3048,7 +3293,7 @@ define('skylark-langx/strings',[
 
         slugify : slugify,
 
-        template : template,
+        //template : template,
 
         trim: trim,
 
@@ -3057,494 +3302,20 @@ define('skylark-langx/strings',[
         upperFirst: function(str) {
             return str.charAt(0).toUpperCase() + str.slice(1);
         }
-	} ; 
+	}) ; 
 
 });
-define('skylark-langx/Xhr',[
-    "./arrays",
-    "./Deferred",
-    "./Evented",
-    "./objects",
-    "./funcs",
-    "./types"
-],function(arrays,Deferred,Evented,objects,funcs,types){
-    var each = objects.each,
-        mixin = objects.mixin,
-        noop = funcs.noop,
-        isArray = types.isArray,
-        isFunction = types.isFunction,
-        isPlainObject = types.isPlainObject,
-        type = types.type;
- 
-     var getAbsoluteUrl = (function() {
-        var a;
-
-        return function(url) {
-            if (!a) a = document.createElement('a');
-            a.href = url;
-
-            return a.href;
-        };
-    })();
-   
-    var Xhr = (function(){
-        var jsonpID = 0,
-            key,
-            name,
-            rscript = /<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi,
-            scriptTypeRE = /^(?:text|application)\/javascript/i,
-            xmlTypeRE = /^(?:text|application)\/xml/i,
-            jsonType = 'application/json',
-            htmlType = 'text/html',
-            blankRE = /^\s*$/;
-
-        var XhrDefaultOptions = {
-            async: true,
-
-            // Default type of request
-            type: 'GET',
-            // Callback that is executed before request
-            beforeSend: noop,
-            // Callback that is executed if the request succeeds
-            success: noop,
-            // Callback that is executed the the server drops error
-            error: noop,
-            // Callback that is executed on request complete (both: error and success)
-            complete: noop,
-            // The context for the callbacks
-            context: null,
-            // Whether to trigger "global" Ajax events
-            global: true,
-
-            // MIME types mapping
-            // IIS returns Javascript as "application/x-javascript"
-            accepts: {
-                script: 'text/javascript, application/javascript, application/x-javascript',
-                json: 'application/json',
-                xml: 'application/xml, text/xml',
-                html: 'text/html',
-                text: 'text/plain'
-            },
-            // Whether the request is to another domain
-            crossDomain: false,
-            // Default timeout
-            timeout: 0,
-            // Whether data should be serialized to string
-            processData: true,
-            // Whether the browser should be allowed to cache GET responses
-            cache: true,
-
-            xhrFields : {
-                withCredentials : true
-            }
-        };
-
-        function mimeToDataType(mime) {
-            if (mime) {
-                mime = mime.split(';', 2)[0];
-            }
-            if (mime) {
-                if (mime == htmlType) {
-                    return "html";
-                } else if (mime == jsonType) {
-                    return "json";
-                } else if (scriptTypeRE.test(mime)) {
-                    return "script";
-                } else if (xmlTypeRE.test(mime)) {
-                    return "xml";
-                }
-            }
-            return "text";
-        }
-
-        function appendQuery(url, query) {
-            if (query == '') return url
-            return (url + '&' + query).replace(/[&?]{1,2}/, '?')
-        }
-
-        // serialize payload and append it to the URL for GET requests
-        function serializeData(options) {
-            options.data = options.data || options.query;
-            if (options.processData && options.data && type(options.data) != "string") {
-                options.data = param(options.data, options.traditional);
-            }
-            if (options.data && (!options.type || options.type.toUpperCase() == 'GET')) {
-                options.url = appendQuery(options.url, options.data);
-                options.data = undefined;
-            }
-        }
-
-        function serialize(params, obj, traditional, scope) {
-            var t, array = isArray(obj),
-                hash = isPlainObject(obj)
-            each(obj, function(key, value) {
-                t =type(value);
-                if (scope) key = traditional ? scope :
-                    scope + '[' + (hash || t == 'object' || t == 'array' ? key : '') + ']'
-                // handle data in serializeArray() format
-                if (!scope && array) params.add(value.name, value.value)
-                // recurse into nested objects
-                else if (t == "array" || (!traditional && t == "object"))
-                    serialize(params, value, traditional, key)
-                else params.add(key, value)
-            })
-        }
-
-        var param = function(obj, traditional) {
-            var params = []
-            params.add = function(key, value) {
-                if (isFunction(value)) {
-                  value = value();
-                }
-                if (value == null) {
-                  value = "";
-                }
-                this.push(encodeURIComponent(key) + '=' + encodeURIComponent(value));
-            };
-            serialize(params, obj, traditional)
-            return params.join('&').replace(/%20/g, '+')
-        };
-
-        var Xhr = Evented.inherit({
-            klassName : "Xhr",
-
-            _request  : function(args) {
-                var _ = this._,
-                    self = this,
-                    options = mixin({},XhrDefaultOptions,_.options,args),
-                    xhr = _.xhr = new XMLHttpRequest();
-
-                serializeData(options)
-
-                if (options.beforeSend) {
-                    options.beforeSend.call(this, xhr, options);
-                }                
-
-                var dataType = options.dataType || options.handleAs,
-                    mime = options.mimeType || options.accepts[dataType],
-                    headers = options.headers,
-                    xhrFields = options.xhrFields,
-                    isFormData = options.data && options.data instanceof FormData,
-                    basicAuthorizationToken = options.basicAuthorizationToken,
-                    type = options.type,
-                    url = options.url,
-                    async = options.async,
-                    user = options.user , 
-                    password = options.password,
-                    deferred = new Deferred(),
-                    contentType = isFormData ? false : 'application/x-www-form-urlencoded';
-
-                if (xhrFields) {
-                    for (name in xhrFields) {
-                        xhr[name] = xhrFields[name];
-                    }
-                }
-
-                if (mime && mime.indexOf(',') > -1) {
-                    mime = mime.split(',', 2)[0];
-                }
-                if (mime && xhr.overrideMimeType) {
-                    xhr.overrideMimeType(mime);
-                }
-
-                //if (dataType) {
-                //    xhr.responseType = dataType;
-                //}
-
-                var finish = function() {
-                    xhr.onloadend = noop;
-                    xhr.onabort = noop;
-                    xhr.onprogress = noop;
-                    xhr.ontimeout = noop;
-                    xhr = null;
-                }
-                var onloadend = function() {
-                    var result, error = false
-                    if ((xhr.status >= 200 && xhr.status < 300) || xhr.status == 304 || (xhr.status == 0 && getAbsoluteUrl(url).startsWith('file:'))) {
-                        dataType = dataType || mimeToDataType(options.mimeType || xhr.getResponseHeader('content-type'));
-
-                        result = xhr.responseText;
-                        try {
-                            if (dataType == 'script') {
-                                eval(result);
-                            } else if (dataType == 'xml') {
-                                result = xhr.responseXML;
-                            } else if (dataType == 'json') {
-                                result = blankRE.test(result) ? null : JSON.parse(result);
-                            } else if (dataType == "blob") {
-                                result = Blob([xhrObj.response]);
-                            } else if (dataType == "arraybuffer") {
-                                result = xhr.reponse;
-                            }
-                        } catch (e) { 
-                            error = e;
-                        }
-
-                        if (error) {
-                            deferred.reject(error,xhr.status,xhr);
-                        } else {
-                            deferred.resolve(result,xhr.status,xhr);
-                        }
-                    } else {
-                        deferred.reject(new Error(xhr.statusText),xhr.status,xhr);
-                    }
-                    finish();
-                };
-
-                var onabort = function() {
-                    if (deferred) {
-                        deferred.reject(new Error("abort"),xhr.status,xhr);
-                    }
-                    finish();                 
-                }
- 
-                var ontimeout = function() {
-                    if (deferred) {
-                        deferred.reject(new Error("timeout"),xhr.status,xhr);
-                    }
-                    finish();                 
-                }
-
-                var onprogress = function(evt) {
-                    if (deferred) {
-                        deferred.notify(evt,xhr.status,xhr);
-                    }
-                }
-
-                xhr.onloadend = onloadend;
-                xhr.onabort = onabort;
-                xhr.ontimeout = ontimeout;
-                xhr.onprogress = onprogress;
-
-                xhr.open(type, url, async, user, password);
-               
-                if (headers) {
-                    for ( var key in headers) {
-                        var value = headers[key];
- 
-                        if(key.toLowerCase() === 'content-type'){
-                            contentType = headers[hdr];
-                        } else {
-                           xhr.setRequestHeader(key, value);
-                        }
-                    }
-                }   
-
-                if  (contentType && contentType !== false){
-                    xhr.setRequestHeader('Content-Type', contentType);
-                }
-
-                if(!headers || !('X-Requested-With' in headers)){
-                    xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
-                }
-
-
-                //If basicAuthorizationToken is defined set its value into "Authorization" header
-                if (basicAuthorizationToken) {
-                    xhr.setRequestHeader("Authorization", basicAuthorizationToken);
-                }
-
-                xhr.send(options.data ? options.data : null);
-
-                return deferred.promise;
-
-            },
-
-            "abort": function() {
-                var _ = this._,
-                    xhr = _.xhr;
-
-                if (xhr) {
-                    xhr.abort();
-                }    
-            },
-
-
-            "request": function(args) {
-                return this._request(args);
-            },
-
-            get : function(args) {
-                args = args || {};
-                args.type = "GET";
-                return this._request(args);
-            },
-
-            post : function(args) {
-                args = args || {};
-                args.type = "POST";
-                return this._request(args);
-            },
-
-            patch : function(args) {
-                args = args || {};
-                args.type = "PATCH";
-                return this._request(args);
-            },
-
-            put : function(args) {
-                args = args || {};
-                args.type = "PUT";
-                return this._request(args);
-            },
-
-            del : function(args) {
-                args = args || {};
-                args.type = "DELETE";
-                return this._request(args);
-            },
-
-            "init": function(options) {
-                this._ = {
-                    options : options || {}
-                };
-            }
-        });
-
-        ["request","get","post","put","del","patch"].forEach(function(name){
-            Xhr[name] = function(url,args) {
-                var xhr = new Xhr({"url" : url});
-                return xhr[name](args);
-            };
-        });
-
-        Xhr.defaultOptions = XhrDefaultOptions;
-        Xhr.param = param;
-
-        return Xhr;
-    })();
-
-	return Xhr;	
+define('skylark-langx-strings/main',[
+	"./strings"
+],function(strings){
+	return strings;
 });
-define('skylark-langx/Restful',[
-    "./Evented",
-    "./objects",
-    "./strings",
-    "./Xhr"
-],function(Evented,objects,strings,Xhr){
-    var mixin = objects.mixin,
-        substitute = strings.substitute;
+define('skylark-langx-strings', ['skylark-langx-strings/main'], function (main) { return main; });
 
-    var Restful = Evented.inherit({
-        "klassName" : "Restful",
-
-        "idAttribute": "id",
-        
-        getBaseUrl : function(args) {
-            //$$baseEndpoint : "/files/${fileId}/comments",
-            var baseEndpoint = substitute(this.baseEndpoint,args),
-                baseUrl = this.server + this.basePath + baseEndpoint;
-            if (args[this.idAttribute]!==undefined) {
-                baseUrl = baseUrl + "/" + args[this.idAttribute]; 
-            }
-            return baseUrl;
-        },
-        _head : function(args) {
-            //get resource metadata .
-            //args : id and other info for the resource ,ex
-            //{
-            //  "id" : 234,  // the own id, required
-            //  "fileId"   : 2 // the parent resource id, option by resource
-            //}
-        },
-        _get : function(args) {
-            //get resource ,one or list .
-            //args : id and other info for the resource ,ex
-            //{
-            //  "id" : 234,  // the own id, null if list
-            //  "fileId"   : 2 // the parent resource id, option by resource
-            //}
-            return Xhr.get(this.getBaseUrl(args),args);
-        },
-        _post  : function(args,verb) {
-            //create or move resource .
-            //args : id and other info for the resource ,ex
-            //{
-            //  "id" : 234,  // the own id, required
-            //  "data" : body // the own data,required
-            //  "fileId"   : 2 // the parent resource id, option by resource
-            //}
-            //verb : the verb ,ex: copy,touch,trash,untrash,watch
-            var url = this.getBaseUrl(args);
-            if (verb) {
-                url = url + "/" + verb;
-            }
-            return Xhr.post(url, args);
-        },
-
-        _put  : function(args,verb) {
-            //update resource .
-            //args : id and other info for the resource ,ex
-            //{
-            //  "id" : 234,  // the own id, required
-            //  "data" : body // the own data,required
-            //  "fileId"   : 2 // the parent resource id, option by resource
-            //}
-            //verb : the verb ,ex: copy,touch,trash,untrash,watch
-            var url = this.getBaseUrl(args);
-            if (verb) {
-                url = url + "/" + verb;
-            }
-            return Xhr.put(url, args);
-        },
-
-        _delete : function(args) {
-            //delete resource . 
-            //args : id and other info for the resource ,ex
-            //{
-            //  "id" : 234,  // the own id, required
-            //  "fileId"   : 2 // the parent resource id, option by resource
-            //}         
-
-            // HTTP request : DELETE http://center.utilhub.com/registry/v1/apps/{appid}
-            var url = this.getBaseUrl(args);
-            return Xhr.del(url);
-        },
-
-        _patch : function(args){
-            //update resource metadata. 
-            //args : id and other info for the resource ,ex
-            //{
-            //  "id" : 234,  // the own id, required
-            //  "data" : body // the own data,required
-            //  "fileId"   : 2 // the parent resource id, option by resource
-            //}
-            var url = this.getBaseUrl(args);
-            return Xhr.patch(url, args);
-        },
-        query: function(params) {
-            
-            return this._post(params);
-        },
-
-        retrieve: function(params) {
-            return this._get(params);
-        },
-
-        create: function(params) {
-            return this._post(params);
-        },
-
-        update: function(params) {
-            return this._put(params);
-        },
-
-        delete: function(params) {
-            // HTTP request : DELETE http://center.utilhub.com/registry/v1/apps/{appid}
-            return this._delete(params);
-        },
-
-        patch: function(params) {
-           // HTTP request : PATCH http://center.utilhub.com/registry/v1/apps/{appid}
-            return this._patch(params);
-        },
-        init: function(params) {
-            mixin(this,params);
- //           this._xhr = XHRx();
-       }
-    });
-
-    return Restful;
+define('skylark-langx/strings',[
+    "skylark-langx-strings"
+],function(strings){
+    return strings;
 });
 define('skylark-langx/Stateful',[
 	"./Evented",
@@ -3758,12 +3529,13 @@ define('skylark-langx/Stateful',[
 
 	return Stateful;
 });
-define('skylark-langx/topic',[
-	"./Evented"
-],function(Evented){
+define('skylark-langx-topic/topic',[
+	"skylark-langx-ns",
+	"skylark-langx-emitter/Evented"
+],function(skylark,Evented){
 	var hub = new Evented();
 
-	return {
+	return skylark.attach("langx.topic",{
 	    publish: function(name, arg1,argn) {
 	        var data = [].slice.call(arguments, 1);
 
@@ -3786,7 +3558,24 @@ define('skylark-langx/topic',[
 
         }
 
-	}
+	});
+});
+define('skylark-langx-topic/main',[
+	"./topic"
+],function(topic){
+	return topic;
+});
+define('skylark-langx-topic', ['skylark-langx-topic/main'], function (main) { return main; });
+
+define('skylark-langx/topic',[
+	"skylark-langx-topic"
+],function(topic){
+	return topic;
+});
+define('skylark-langx/types',[
+    "skylark-langx-types"
+],function(types){
+    return types;
 });
 define('skylark-langx/langx',[
     "./skylark",
@@ -3796,19 +3585,18 @@ define('skylark-langx/langx',[
     "./async",
     "./datetimes",
     "./Deferred",
+    "./Emitter",
     "./Evented",
     "./funcs",
     "./hoster",
     "./klass",
     "./numbers",
     "./objects",
-    "./Restful",
     "./Stateful",
     "./strings",
     "./topic",
-    "./types",
-    "./Xhr"
-], function(skylark,arrays,ArrayStore,aspect,async,datetimes,Deferred,Evented,funcs,hoster,klass,numbers,objects,Restful,Stateful,strings,topic,types,Xhr) {
+    "./types"
+], function(skylark,arrays,ArrayStore,aspect,async,datetimes,Deferred,Emitter,Evented,funcs,hoster,klass,numbers,objects,Stateful,strings,topic,types) {
     "use strict";
     var toString = {}.toString,
         concat = Array.prototype.concat,
@@ -3819,13 +3607,6 @@ define('skylark-langx/langx',[
         safeMixin = objects.safeMixin,
         isFunction = types.isFunction;
 
-
-    function createEvent(type, props) {
-        var e = new CustomEvent(type, props);
-
-        return safeMixin(e, props);
-    }
-    
 
     function funcArg(context, arg, idx, payload) {
         return isFunction(arg) ? arg.call(context, idx, payload) : arg;
@@ -3864,7 +3645,7 @@ define('skylark-langx/langx',[
     }
 
     mixin(langx, {
-        createEvent : createEvent,
+        createEvent : Emitter.createEvent,
 
         funcArg: funcArg,
 
@@ -3886,42 +3667,25 @@ define('skylark-langx/langx',[
         
         Deferred: Deferred,
 
+        Emitter: Emitter,
+
         Evented: Evented,
 
         hoster : hoster,
 
         klass : klass,
-
-        Restful: Restful,
-        
+       
         Stateful: Stateful,
 
-        topic : topic,
-
-        Xhr: Xhr
-
+        topic : topic
     });
 
     return skylark.langx = langx;
 });
-define('skylark-utils-dom/skylark',["skylark-langx/skylark"], function(skylark) {
-    return skylark;
-});
-
-define('skylark-utils-dom/dom',["./skylark"], function(skylark) {
-	return skylark.dom = skylark.attach("utils.dom",{});
-});
-
-define('skylark-utils-dom/langx',[
+define('skylark-domx-browser/browser',[
+    "skylark-langx/skylark",
     "skylark-langx/langx"
-], function(langx) {
-    return langx;
-});
-
-define('skylark-utils-dom/browser',[
-    "./dom",
-    "./langx"
-], function(dom,langx) {
+], function(skylark,langx) {
     "use strict";
 
     var browser = langx.hoster.browser;
@@ -4044,282 +3808,21 @@ define('skylark-utils-dom/browser',[
 
     testEl = null;
 
-    return dom.browser = browser;
+    return skylark.attach("domx.browser",browser);
 });
 
-define('skylark-utils-dom/styler',[
-    "./dom",
-    "./langx"
-], function(dom, langx) {
-    var every = Array.prototype.every,
-        forEach = Array.prototype.forEach,
-        camelCase = langx.camelCase,
-        dasherize = langx.dasherize;
-
-    function maybeAddPx(name, value) {
-        return (typeof value == "number" && !cssNumber[dasherize(name)]) ? value + "px" : value
-    }
-
-    var cssNumber = {
-            'column-count': 1,
-            'columns': 1,
-            'font-weight': 1,
-            'line-height': 1,
-            'opacity': 1,
-            'z-index': 1,
-            'zoom': 1
-        },
-        classReCache = {
-
-        };
-
-    function classRE(name) {
-        return name in classReCache ?
-            classReCache[name] : (classReCache[name] = new RegExp('(^|\\s)' + name + '(\\s|$)'));
-    }
-
-    // access className property while respecting SVGAnimatedString
-    /*
-     * Adds the specified class(es) to each element in the set of matched elements.
-     * @param {HTMLElement} node
-     * @param {String} value
-     */
-    function className(node, value) {
-        var klass = node.className || '',
-            svg = klass && klass.baseVal !== undefined
-
-        if (value === undefined) return svg ? klass.baseVal : klass
-        svg ? (klass.baseVal = value) : (node.className = value)
-    }
-
-    function disabled(elm, value ) {
-        if (arguments.length < 2) {
-            return !!this.dom.disabled;
-        }
-
-        elm.disabled = value;
-
-        return this;
-    }
-
-    var elementDisplay = {};
-
-    function defaultDisplay(nodeName) {
-        var element, display
-        if (!elementDisplay[nodeName]) {
-            element = document.createElement(nodeName)
-            document.body.appendChild(element)
-            display = getStyles(element).getPropertyValue("display")
-            element.parentNode.removeChild(element)
-            display == "none" && (display = "block")
-            elementDisplay[nodeName] = display
-        }
-        return elementDisplay[nodeName]
-    }
-    /*
-     * Display the matched elements.
-     * @param {HTMLElement} elm
-     */
-    function show(elm) {
-        styler.css(elm, "display", "");
-        if (styler.css(elm, "display") == "none") {
-            styler.css(elm, "display", defaultDisplay(elm.nodeName));
-        }
-        return this;
-    }
-
-    function isInvisible(elm) {
-        return styler.css(elm, "display") == "none" || styler.css(elm, "opacity") == 0;
-    }
-
-    /*
-     * Hide the matched elements.
-     * @param {HTMLElement} elm
-     */
-    function hide(elm) {
-        styler.css(elm, "display", "none");
-        return this;
-    }
-
-    /*
-     * Adds the specified class(es) to each element in the set of matched elements.
-     * @param {HTMLElement} elm
-     * @param {String} name
-     */
-    function addClass(elm, name) {
-        if (!name) return this
-        var cls = className(elm),
-            names;
-        if (langx.isString(name)) {
-            names = name.split(/\s+/g);
-        } else {
-            names = name;
-        }
-        names.forEach(function(klass) {
-            var re = classRE(klass);
-            if (!cls.match(re)) {
-                cls += (cls ? " " : "") + klass;
-            }
-        });
-
-        className(elm, cls);
-
-        return this;
-    }
-
-    function getStyles( elem ) {
-
-        // Support: IE <=11 only, Firefox <=30 (#15098, #14150)
-        // IE throws on elements created in popups
-        // FF meanwhile throws on frame elements through "defaultView.getComputedStyle"
-        var view = elem.ownerDocument.defaultView;
-
-        if ( !view || !view.opener ) {
-            view = window;
-        }
-
-        return view.getComputedStyle( elem);
-    }
-
-
-    /*
-     * Get the value of a computed style property for the first element in the set of matched elements or set one or more CSS properties for every matched element.
-     * @param {HTMLElement} elm
-     * @param {String} property
-     * @param {Any} value
-     */
-    function css(elm, property, value) {
-        if (arguments.length < 3) {
-            var computedStyle,
-                computedStyle = getStyles(elm)
-            if (langx.isString(property)) {
-                return elm.style[camelCase(property)] || computedStyle.getPropertyValue(dasherize(property))
-            } else if (langx.isArrayLike(property)) {
-                var props = {}
-                forEach.call(property, function(prop) {
-                    props[prop] = (elm.style[camelCase(prop)] || computedStyle.getPropertyValue(dasherize(prop)))
-                })
-                return props
-            }
-        }
-
-        var css = '';
-        if (typeof(property) == 'string') {
-            if (!value && value !== 0) {
-                elm.style.removeProperty(dasherize(property));
-            } else {
-                css = dasherize(property) + ":" + maybeAddPx(property, value)
-            }
-        } else {
-            for (key in property) {
-                if (property[key] === undefined) {
-                    continue;
-                }
-                if (!property[key] && property[key] !== 0) {
-                    elm.style.removeProperty(dasherize(key));
-                } else {
-                    css += dasherize(key) + ':' + maybeAddPx(key, property[key]) + ';'
-                }
-            }
-        }
-
-        elm.style.cssText += ';' + css;
-        return this;
-    }
-
-    /*
-     * Determine whether any of the matched elements are assigned the given class.
-     * @param {HTMLElement} elm
-     * @param {String} name
-     */
-    function hasClass(elm, name) {
-        var re = classRE(name);
-        return elm.className && elm.className.match(re);
-    }
-
-    /*
-     * Remove a single class, multiple classes, or all classes from each element in the set of matched elements.
-     * @param {HTMLElement} elm
-     * @param {String} name
-     */
-    function removeClass(elm, name) {
-        if (name) {
-            var cls = className(elm),
-                names;
-
-            if (langx.isString(name)) {
-                names = name.split(/\s+/g);
-            } else {
-                names = name;
-            }
-
-            names.forEach(function(klass) {
-                var re = classRE(klass);
-                if (cls.match(re)) {
-                    cls = cls.replace(re, " ");
-                }
-            });
-
-            className(elm, cls.trim());
-        } else {
-            className(elm, "");
-        }
-
-        return this;
-    }
-
-    /*
-     * Add or remove one or more classes from the specified element.
-     * @param {HTMLElement} elm
-     * @param {String} name
-     * @param {} when
-     */
-    function toggleClass(elm, name, when) {
-        var self = this;
-        name.split(/\s+/g).forEach(function(klass) {
-            if (when === undefined) {
-                when = !self.hasClass(elm, klass);
-            }
-            if (when) {
-                self.addClass(elm, klass);
-            } else {
-                self.removeClass(elm, klass)
-            }
-        });
-
-        return self;
-    }
-
-    var styler = function() {
-        return styler;
-    };
-
-    langx.mixin(styler, {
-        autocssfix: false,
-        cssHooks: {
-
-        },
-
-        addClass: addClass,
-        className: className,
-        css: css,
-        disabled : disabled,        
-        hasClass: hasClass,
-        hide: hide,
-        isInvisible: isInvisible,
-        removeClass: removeClass,
-        show: show,
-        toggleClass: toggleClass
-    });
-
-    return dom.styler = styler;
+define('skylark-domx-browser/main',[
+	"./browser"
+],function(browser){
+	return browser;
 });
-define('skylark-utils-dom/noder',[
-    "./dom",
-    "./langx",
-    "./browser",
-    "./styler"
-], function(dom, langx, browser, styler) {
+define('skylark-domx-browser', ['skylark-domx-browser/main'], function (main) { return main; });
+
+define('skylark-domx-noder/noder',[
+    "skylark-langx/skylark",
+    "skylark-langx/langx",
+    "skylark-domx-browser"
+], function(skylark, langx, browser) {
     var isIE = !!navigator.userAgent.match(/Trident/g) || !!navigator.userAgent.match(/MSIE/g),
         fragmentRE = /^\s*<(\w+|!)[^>]*>/,
         singleTagRE = /^<(\w+)\s*\/?>(?:<\/\1>|)$/,
@@ -4469,7 +3972,14 @@ define('skylark-utils-dom/noder',[
      * @param } parent
      */
     function createElement(tag, props, parent) {
-        var node = document.createElement(tag);
+        var node;
+
+        if (/svg/i.test(tag)) {
+            node = document.createElementNS("http://www.w3.org/2000/svg", tag)
+        } else {
+            node = document.createElement(tag);
+        }
+
         if (props) {
             for (var name in props) {
                 node.setAttribute(name, props[name]);
@@ -4654,6 +4164,8 @@ define('skylark-utils-dom/noder',[
             } else {
                 node.appendChild(html);
             }
+
+            return this;
         }
     }
 
@@ -4697,6 +4209,16 @@ define('skylark-utils-dom/noder',[
     function isInDocument(node) {
       return (node === document.body) ? true : document.body.contains(node);
     }        
+
+    var blockNodes = ["div", "p", "ul", "ol", "li", "blockquote", "hr", "pre", "h1", "h2", "h3", "h4", "h5", "table"];
+
+    function isBlockNode(node) {
+        if (!node || node.nodeType === 3) {
+          return false;
+        }
+        return new RegExp("^(" + (blockNodes.join('|')) + ")$").test(node.nodeName.toLowerCase());
+    }
+
 
     /*   
      * Get the owner document object for the specified element.
@@ -4749,31 +4271,10 @@ define('skylark-utils-dom/noder',[
      */
     function offsetParent(elm) {
         var parent = elm.offsetParent || document.body;
-        while (parent && !rootNodeRE.test(parent.nodeName) && styler.css(parent, "position") == "static") {
+        while (parent && !rootNodeRE.test(parent.nodeName) && document.defaultView.getComputedStyle(parent).position == "static") {
             parent = parent.offsetParent;
         }
         return parent;
-    }
-
-    /*   
-     *
-     * @param {Node} elm
-     * @param {Node} params
-     */
-    function overlay(elm, params) {
-        var overlayDiv = createElement("div", params);
-        styler.css(overlayDiv, {
-            position: "absolute",
-            top: 0,
-            left: 0,
-            width: "100%",
-            height: "100%",
-            zIndex: 0x7FFFFFFF,
-            opacity: 0.7
-        });
-        elm.appendChild(overlayDiv);
-        return overlayDiv;
-
     }
 
     /*   
@@ -4803,7 +4304,7 @@ define('skylark-utils-dom/noder',[
     }
 
     function scrollParent( elm, includeHidden ) {
-        var position = styler.css(elm,"position" ),
+        var position = document.defaultView.getComputedStyle(elm).position,
             excludeStaticParent = position === "absolute",
             overflowRegex = includeHidden ? /(auto|scroll|hidden)/ : /(auto|scroll)/,
             scrollParent = this.parents().filter( function() {
@@ -4820,7 +4321,17 @@ define('skylark-utils-dom/noder',[
             scrollParent;
     };
 
-        /*   
+
+    function reflow(elm) {
+        if (el == null) {
+          elm = document;
+        }
+        elm.offsetHeight;
+
+        return this;      
+    }
+
+    /*   
      * Replace an old node with the specified node.
      * @param {Node} node
      * @param {Node} oldNode
@@ -4828,65 +4339,6 @@ define('skylark-utils-dom/noder',[
     function replace(node, oldNode) {
         oldNode.parentNode.replaceChild(node, oldNode);
         return this;
-    }
-
-    /*   
-     * Replace an old node with the specified node.
-     * @param {HTMLElement} elm
-     * @param {Node} params
-     */
-    function throb(elm, params) {
-        params = params || {};
-        var self = this,
-            text = params.text,
-            style = params.style,
-            time = params.time,
-            callback = params.callback,
-            timer,
-
-            throbber = this.createElement("div", {
-                "class": params.className || "throbber"
-            }),
-            _overlay = overlay(throbber, {
-                "class": 'overlay fade'
-            }),
-            throb = this.createElement("div", {
-                "class": "throb"
-            }),
-            textNode = this.createTextNode(text || ""),
-            remove = function() {
-                if (timer) {
-                    clearTimeout(timer);
-                    timer = null;
-                }
-                if (throbber) {
-                    self.remove(throbber);
-                    throbber = null;
-                }
-            },
-            update = function(params) {
-                if (params && params.text && throbber) {
-                    textNode.nodeValue = params.text;
-                }
-            };
-        if (params.style) {
-            styler.css(throbber,params.style);
-        }
-        throb.appendChild(textNode);
-        throbber.appendChild(throb);
-        elm.appendChild(throbber);
-        var end = function() {
-            remove();
-            if (callback) callback();
-        };
-        if (time) {
-            timer = setTimeout(end, time);
-        }
-
-        return {
-            remove: remove,
-            update: update
-        };
     }
 
 
@@ -5000,6 +4452,8 @@ define('skylark-utils-dom/noder',[
 
         isWindow: langx.isWindow,
 
+        nodeName : nodeName,
+
         offsetParent: offsetParent,
 
         ownerDoc: ownerDoc,
@@ -5014,13 +4468,13 @@ define('skylark-utils-dom/noder',[
 
         append: append,
 
+        reflow: reflow,
+
         remove: remove,
 
         removeChild : removeChild,
 
         replace: replace,
-
-        throb: throb,
 
         traverse: traverse,
 
@@ -5033,14 +4487,21 @@ define('skylark-utils-dom/noder',[
         unwrap: unwrap
     });
 
-    return dom.noder = noder;
+    return skylark.attach("domx.noder" , noder);
 });
-define('skylark-utils-dom/finder',[
-    "./dom",
-    "./langx",
-    "./browser",
-    "./noder"
-], function(dom, langx, browser, noder, velm) {
+define('skylark-domx-noder/main',[
+	"./noder"
+],function(noder){
+	return noder;
+});
+define('skylark-domx-noder', ['skylark-domx-noder/main'], function (main) { return main; });
+
+define('skylark-domx-finder/finder',[
+    "skylark-langx/skylark",
+    "skylark-langx/langx",
+    "skylark-domx-browser",
+    "skylark-domx-noder"
+], function(skylark, langx, browser, noder) {
     var local = {},
         filter = Array.prototype.filter,
         slice = Array.prototype.slice,
@@ -5389,6 +4850,9 @@ define('skylark-utils-dom/finder',[
 
         'visible': function(elm) {
             return elm.offsetWidth && elm.offsetWidth
+        },
+        'empty': function(elm) {
+            return !elm.hasChildNodes();
         }
     };
 
@@ -5798,14 +5262,17 @@ define('skylark-utils-dom/finder',[
                     break;
                 }
             }
-            ret.push(node); // TODO
+            if (!selector || matches(node, selector)) {
+              ret.push(node); 
+            }
         }
 
-        if (selector) {
-            ret = local.filter(ret, selector);
-        }
+        //if (selector) {
+        //    ret = local.filter(ret, selector);
+        //}
         return ret;
     }
+
 
     /*
      * Returns a element by its ID.
@@ -6144,13 +5611,22 @@ define('skylark-utils-dom/finder',[
         siblings: siblings
     });
 
-    return dom.finder = finder;
+    return skylark.attach("domx.finder", finder);
 });
-define('skylark-utils-dom/datax',[
-    "./dom",
-    "./langx",
-    "./finder"
-], function(dom, langx, finder) {
+define('skylark-domx-finder/main',[
+	"./finder"
+],function(finder){
+
+	return finder;
+});
+define('skylark-domx-finder', ['skylark-domx-finder/main'], function (main) { return main; });
+
+define('skylark-domx-data/data',[
+    "skylark-langx/skylark",
+    "skylark-langx/langx",
+    "skylark-domx-finder",
+    "skylark-domx-noder"
+], function(skylark, langx, finder,noder) {
     var map = Array.prototype.map,
         filter = Array.prototype.filter,
         camelCase = langx.camelCase,
@@ -6171,6 +5647,107 @@ define('skylark-utils-dom/datax',[
             'frameborder': 'frameBorder',
             'contenteditable': 'contentEditable'
         };
+
+    // Strip and collapse whitespace according to HTML spec
+    function stripAndCollapse( value ) {
+      var tokens = value.match( /[^\x20\t\r\n\f]+/g ) || [];
+      return tokens.join( " " );
+    }
+
+
+    var valHooks = {
+      option: {
+        get: function( elem ) {
+          var val = elem.getAttribute( "value" );
+          return val != null ?  val :  stripAndCollapse(text( elem ) );
+        }
+      },
+      select: {
+        get: function( elem ) {
+          var value, option, i,
+            options = elem.options,
+            index = elem.selectedIndex,
+            one = elem.type === "select-one",
+            values = one ? null : [],
+            max = one ? index + 1 : options.length;
+
+          if ( index < 0 ) {
+            i = max;
+
+          } else {
+            i = one ? index : 0;
+          }
+
+          // Loop through all the selected options
+          for ( ; i < max; i++ ) {
+            option = options[ i ];
+
+            if ( option.selected &&
+
+                // Don't return options that are disabled or in a disabled optgroup
+                !option.disabled &&
+                ( !option.parentNode.disabled ||
+                  !noder.nodeName( option.parentNode, "optgroup" ) ) ) {
+
+              // Get the specific value for the option
+              value = val(option);
+
+              // We don't need an array for one selects
+              if ( one ) {
+                return value;
+              }
+
+              // Multi-Selects return an array
+              values.push( value );
+            }
+          }
+
+          return values;
+        },
+
+        set: function( elem, value ) {
+          var optionSet, option,
+            options = elem.options,
+            values = langx.makeArray( value ),
+            i = options.length;
+
+          while ( i-- ) {
+            option = options[ i ];
+
+            /* eslint-disable no-cond-assign */
+
+            if ( option.selected =
+              langx.inArray( valHooks.option.get( option ), values ) > -1
+            ) {
+              optionSet = true;
+            }
+
+            /* eslint-enable no-cond-assign */
+          }
+
+          // Force browsers to behave consistently when non-matching value is set
+          if ( !optionSet ) {
+            elem.selectedIndex = -1;
+          }
+          return values;
+        }
+      }
+    };
+
+
+    // Radios and checkboxes getter/setter
+    langx.each( [ "radio", "checkbox" ], function() {
+      valHooks[ this ] = {
+        set: function( elem, value ) {
+          if ( langx.isArray( value ) ) {
+            return ( elem.checked = langx.inArray( val(elem), value ) > -1 );
+          }
+        }
+      };
+    });
+
+
+
     /*
      * Set property values
      * @param {Object} elm  
@@ -6205,9 +5782,7 @@ define('skylark-utils-dom/datax',[
                 }
                 return this;
             } else {
-                if (elm.hasAttribute && elm.hasAttribute(name)) {
-                    return elm.getAttribute(name);
-                }
+                return elm.getAttribute(name);
             }
         } else {
             elm.setAttribute(name, value);
@@ -6390,7 +5965,9 @@ define('skylark-utils-dom/datax',[
      * @param {String} value
      */
     function val(elm, value) {
+        var hooks = valHooks[ elm.type ] || valHooks[ elm.nodeName.toLowerCase() ];
         if (value === undefined) {
+/*
             if (elm.multiple) {
                 // select multiple values
                 var selectedOptions = filter.call(finder.find(elm, "option"), (function(option) {
@@ -6403,14 +5980,49 @@ define('skylark-utils-dom/datax',[
                 }
                 return text(elm);
             }
+*/
+
+          if ( hooks &&  "get" in hooks &&  ( ret = hooks.get( elm, "value" ) ) !== undefined ) {
+            return ret;
+          }
+
+          ret = elm.value;
+
+          // Handle most common string cases
+          if ( typeof ret === "string" ) {
+            return ret.replace( /\r/g, "" );
+          }
+
+          // Handle cases where value is null/undef or number
+          return ret == null ? "" : ret;
+
         } else {
+/*          
             if (/input|textarea/i.test(elm.tagName)) {
               elm.value = value;
             } else {
               text(elm,value);
             }
             return this;
-        }
+*/
+          // Treat null/undefined as ""; convert numbers to string
+          if ( value == null ) {
+            value = "";
+
+          } else if ( typeof value === "number" ) {
+            value += "";
+
+          } else if ( langx.isArray( value ) ) {
+            value = langx.map( value, function( value1 ) {
+              return value1 == null ? "" : value1 + "";
+            } );
+          }
+
+          // If set returns undefined, fall back to normal setting
+          if ( !hooks || !( "set" in hooks ) || hooks.set( elm, value, "value" ) === undefined ) {
+            elm.value = value;
+          }
+        }      
     }
 
 
@@ -6444,19 +6056,1112 @@ define('skylark-utils-dom/datax',[
 
         text: text,
 
-        val: val
+        val: val,
+
+        valHooks : valHooks
     });
 
-    return dom.datax = datax;
+    return skylark.attach("domx.data", datax);
 });
-define('skylark-utils-dom/eventer',[
-    "./dom",
-    "./langx",
-    "./browser",
-    "./finder",
-    "./noder",
-    "./datax"
-], function(dom, langx, browser, finder, noder, datax) {
+define('skylark-domx-query/query',[
+    "skylark-langx/skylark",
+    "skylark-langx/langx",
+    "skylark-domx-noder",
+    "skylark-domx-finder"
+], function(skylark, langx, noder, finder) {
+    var some = Array.prototype.some,
+        push = Array.prototype.push,
+        every = Array.prototype.every,
+        concat = Array.prototype.concat,
+        slice = Array.prototype.slice,
+        map = Array.prototype.map,
+        filter = Array.prototype.filter,
+        forEach = Array.prototype.forEach,
+        indexOf = Array.prototype.indexOf,
+        sort = Array.prototype.sort,
+        isQ;
+
+    var rquickExpr = /^(?:[^#<]*(<[\w\W]+>)[^>]*$|#([\w\-]*)$)/;
+
+    var funcArg = langx.funcArg,
+        isArrayLike = langx.isArrayLike,
+        isString = langx.isString,
+        uniq = langx.uniq,
+        isFunction = langx.isFunction;
+
+    var type = langx.type,
+        isArray = langx.isArray,
+
+        isWindow = langx.isWindow,
+
+        isDocument = langx.isDocument,
+
+        isObject = langx.isObject,
+
+        isPlainObject = langx.isPlainObject,
+
+        compact = langx.compact,
+
+        flatten = langx.flatten,
+
+        camelCase = langx.camelCase,
+
+        dasherize = langx.dasherize,
+        children = finder.children;
+
+    function wrapper_node_operation(func, context, oldValueFunc) {
+        return function(html) {
+            var argType, nodes = langx.map(arguments, function(arg) {
+                argType = type(arg)
+                return argType == "function" || argType == "object" || argType == "array" || arg == null ?
+                    arg : noder.createFragment(arg)
+            });
+            if (nodes.length < 1) {
+                return this
+            }
+            this.each(function(idx) {
+                func.apply(context, [this, nodes, idx > 0]);
+            });
+            return this;
+        }
+    }
+
+    function wrapper_map(func, context) {
+        return function() {
+            var self = this,
+                params = slice.call(arguments);
+            var result = langx.map(self, function(elem, idx) {
+                return func.apply(context, [elem].concat(params));
+            });
+            return query(uniq(result));
+        }
+    }
+
+    function wrapper_selector(func, context, last) {
+        return function(selector) {
+            var self = this,
+                params = slice.call(arguments);
+            var result = this.map(function(idx, elem) {
+                // if (elem.nodeType == 1) {
+                //if (elem.querySelector) {
+                    return func.apply(context, last ? [elem] : [elem, selector]);
+                //}
+            });
+            if (last && selector) {
+                return result.filter(selector);
+            } else {
+                return result;
+            }
+        }
+    }
+
+    function wrapper_selector_until(func, context, last) {
+        return function(util, selector) {
+            var self = this,
+                params = slice.call(arguments);
+            //if (selector === undefined) { //TODO : needs confirm?
+            //    selector = util;
+            //    util = undefined;
+            //}
+            var result = this.map(function(idx, elem) {
+                // if (elem.nodeType == 1) { // TODO
+                //if (elem.querySelector) {
+                    return func.apply(context, last ? [elem, util] : [elem, selector, util]);
+                //}
+            });
+            if (last && selector) {
+                return result.filter(selector);
+            } else {
+                return result;
+            }
+        }
+    }
+
+
+    function wrapper_every_act(func, context) {
+        return function() {
+            var self = this,
+                params = slice.call(arguments);
+            this.each(function(idx,node) {
+                func.apply(context, [this].concat(params));
+            });
+            return self;
+        }
+    }
+
+    function wrapper_every_act_firstArgFunc(func, context, oldValueFunc) {
+        return function(arg1) {
+            var self = this,
+                params = slice.call(arguments);
+            forEach.call(self, function(elem, idx) {
+                var newArg1 = funcArg(elem, arg1, idx, oldValueFunc(elem));
+                func.apply(context, [elem, arg1].concat(params.slice(1)));
+            });
+            return self;
+        }
+    }
+
+    function wrapper_some_chk(func, context) {
+        return function() {
+            var self = this,
+                params = slice.call(arguments);
+            return some.call(self, function(elem) {
+                return func.apply(context, [elem].concat(params));
+            });
+        }
+    }
+
+    function wrapper_name_value(func, context, oldValueFunc) {
+        return function(name, value) {
+            var self = this;
+
+            if (langx.isPlainObject(name) || langx.isDefined(value)) {
+                forEach.call(self, function(elem, idx) {
+                    var newValue;
+                    if (oldValueFunc) {
+                        newValue = funcArg(elem, value, idx, oldValueFunc(elem, name));
+                    } else {
+                        newValue = value
+                    }
+                    func.apply(context, [elem,name,newValue]);
+                });
+                return self;
+            } else {
+                if (self[0]) {
+                    return func.apply(context, [self[0], name]);
+                }
+            }
+
+        }
+    }
+
+    function wrapper_value(func, context, oldValueFunc) {
+        return function(value) {
+            var self = this;
+
+            if (langx.isDefined(value)) {
+                forEach.call(self, function(elem, idx) {
+                    var newValue;
+                    if (oldValueFunc) {
+                        newValue = funcArg(elem, value, idx, oldValueFunc(elem));
+                    } else {
+                        newValue = value
+                    }
+                    func.apply(context, [elem, newValue]);
+                });
+                return self;
+            } else {
+                if (self[0]) {
+                    return func.apply(context, [self[0]]);
+                }
+            }
+
+        }
+    }
+
+    var NodeList = langx.klass({
+        klassName: "SkNodeList",
+        init: function(selector, context) {
+            var self = this,
+                match, nodes, node, props;
+
+            if (selector) {
+                self.context = context = context || noder.doc();
+
+                if (isString(selector)) {
+                    // a html string or a css selector is expected
+                    self.selector = selector;
+
+                    if (selector.charAt(0) === "<" && selector.charAt(selector.length - 1) === ">" && selector.length >= 3) {
+                        match = [null, selector, null];
+                    } else {
+                        match = rquickExpr.exec(selector);
+                    }
+
+                    if (match) {
+                        if (match[1]) {
+                            // if selector is html
+                            nodes = noder.createFragment(selector);
+
+                            if (langx.isPlainObject(context)) {
+                                props = context;
+                            }
+
+                        } else {
+                            node = finder.byId(match[2], noder.ownerDoc(context));
+
+                            if (node) {
+                                // if selector is id
+                                nodes = [node];
+                            }
+
+                        }
+                    } else {
+                        // if selector is css selector
+                        if (langx.isString(context)) {
+                            context = finder.find(context);
+                        }
+
+                        nodes = finder.descendants(context, selector);
+                    }
+                } else {
+                    if (selector !== window && isArrayLike(selector)) {
+                        // a dom node array is expected
+                        nodes = selector;
+                    } else {
+                        // a dom node is expected
+                        nodes = [selector];
+                    }
+                    //self.add(selector, false);
+                }
+            }
+
+
+            if (nodes) {
+
+                push.apply(self, nodes);
+
+                if (props) {
+                    for ( var name  in props ) {
+                        // Properties of context are called as methods if possible
+                        if ( langx.isFunction( this[ name ] ) ) {
+                            this[ name ]( props[ name ] );
+                        } else {
+                            this.attr( name, props[ name ] );
+                        }
+                    }
+                }
+            }
+
+            return self;
+        }
+    });
+
+    var query = (function() {
+        isQ = function(object) {
+            return object instanceof NodeList;
+        }
+        init = function(selector, context) {
+            return new NodeList(selector, context);
+        }
+
+        var $ = function(selector, context) {
+            if (isFunction(selector)) {
+                $.ready(function() {
+                    selector($);
+                });
+            } else if (isQ(selector)) {
+                return selector;
+            } else {
+                if (context && isQ(context) && isString(selector)) {
+                    return context.find(selector);
+                }
+                return init(selector, context);
+            }
+        };
+
+        $.fn = NodeList.prototype;
+        langx.mixin($.fn, {
+            // `map` and `slice` in the jQuery API work differently
+            // from their array counterparts
+            length : 0,
+
+            map: function(fn) {
+                return $(uniq(langx.map(this, function(el, i) {
+                    return fn.call(el, i, el)
+                })));
+            },
+
+            slice: function() {
+                return $(slice.apply(this, arguments))
+            },
+
+            forEach: function() {
+                return forEach.apply(this,arguments);
+            },
+
+            get: function(idx) {
+                return idx === undefined ? slice.call(this) : this[idx >= 0 ? idx : idx + this.length]
+            },
+
+            indexOf: function() {
+                return indexOf.apply(this,arguments);
+            },
+
+            sort : function() {
+                return sort.apply(this,arguments);
+            },
+
+            toArray: function() {
+                return slice.call(this);
+            },
+
+            size: function() {
+                return this.length
+            },
+
+            //remove: wrapper_every_act(noder.remove, noder),
+            remove : function(selector) {
+                if (selector) {
+                    return this.find(selector).remove();
+                }
+                this.each(function(i,node){
+                    noder.remove(node);
+                });
+                return this;
+            },
+
+            each: function(callback) {
+                langx.each(this, callback);
+                return this;
+            },
+
+            filter: function(selector) {
+                if (isFunction(selector)) return this.not(this.not(selector))
+                return $(filter.call(this, function(element) {
+                    return finder.matches(element, selector)
+                }))
+            },
+
+            add: function(selector, context) {
+                return $(uniq(this.toArray().concat($(selector, context).toArray())));
+            },
+
+            is: function(selector) {
+                if (this.length > 0) {
+                    var self = this;
+                    if (langx.isString(selector)) {
+                        return some.call(self,function(elem) {
+                            return finder.matches(elem, selector);
+                        });
+                    } else if (langx.isArrayLike(selector)) {
+                       return some.call(self,function(elem) {
+                            return langx.inArray(elem, selector) > -1;
+                        });
+                    } else if (langx.isHtmlNode(selector)) {
+                       return some.call(self,function(elem) {
+                            return elem ==  selector;
+                        });
+                    }
+                }
+                return false;
+            },
+            
+            not: function(selector) {
+                var nodes = []
+                if (isFunction(selector) && selector.call !== undefined)
+                    this.each(function(idx,node) {
+                        if (!selector.call(this, idx,node)) nodes.push(this)
+                    })
+                else {
+                    var excludes = typeof selector == 'string' ? this.filter(selector) :
+                        (isArrayLike(selector) && isFunction(selector.item)) ? slice.call(selector) : $(selector)
+                    this.forEach(function(el) {
+                        if (excludes.indexOf(el) < 0) nodes.push(el)
+                    })
+                }
+                return $(nodes)
+            },
+
+            has: function(selector) {
+                return this.filter(function() {
+                    return isObject(selector) ?
+                        noder.contains(this, selector) :
+                        $(this).find(selector).size()
+                })
+            },
+
+            eq: function(idx) {
+                return idx === -1 ? this.slice(idx) : this.slice(idx, +idx + 1);
+            },
+
+            first: function() {
+                return this.eq(0);
+            },
+
+            last: function() {
+                return this.eq(-1);
+            },
+
+            find: wrapper_selector(finder.descendants, finder),
+
+            closest: wrapper_selector(finder.closest, finder),
+            /*
+                        closest: function(selector, context) {
+                            var node = this[0],
+                                collection = false
+                            if (typeof selector == 'object') collection = $(selector)
+                            while (node && !(collection ? collection.indexOf(node) >= 0 : finder.matches(node, selector)))
+                                node = node !== context && !isDocument(node) && node.parentNode
+                            return $(node)
+                        },
+            */
+
+
+            parents: wrapper_selector(finder.ancestors, finder),
+
+            parentsUntil: wrapper_selector_until(finder.ancestors, finder),
+
+
+            parent: wrapper_selector(finder.parent, finder),
+
+            children: wrapper_selector(finder.children, finder),
+
+            contents: wrapper_map(noder.contents, noder),
+
+            empty: wrapper_every_act(noder.empty, noder),
+
+            html: wrapper_value(noder.html, noder),
+
+            // `pluck` is borrowed from Prototype.js
+            pluck: function(property) {
+                return langx.map(this, function(el) {
+                    return el[property]
+                })
+            },
+
+            pushStack : function(elms) {
+                var ret = $(elms);
+                ret.prevObject = this;
+                return ret;
+            },
+            
+            replaceWith: function(newContent) {
+                return this.before(newContent).remove();
+            },
+
+            wrap: function(html) {
+                /*
+                var func = isFunction(structure)
+                if (this[0] && !func)
+                    var dom = $(structure).get(0),
+                        clone = dom.parentNode || this.length > 1
+
+                return this.each(function(index,node) {
+                    $(this).wrapAll(
+                        func ? structure.call(this, index,node) :
+                        clone ? dom.cloneNode(true) : dom
+                    )
+                })
+                */
+                var htmlIsFunction = typeof html === "function";
+
+                return this.each( function( i ) {
+                    $( this ).wrapAll( htmlIsFunction ? html.call( this, i ) : html );
+                } );                
+            },
+
+            wrapAll: function(html) {
+                /*
+                if (this[0]) {
+                    $(this[0]).before(wrappingElement = $(wrappingElement));
+                    var children;
+                    // drill down to the inmost element
+                    while ((children = wrappingElement.children()).length) {
+                        wrappingElement = children.first();
+                    }
+                    $(wrappingElement).append(this);
+                }
+                return this
+                */
+                var wrap;
+
+                if ( this[ 0 ] ) {
+                    if ( typeof html === "function" ) {
+                        html = html.call( this[ 0 ] );
+                    }
+
+                    // The elements to wrap the target around
+                    wrap = $( html, this[ 0 ].ownerDocument ).eq( 0 ).clone( true );
+
+                    if ( this[ 0 ].parentNode ) {
+                        wrap.insertBefore( this[ 0 ] );
+                    }
+
+                    wrap.map( function() {
+                        var elem = this;
+
+                        while ( elem.firstElementChild ) {
+                            elem = elem.firstElementChild;
+                        }
+
+                        return elem;
+                    } ).append( this );
+                }
+
+                return this;
+
+            },
+
+            wrapInner: function(html) {
+                /*
+                var func = isFunction(wrappingElement)
+                return this.each(function(index,node) {
+                    var self = $(this),
+                        contents = self.contents(),
+                        dom = func ? wrappingElement.call(this, index,node) : wrappingElement
+                    contents.length ? contents.wrapAll(dom) : self.append(dom)
+                })
+                */
+                if ( typeof html === "function" ) {
+                    return this.each( function( i ) {
+                        $( this ).wrapInner( html.call( this, i ) );
+                    } );
+                }
+
+                return this.each( function() {
+                    var self = $( this ),
+                        contents = self.contents();
+
+                    if ( contents.length ) {
+                        contents.wrapAll( html );
+
+                    } else {
+                        self.append( html );
+                    }
+                } );
+
+            },
+
+            unwrap: function(selector) {
+                /*
+                if (this.parent().children().length === 0) {
+                    // remove dom without text
+                    this.parent(selector).not("body").each(function() {
+                        $(this).replaceWith(document.createTextNode(this.childNodes[0].textContent));
+                    });
+                } else {
+                    this.parent().each(function() {
+                        $(this).replaceWith($(this).children())
+                    });
+                }
+                return this
+                */
+                this.parent(selector).not("body").each( function() {
+                    $(this).replaceWith(this.childNodes);
+                });
+                return this;
+
+            },
+
+            clone: function() {
+                return this.map(function() {
+                    return this.cloneNode(true)
+                })
+            },
+
+
+            toggle: function(setting) {
+                return this.each(function() {
+                    var el = $(this);
+                    (setting === undefined ? el.css("display") == "none" : setting) ? el.show(): el.hide()
+                })
+            },
+
+            prev: function(selector) {
+                return $(this.pluck('previousElementSibling')).filter(selector || '*')
+            },
+
+            prevAll: wrapper_selector(finder.previousSiblings, finder),
+
+            next: function(selector) {
+                return $(this.pluck('nextElementSibling')).filter(selector || '*')
+            },
+
+            nextAll: wrapper_selector(finder.nextSiblings, finder),
+
+            siblings: wrapper_selector(finder.siblings, finder),
+
+            index: function(elem) {
+                if (elem) {
+                    return this.indexOf($(elem)[0]);
+                } else {
+                    return this.parent().children().indexOf(this[0]);
+                }
+            }
+        });
+
+        // for now
+        $.fn.detach = $.fn.remove;
+
+        $.fn.hover = function(fnOver, fnOut) {
+            return this.mouseenter(fnOver).mouseleave(fnOut || fnOver);
+        };
+
+
+        var traverseNode = noder.traverse;
+
+
+        $.fn.after = wrapper_node_operation(noder.after, noder);
+
+        $.fn.prepend = wrapper_node_operation(noder.prepend, noder);
+
+        $.fn.before = wrapper_node_operation(noder.before, noder);
+
+        $.fn.append = wrapper_node_operation(noder.append, noder);
+
+
+        langx.each( {
+            appendTo: "append",
+            prependTo: "prepend",
+            insertBefore: "before",
+            insertAfter: "after",
+            replaceAll: "replaceWith"
+        }, function( name, original ) {
+            $.fn[ name ] = function( selector ) {
+                var elems,
+                    ret = [],
+                    insert = $( selector ),
+                    last = insert.length - 1,
+                    i = 0;
+
+                for ( ; i <= last; i++ ) {
+                    elems = i === last ? this : this.clone( true );
+                    $( insert[ i ] )[ original ]( elems );
+
+                    // Support: Android <=4.0 only, PhantomJS 1 only
+                    // .get() because push.apply(_, arraylike) throws on ancient WebKit
+                    push.apply( ret, elems.get() );
+                }
+
+                return this.pushStack( ret );
+            };
+        } );
+
+/*
+        $.fn.insertAfter = function(html) {
+            $(html).after(this);
+            return this;
+        };
+
+        $.fn.insertBefore = function(html) {
+            $(html).before(this);
+            return this;
+        };
+
+        $.fn.appendTo = function(html) {
+            $(html).append(this);
+            return this;
+        };
+
+        $.fn.prependTo = function(html) {
+            $(html).prepend(this);
+            return this;
+        };
+
+        $.fn.replaceAll = function(selector) {
+            $(selector).replaceWith(this);
+            return this;
+        };
+*/
+        return $;
+    })();
+
+    (function($) {
+        $.fn.scrollParent = function( includeHidden ) {
+            var position = this.css( "position" ),
+                excludeStaticParent = position === "absolute",
+                overflowRegex = includeHidden ? /(auto|scroll|hidden)/ : /(auto|scroll)/,
+                scrollParent = this.parents().filter( function() {
+                    var parent = $( this );
+                    if ( excludeStaticParent && parent.css( "position" ) === "static" ) {
+                        return false;
+                    }
+                    return overflowRegex.test( parent.css( "overflow" ) + parent.css( "overflow-y" ) +
+                        parent.css( "overflow-x" ) );
+                } ).eq( 0 );
+
+            return position === "fixed" || !scrollParent.length ?
+                $( this[ 0 ].ownerDocument || document ) :
+                scrollParent;
+        };
+
+    })(query);
+
+
+    (function($) {
+        $.fn.end = function() {
+            return this.prevObject || $()
+        }
+
+        $.fn.andSelf = function() {
+            return this.add(this.prevObject || $())
+        }
+
+        $.fn.addBack = function(selector) {
+            if (this.prevObject) {
+                if (selector) {
+                    return this.add(this.prevObject.filter(selector));
+                } else {
+                    return this.add(this.prevObject);
+                }
+            } else {
+                return this;
+            }
+        }
+
+        'filter,add,not,eq,first,last,find,closest,parents,parent,children,siblings,prev,prevAll,next,nextAll'.split(',').forEach(function(property) {
+            var fn = $.fn[property]
+            $.fn[property] = function() {
+                var ret = fn.apply(this, arguments)
+                ret.prevObject = this
+                return ret
+            }
+        })
+    })(query);
+
+
+    (function($) {
+        $.fn.query = $.fn.find;
+
+        $.fn.place = function(refNode, position) {
+            // summary:
+            //      places elements of this node list relative to the first element matched
+            //      by queryOrNode. Returns the original NodeList. See: `dojo/dom-construct.place`
+            // queryOrNode:
+            //      may be a string representing any valid CSS3 selector or a DOM node.
+            //      In the selector case, only the first matching element will be used
+            //      for relative positioning.
+            // position:
+            //      can be one of:
+            //
+            //      -   "last" (default)
+            //      -   "first"
+            //      -   "before"
+            //      -   "after"
+            //      -   "only"
+            //      -   "replace"
+            //
+            //      or an offset in the childNodes
+            if (langx.isString(refNode)) {
+                refNode = finder.descendant(refNode);
+            } else if (isQ(refNode)) {
+                refNode = refNode[0];
+            }
+            return this.each(function(i, node) {
+                switch (position) {
+                    case "before":
+                        noder.before(refNode, node);
+                        break;
+                    case "after":
+                        noder.after(refNode, node);
+                        break;
+                    case "replace":
+                        noder.replace(refNode, node);
+                        break;
+                    case "only":
+                        noder.empty(refNode);
+                        noder.append(refNode, node);
+                        break;
+                    case "first":
+                        noder.prepend(refNode, node);
+                        break;
+                        // else fallthrough...
+                    default: // aka: last
+                        noder.append(refNode, node);
+                }
+            });
+        };
+
+        $.fn.addContent = function(content, position) {
+            if (content.template) {
+                content = langx.substitute(content.template, content);
+            }
+            return this.append(content);
+        };
+
+
+
+        $.fn.disableSelection = ( function() {
+            var eventType = "onselectstart" in document.createElement( "div" ) ?
+                "selectstart" :
+                "mousedown";
+
+            return function() {
+                return this.on( eventType + ".ui-disableSelection", function( event ) {
+                    event.preventDefault();
+                } );
+            };
+        } )();
+
+        $.fn.enableSelection = function() {
+            return this.off( ".ui-disableSelection" );
+        };
+
+        $.fn.reflow = function() {
+            return noder.flow(this[0]);
+        };
+
+        $.fn.isBlockNode = function() {
+            return noder.isBlockNode(this[0]);
+        };
+       
+
+    })(query);
+
+    query.fn.plugin = function(name,options) {
+        var args = slice.call( arguments, 1 ),
+            self = this,
+            returnValue = this;
+
+        this.each(function(){
+            returnValue = plugins.instantiate.apply(self,[this,name].concat(args));
+        });
+        return returnValue;
+    };
+
+
+    query.wraps = {
+        wrapper_node_operation,
+        wrapper_map,
+        wrapper_value,
+        wrapper_selector,
+        wrapper_some_chk,
+        wrapper_selector_until,
+        wrapper_every_act_firstArgFunc,
+        wrapper_every_act,
+        wrapper_name_value
+
+    };
+
+    return skylark.attach("domx.query", query);
+
+});
+define('skylark-domx-query/main',[
+	"./query"
+],function(query){
+	return query;
+});
+define('skylark-domx-query', ['skylark-domx-query/main'], function (main) { return main; });
+
+define('skylark-domx-velm/velm',[
+    "skylark-langx/skylark",
+    "skylark-langx/langx",
+    "skylark-domx-noder",
+    "skylark-domx-finder",
+    "skylark-domx-query"
+], function(skylark, langx, noder, finder, $) {
+    var map = Array.prototype.map,
+        slice = Array.prototype.slice;
+    /*
+     * VisualElement is a skylark class type wrapping a visule dom node,
+     * provides a number of prototype methods and supports chain calls.
+     */
+    var VisualElement = langx.klass({
+        klassName: "VisualElement",
+
+        "_construct": function(node) {
+            if (langx.isString(node)) {
+                if (node.charAt(0) === "<") {
+                    //html
+                    node = noder.createFragment(node)[0];
+                } else {
+                    // id
+                    node = document.getElementById(node);
+                }
+            }
+            this._elm = node;
+        }
+    });
+
+    VisualElement.prototype.$ = VisualElement.prototype.query = function(selector) {
+        return $(selector,this._elm);
+    };
+
+    VisualElement.prototype.elm = function() {
+        return this._elm;
+    };
+
+    /*
+     * the VisualElement object wrapping document.body
+     */
+    var root = new VisualElement(document.body),
+        velm = function(node) {
+            if (node) {
+                return new VisualElement(node);
+            } else {
+                return root;
+            }
+        };
+    /*
+     * Extend VisualElement prototype with wrapping the specified methods.
+     * @param {ArrayLike} fn
+     * @param {Object} context
+     */
+    function _delegator(fn, context) {
+        return function() {
+            var self = this,
+                elem = self._elm,
+                ret = fn.apply(context, [elem].concat(slice.call(arguments)));
+
+            if (ret) {
+                if (ret === context) {
+                    return self;
+                } else {
+                    if (ret instanceof HTMLElement) {
+                        ret = new VisualElement(ret);
+                    } else if (langx.isArrayLike(ret)) {
+                        ret = map.call(ret, function(el) {
+                            if (el instanceof HTMLElement) {
+                                return new VisualElement(el);
+                            } else {
+                                return el;
+                            }
+                        })
+                    }
+                }
+            }
+            return ret;
+        };
+    }
+
+    langx.mixin(velm, {
+        batch: function(nodes, action, args) {
+            nodes.forEach(function(node) {
+                var elm = (node instanceof VisualElement) ? node : velm(node);
+                elm[action].apply(elm, args);
+            });
+
+            return this;
+        },
+
+        root: new VisualElement(document.body),
+
+        VisualElement: VisualElement,
+
+        partial: function(name, fn) {
+            var props = {};
+
+            props[name] = fn;
+
+            VisualElement.partial(props);
+        },
+
+        delegate: function(names, context) {
+            var props = {};
+
+            names.forEach(function(name) {
+                props[name] = _delegator(context[name], context);
+            });
+
+            VisualElement.partial(props);
+        }
+    });
+
+    // from ./finder
+    velm.delegate([
+        "ancestor",
+        "ancestors",
+        "children",
+        "descendant",
+        "find",
+        "findAll",
+        "firstChild",
+        "lastChild",
+        "matches",
+        "nextSibling",
+        "nextSiblings",
+        "parent",
+        "previousSibling",
+        "previousSiblings",
+        "siblings"
+    ], finder);
+
+    /*
+     * find a dom element matched by the specified selector.
+     * @param {String} selector
+     */
+    velm.find = function(selector) {
+        if (selector === "body") {
+            return this.root;
+        } else {
+            return this.root.descendant(selector);
+        }
+    };
+
+
+    // from ./noder
+    velm.delegate([
+        "after",
+        "append",
+        "before",
+        "clone",
+        "contains",
+        "contents",
+        "empty",
+        "html",
+        "isChildOf",
+        "isDocument",
+        "isInDocument",
+        "isWindow",
+        "ownerDoc",
+        "prepend",
+        "remove",
+        "removeChild",
+        "replace",
+        "reverse",
+        "throb",
+        "traverse",
+        "wrapper",
+        "wrapperInner",
+        "unwrap"
+    ], noder);
+
+
+    return skylark.attach("domx.velm", velm);
+});
+define('skylark-domx-velm/main',[
+	"./velm"
+],function(velm){
+	return velm;
+});
+define('skylark-domx-velm', ['skylark-domx-velm/main'], function (main) { return main; });
+
+define('skylark-domx-data/main',[
+    "./data",
+    "skylark-domx-velm",
+    "skylark-domx-query"    
+],function(data,velm,$){
+    // from ./data
+    velm.delegate([
+        "attr",
+        "data",
+        "prop",
+        "removeAttr",
+        "removeData",
+        "text",
+        "val"
+    ], data);
+
+    $.fn.text = $.wraps.wrapper_value(data.text, data, data.text);
+
+    $.fn.attr = $.wraps.wrapper_name_value(data.attr, data, data.attr);
+
+    $.fn.removeAttr = $.wraps.wrapper_every_act(data.removeAttr, data);
+
+    $.fn.prop = $.wraps.wrapper_name_value(data.prop, data, data.prop);
+
+    $.fn.removeProp = $.wraps.wrapper_every_act(data.removeProp, data);
+
+    $.fn.data = $.wraps.wrapper_name_value(data.data, data, data.data);
+
+    $.fn.removeData = $.wraps.wrapper_every_act(data.removeData, data);
+
+    $.fn.val = $.wraps.wrapper_value(data.val, data, data.val);
+
+
+    return data;
+});
+define('skylark-domx-data', ['skylark-domx-data/main'], function (main) { return main; });
+
+define('skylark-domx-eventer/eventer',[
+    "skylark-langx/skylark",
+    "skylark-langx/langx",
+    "skylark-domx-browser",
+    "skylark-domx-finder",
+    "skylark-domx-noder",
+    "skylark-domx-data"
+], function(skylark, langx, browser, finder, noder, datax) {
     var mixin = langx.mixin,
         each = langx.each,
         slice = Array.prototype.slice,
@@ -6495,99 +7200,101 @@ define('skylark-utils-dom/eventer',[
         };
     }
 
+
+    var NativeEventCtors = [
+            window["CustomEvent"], // 0 default
+            window["CompositionEvent"], // 1
+            window["DragEvent"], // 2
+            window["Event"], // 3
+            window["FocusEvent"], // 4
+            window["KeyboardEvent"], // 5
+            window["MessageEvent"], // 6
+            window["MouseEvent"], // 7
+            window["MouseScrollEvent"], // 8
+            window["MouseWheelEvent"], // 9
+            window["MutationEvent"], // 10
+            window["ProgressEvent"], // 11
+            window["TextEvent"], // 12
+            window["TouchEvent"], // 13
+            window["UIEvent"], // 14
+            window["WheelEvent"], // 15
+            window["ClipboardEvent"] // 16
+        ],
+        NativeEvents = {
+            "compositionstart": 1, // CompositionEvent
+            "compositionend": 1, // CompositionEvent
+            "compositionupdate": 1, // CompositionEvent
+
+            "beforecopy": 16, // ClipboardEvent
+            "beforecut": 16, // ClipboardEvent
+            "beforepaste": 16, // ClipboardEvent
+            "copy": 16, // ClipboardEvent
+            "cut": 16, // ClipboardEvent
+            "paste": 16, // ClipboardEvent
+
+            "drag": 2, // DragEvent
+            "dragend": 2, // DragEvent
+            "dragenter": 2, // DragEvent
+            "dragexit": 2, // DragEvent
+            "dragleave": 2, // DragEvent
+            "dragover": 2, // DragEvent
+            "dragstart": 2, // DragEvent
+            "drop": 2, // DragEvent
+
+            "abort": 3, // Event
+            "change": 3, // Event
+            "error": 3, // Event
+            "selectionchange": 3, // Event
+            "submit": 3, // Event
+            "reset": 3, // Event
+
+            "focus": 4, // FocusEvent
+            "blur": 4, // FocusEvent
+            "focusin": 4, // FocusEvent
+            "focusout": 4, // FocusEvent
+
+            "keydown": 5, // KeyboardEvent
+            "keypress": 5, // KeyboardEvent
+            "keyup": 5, // KeyboardEvent
+
+            "message": 6, // MessageEvent
+
+            "click": 7, // MouseEvent
+            "contextmenu": 7, // MouseEvent
+            "dblclick": 7, // MouseEvent
+            "mousedown": 7, // MouseEvent
+            "mouseup": 7, // MouseEvent
+            "mousemove": 7, // MouseEvent
+            "mouseover": 7, // MouseEvent
+            "mouseout": 7, // MouseEvent
+            "mouseenter": 7, // MouseEvent
+            "mouseleave": 7, // MouseEvent
+
+
+            "textInput": 12, // TextEvent
+
+            "touchstart": 13, // TouchEvent
+            "touchmove": 13, // TouchEvent
+            "touchend": 13, // TouchEvent
+
+            "load": 14, // UIEvent
+            "resize": 14, // UIEvent
+            "select": 14, // UIEvent
+            "scroll": 14, // UIEvent
+            "unload": 14, // UIEvent,
+
+            "wheel": 15 // WheelEvent
+        };
+
     //create a custom dom event
     var createEvent = (function() {
-        var EventCtors = [
-                window["CustomEvent"], // 0 default
-                window["CompositionEvent"], // 1
-                window["DragEvent"], // 2
-                window["Event"], // 3
-                window["FocusEvent"], // 4
-                window["KeyboardEvent"], // 5
-                window["MessageEvent"], // 6
-                window["MouseEvent"], // 7
-                window["MouseScrollEvent"], // 8
-                window["MouseWheelEvent"], // 9
-                window["MutationEvent"], // 10
-                window["ProgressEvent"], // 11
-                window["TextEvent"], // 12
-                window["TouchEvent"], // 13
-                window["UIEvent"], // 14
-                window["WheelEvent"], // 15
-                window["ClipboardEvent"] // 16
-            ],
-            NativeEvents = {
-                "compositionstart": 1, // CompositionEvent
-                "compositionend": 1, // CompositionEvent
-                "compositionupdate": 1, // CompositionEvent
-
-                "beforecopy": 16, // ClipboardEvent
-                "beforecut": 16, // ClipboardEvent
-                "beforepaste": 16, // ClipboardEvent
-                "copy": 16, // ClipboardEvent
-                "cut": 16, // ClipboardEvent
-                "paste": 16, // ClipboardEvent
-
-                "drag": 2, // DragEvent
-                "dragend": 2, // DragEvent
-                "dragenter": 2, // DragEvent
-                "dragexit": 2, // DragEvent
-                "dragleave": 2, // DragEvent
-                "dragover": 2, // DragEvent
-                "dragstart": 2, // DragEvent
-                "drop": 2, // DragEvent
-
-                "abort": 3, // Event
-                "change": 3, // Event
-                "error": 3, // Event
-                "selectionchange": 3, // Event
-                "submit": 3, // Event
-                "reset": 3, // Event
-
-                "focus": 4, // FocusEvent
-                "blur": 4, // FocusEvent
-                "focusin": 4, // FocusEvent
-                "focusout": 4, // FocusEvent
-
-                "keydown": 5, // KeyboardEvent
-                "keypress": 5, // KeyboardEvent
-                "keyup": 5, // KeyboardEvent
-
-                "message": 6, // MessageEvent
-
-                "click": 7, // MouseEvent
-                "contextmenu": 7, // MouseEvent
-                "dblclick": 7, // MouseEvent
-                "mousedown": 7, // MouseEvent
-                "mouseup": 7, // MouseEvent
-                "mousemove": 7, // MouseEvent
-                "mouseover": 7, // MouseEvent
-                "mouseout": 7, // MouseEvent
-                "mouseenter": 7, // MouseEvent
-                "mouseleave": 7, // MouseEvent
-
-
-                "textInput": 12, // TextEvent
-
-                "touchstart": 13, // TouchEvent
-                "touchmove": 13, // TouchEvent
-                "touchend": 13, // TouchEvent
-
-                "load": 14, // UIEvent
-                "resize": 14, // UIEvent
-                "select": 14, // UIEvent
-                "scroll": 14, // UIEvent
-                "unload": 14, // UIEvent,
-
-                "wheel": 15 // WheelEvent
-            };
 
         function getEventCtor(type) {
             var idx = NativeEvents[type];
             if (!idx) {
                 idx = 0;
             }
-            return EventCtors[idx];
+            return NativeEventCtors[idx];
         }
 
         return function(type, props) {
@@ -7106,6 +7813,8 @@ define('skylark-utils-dom/eventer',[
     }
 
     langx.mixin(eventer, {
+        NativeEvents : NativeEvents,
+        
         create: createEvent,
 
         keys: keyCodeLookup,
@@ -7130,14 +7839,751 @@ define('skylark-utils-dom/eventer',[
 
     });
 
-    return dom.eventer = eventer;
+    each(NativeEvents,function(name){
+        eventer[name] = function(elm,selector,data,callback) {
+            if (arguments.length>1) {
+                return this.on(elm,name,selector,data,callback);
+            } else {
+                if (name == "focus") {
+                    if (elm.focus) {
+                        elm.focus();
+                    }
+                } else if (name == "blur") {
+                    if (elm.blur) {
+                        elm.blur();
+                    }
+                } else if (name == "click") {
+                    if (elm.click) {
+                        elm.click();
+                    }
+                } else {
+                    this.trigger(elm,name);
+                }
+
+                return this;
+            }
+        };
+    });
+
+    return skylark.attach("domx.eventer",eventer);
 });
-define('skylark-utils-dom/geom',[
-    "./dom",
-    "./langx",
-    "./noder",
-    "./styler"
-], function(dom, langx, noder, styler) {
+define('skylark-domx-eventer/main',[
+    "skylark-langx/langx",
+    "./eventer",
+    "skylark-domx-velm",
+    "skylark-domx-query"        
+],function(langx,eventer,velm,$){
+
+    var delegateMethodNames = [
+        "off",
+        "on",
+        "one",
+        "trigger"
+    ];
+
+    langx.each(eventer.NativeEvents,function(name){
+        delegateMethodNames.push(name);
+    });
+
+    // from ./eventer
+    velm.delegate(delegateMethodNames, eventer);
+
+    langx.each(delegateMethodNames,function(i,name){
+        $.fn[name] = $.wraps.wrapper_every_act(eventer[name],eventer);
+    });
+
+
+    /*
+    $.fn.on = $.wraps.wrapper_every_act(eventer.on, eventer);
+
+    $.fn.off = $.wraps.wrapper_every_act(eventer.off, eventer);
+
+    $.fn.trigger = $.wraps.wrapper_every_act(eventer.trigger, eventer);
+
+    ('focusin focusout focus blur load resize scroll unload click dblclick ' +
+        'mousedown mouseup mousemove mouseover mouseout mouseenter mouseleave ' +
+        'change select keydown keypress keyup error transitionEnd').split(' ').forEach(function(event) {
+        $.fn[event] = $.wraps.wrapper_every_act(eventer[event],eventer);
+    });
+
+    $.fn.one = function(event, selector, data, callback) {
+        if (!langx.isString(selector) && !langx.isFunction(callback)) {
+            callback = data;
+            data = selector;
+            selector = null;
+        }
+
+        if (langx.isFunction(data)) {
+            callback = data;
+            data = null;
+        }
+
+        return this.on(event, selector, data, callback, 1)
+    }; 
+    */
+
+    $.ready = eventer.ready;
+
+    return eventer;
+});
+define('skylark-domx-eventer', ['skylark-domx-eventer/main'], function (main) { return main; });
+
+define('skylark-domx-files/files',[
+    "skylark-langx/skylark"
+], function(skylark) {
+
+    function dataURLtoBlob(dataurl) {
+        var arr = dataurl.split(','),
+            mime = arr[0].match(/:(.*?);/)[1],
+            bstr = atob(arr[1]),
+            n = bstr.length,
+            u8arr = new Uint8Array(n);
+        while (n--) {
+            u8arr[n] = bstr.charCodeAt(n);
+        }
+        return new Blob([u8arr], { type: mime });
+    }
+
+
+    var files = function() {
+        return files;
+    };
+
+    return skylark.attach("domx.files", files);
+});
+define('skylark-domx-styler/styler',[
+    "skylark-langx/skylark",
+    "skylark-langx/langx"
+], function(skylark, langx) {
+    var every = Array.prototype.every,
+        forEach = Array.prototype.forEach,
+        camelCase = langx.camelCase,
+        dasherize = langx.dasherize;
+
+    function maybeAddPx(name, value) {
+        return (typeof value == "number" && !cssNumber[dasherize(name)]) ? value + "px" : value
+    }
+
+    var cssNumber = {
+            'column-count': 1,
+            'columns': 1,
+            'font-weight': 1,
+            'line-height': 1,
+            'opacity': 1,
+            'z-index': 1,
+            'zoom': 1
+        },
+        classReCache = {
+
+        };
+
+    function classRE(name) {
+        return name in classReCache ?
+            classReCache[name] : (classReCache[name] = new RegExp('(^|\\s)' + name + '(\\s|$)'));
+    }
+
+    // access className property while respecting SVGAnimatedString
+    /*
+     * Adds the specified class(es) to each element in the set of matched elements.
+     * @param {HTMLElement} node
+     * @param {String} value
+     */
+    function className(node, value) {
+        var klass = node.className || '',
+            svg = klass && klass.baseVal !== undefined
+
+        if (value === undefined) return svg ? klass.baseVal : klass
+        svg ? (klass.baseVal = value) : (node.className = value)
+    }
+
+    function disabled(elm, value ) {
+        if (arguments.length < 2) {
+            return !!this.dom.disabled;
+        }
+
+        elm.disabled = value;
+
+        return this;
+    }
+
+    var elementDisplay = {};
+
+    function defaultDisplay(nodeName) {
+        var element, display
+        if (!elementDisplay[nodeName]) {
+            element = document.createElement(nodeName)
+            document.body.appendChild(element)
+            display = getStyles(element).getPropertyValue("display")
+            element.parentNode.removeChild(element)
+            display == "none" && (display = "block")
+            elementDisplay[nodeName] = display
+        }
+        return elementDisplay[nodeName]
+    }
+    /*
+     * Display the matched elements.
+     * @param {HTMLElement} elm
+     */
+    function show(elm) {
+        styler.css(elm, "display", "");
+        if (styler.css(elm, "display") == "none") {
+            styler.css(elm, "display", defaultDisplay(elm.nodeName));
+        }
+        return this;
+    }
+
+    function isInvisible(elm) {
+        return styler.css(elm, "display") == "none" || styler.css(elm, "opacity") == 0;
+    }
+
+    /*
+     * Hide the matched elements.
+     * @param {HTMLElement} elm
+     */
+    function hide(elm) {
+        styler.css(elm, "display", "none");
+        return this;
+    }
+
+    /*
+     * Adds the specified class(es) to each element in the set of matched elements.
+     * @param {HTMLElement} elm
+     * @param {String} name
+     */
+    function addClass(elm, name) {
+        if (!name) return this
+        var cls = className(elm),
+            names;
+        if (langx.isString(name)) {
+            names = name.split(/\s+/g);
+        } else {
+            names = name;
+        }
+        names.forEach(function(klass) {
+            var re = classRE(klass);
+            if (!cls.match(re)) {
+                cls += (cls ? " " : "") + klass;
+            }
+        });
+
+        className(elm, cls);
+
+        return this;
+    }
+
+    function getStyles( elem ) {
+
+        // Support: IE <=11 only, Firefox <=30 (#15098, #14150)
+        // IE throws on elements created in popups
+        // FF meanwhile throws on frame elements through "defaultView.getComputedStyle"
+        var view = elem.ownerDocument.defaultView;
+
+        if ( !view || !view.opener ) {
+            view = window;
+        }
+
+        return view.getComputedStyle( elem);
+    }
+
+
+    /*
+     * Get the value of a computed style property for the first element in the set of matched elements or set one or more CSS properties for every matched element.
+     * @param {HTMLElement} elm
+     * @param {String} property
+     * @param {Any} value
+     */
+    function css(elm, property, value) {
+        if (arguments.length < 3) {
+            var computedStyle,
+                computedStyle = getStyles(elm)
+            if (langx.isString(property)) {
+                return elm.style[camelCase(property)] || computedStyle.getPropertyValue(dasherize(property))
+            } else if (langx.isArrayLike(property)) {
+                var props = {}
+                forEach.call(property, function(prop) {
+                    props[prop] = (elm.style[camelCase(prop)] || computedStyle.getPropertyValue(dasherize(prop)))
+                })
+                return props
+            }
+        }
+
+        var css = '';
+        if (typeof(property) == 'string') {
+            if (!value && value !== 0) {
+                elm.style.removeProperty(dasherize(property));
+            } else {
+                css = dasherize(property) + ":" + maybeAddPx(property, value)
+            }
+        } else {
+            for (key in property) {
+                if (property[key] === undefined) {
+                    continue;
+                }
+                if (!property[key] && property[key] !== 0) {
+                    elm.style.removeProperty(dasherize(key));
+                } else {
+                    css += dasherize(key) + ':' + maybeAddPx(key, property[key]) + ';'
+                }
+            }
+        }
+
+        elm.style.cssText += ';' + css;
+        return this;
+    }
+
+    /*
+     * Determine whether any of the matched elements are assigned the given class.
+     * @param {HTMLElement} elm
+     * @param {String} name
+     */
+    function hasClass(elm, name) {
+        var re = classRE(name);
+        return elm.className && elm.className.match(re);
+    }
+
+    /*
+     * Remove a single class, multiple classes, or all classes from each element in the set of matched elements.
+     * @param {HTMLElement} elm
+     * @param {String} name
+     */
+    function removeClass(elm, name) {
+        if (name) {
+            var cls = className(elm),
+                names;
+
+            if (langx.isString(name)) {
+                names = name.split(/\s+/g);
+            } else {
+                names = name;
+            }
+
+            names.forEach(function(klass) {
+                var re = classRE(klass);
+                if (cls.match(re)) {
+                    cls = cls.replace(re, " ");
+                }
+            });
+
+            className(elm, cls.trim());
+        } else {
+            className(elm, "");
+        }
+
+        return this;
+    }
+
+    /*
+     * Add or remove one or more classes from the specified element.
+     * @param {HTMLElement} elm
+     * @param {String} name
+     * @param {} when
+     */
+    function toggleClass(elm, name, when) {
+        var self = this;
+        name.split(/\s+/g).forEach(function(klass) {
+            if (when === undefined) {
+                when = !self.hasClass(elm, klass);
+            }
+            if (when) {
+                self.addClass(elm, klass);
+            } else {
+                self.removeClass(elm, klass)
+            }
+        });
+
+        return self;
+    }
+
+    var styler = function() {
+        return styler;
+    };
+
+    langx.mixin(styler, {
+        autocssfix: false,
+        cssHooks: {
+
+        },
+
+        addClass: addClass,
+        className: className,
+        css: css,
+        disabled : disabled,        
+        hasClass: hasClass,
+        hide: hide,
+        isInvisible: isInvisible,
+        removeClass: removeClass,
+        show: show,
+        toggleClass: toggleClass
+    });
+
+    return skylark.attach("domx.styler", styler);
+});
+define('skylark-domx-styler/main',[
+	"./styler",
+	"skylark-domx-velm",
+	"skylark-domx-query"	
+],function(styler,velm,$){
+	
+    // from ./styler
+    velm.delegate([
+        "addClass",
+        "className",
+        "css",
+        "hasClass",
+        "hide",
+        "isInvisible",
+        "removeClass",
+        "show",
+        "toggleClass"
+    ], styler);
+
+    // properties
+
+    var properties = [ 'position', 'left', 'top', 'right', 'bottom', 'width', 'height', 'border', 'borderLeft',
+    'borderTop', 'borderRight', 'borderBottom', 'borderColor', 'display', 'overflow', 'margin', 'marginLeft', 'marginTop', 'marginRight', 'marginBottom', 'padding', 'paddingLeft', 'paddingTop', 'paddingRight', 'paddingBottom', 'color',
+    'background', 'backgroundColor', 'opacity', 'fontSize', 'fontWeight', 'textAlign', 'textDecoration', 'textTransform', 'cursor', 'zIndex' ];
+
+    properties.forEach( function ( property ) {
+
+        var method = property;
+
+        velm.VisualElement.prototype[method ] = function (value) {
+
+            this.css( property, value );
+
+            return this;
+
+        };
+
+    });
+
+
+    $.fn.style = $.wraps.wrapper_name_value(styler.css, styler);
+
+    $.fn.css = $.wraps.wrapper_name_value(styler.css, styler);
+
+    //hasClass(name)
+    $.fn.hasClass = $.wraps.wrapper_some_chk(styler.hasClass, styler);
+
+    //addClass(name)
+    $.fn.addClass = $.wraps.wrapper_every_act_firstArgFunc(styler.addClass, styler, styler.className);
+
+    //removeClass(name)
+    $.fn.removeClass = $.wraps.wrapper_every_act_firstArgFunc(styler.removeClass, styler, styler.className);
+
+    //toogleClass(name,when)
+    $.fn.toggleClass = $.wraps.wrapper_every_act_firstArgFunc(styler.toggleClass, styler, styler.className);
+
+    $.fn.replaceClass = function(newClass, oldClass) {
+        this.removeClass(oldClass);
+        this.addClass(newClass);
+        return this;
+    };
+
+    $.fn.replaceClass = function(newClass, oldClass) {
+        this.removeClass(oldClass);
+        this.addClass(newClass);
+        return this;
+    };
+        
+	return styler;
+});
+define('skylark-domx-styler', ['skylark-domx-styler/main'], function (main) { return main; });
+
+define('skylark-storages-diskfs/diskfs',[
+    "skylark-langx/skylark"
+], function(skylark) {
+
+    function dataURLtoBlob(dataurl) {
+        var arr = dataurl.split(','),
+            mime = arr[0].match(/:(.*?);/)[1],
+            bstr = atob(arr[1]),
+            n = bstr.length,
+            u8arr = new Uint8Array(n);
+        while (n--) {
+            u8arr[n] = bstr.charCodeAt(n);
+        }
+        return new Blob([u8arr], { type: mime });
+    }
+
+
+    var diskfs = function() {
+        return diskfs;
+    };
+
+    return skylark.attach("storages.diskfs", diskfs);
+});
+ define('skylark-storages-diskfs/webentry',[
+    "skylark-langx/arrays",
+    "skylark-langx/Deferred",
+    "./diskfs"
+],function(arrays,Deferred, diskfs){
+    var concat = Array.prototype.concat;
+    var webentry = (function() {
+        function one(entry, path) {
+            var d = new Deferred(),
+                onError = function(e) {
+                    d.reject(e);
+                };
+
+            path = path || '';
+            if (entry.isFile) {
+                entry.file(function(file) {
+                    file.relativePath = path;
+                    d.resolve(file);
+                }, onError);
+            } else if (entry.isDirectory) {
+                var dirReader = entry.createReader();
+                dirReader.readEntries(function(entries) {
+                    all(
+                        entries,
+                        path + entry.name + '/'
+                    ).then(function(files) {
+                        d.resolve(files);
+                    }).catch(onError);
+                }, onError);
+            } else {
+                // Return an empy list for file system items
+                // other than files or directories:
+                d.resolve([]);
+            }
+            return d.promise;
+        }
+
+        function all(entries, path) {
+            return Deferred.all(
+                arrays.map(entries, function(entry) {
+                    return one(entry, path);
+                })
+            ).then(function() {
+                return concat.apply([], arguments);
+            });
+        }
+
+        return {
+            one: one,
+            all: all
+        };
+    })();
+
+    return diskfs.webentry = webentry;
+});
+  define('skylark-domx-files/dropzone',[
+    "skylark-langx/arrays",
+    "skylark-langx/Deferred",
+    "skylark-domx-styler",
+    "skylark-domx-eventer",
+    "./files",
+    "skylark-storages-diskfs/webentry"
+],function(arrays,Deferred, styler, eventer, files, webentry){  /*
+     * Make the specified element to could accept HTML5 file drag and drop.
+     * @param {HTMLElement} elm
+     * @param {PlainObject} params
+     */
+    function dropzone(elm, params) {
+        params = params || {};
+        var hoverClass = params.hoverClass || "dropzone",
+            droppedCallback = params.dropped;
+
+        var enterdCount = 0;
+        eventer.on(elm, "dragenter", function(e) {
+            if (e.dataTransfer && e.dataTransfer.types.indexOf("Files") > -1) {
+                eventer.stop(e);
+                enterdCount++;
+                styler.addClass(elm, hoverClass)
+            }
+        });
+
+        eventer.on(elm, "dragover", function(e) {
+            if (e.dataTransfer && e.dataTransfer.types.indexOf("Files") > -1) {
+                eventer.stop(e);
+            }
+        });
+
+        eventer.on(elm, "dragleave", function(e) {
+            if (e.dataTransfer && e.dataTransfer.types.indexOf("Files") > -1) {
+                enterdCount--
+                if (enterdCount == 0) {
+                    styler.removeClass(elm, hoverClass);
+                }
+            }
+        });
+
+        eventer.on(elm, "drop", function(e) {
+            if (e.dataTransfer && e.dataTransfer.types.indexOf("Files") > -1) {
+                styler.removeClass(elm, hoverClass)
+                eventer.stop(e);
+                if (droppedCallback) {
+                    var items = e.dataTransfer.items;
+                    if (items && items.length && (items[0].webkitGetAsEntry ||
+                            items[0].getAsEntry)) {
+                        webentry.all(
+                            arrays.map(items, function(item) {
+                                if (item.webkitGetAsEntry) {
+                                    return item.webkitGetAsEntry();
+                                }
+                                return item.getAsEntry();
+                            })
+                        ).then(droppedCallback);
+                    } else {
+                        droppedCallback(e.dataTransfer.files);
+                    }
+                }
+            }
+        });
+
+        return this;
+    }
+
+     return files.dropzone = dropzone;
+});
+define('skylark-domx-files/pastezone',[
+    "skylark-langx/objects",
+    "skylark-domx-eventer",
+    "./files"
+],function(objects, eventer, files){
+    function pastezone(elm, params) {
+        params = params || {};
+        var hoverClass = params.hoverClass || "pastezone",
+            pastedCallback = params.pasted;
+
+        eventer.on(elm, "paste", function(e) {
+            var items = e.originalEvent && e.originalEvent.clipboardData &&
+                e.originalEvent.clipboardData.items,
+                files = [];
+            if (items && items.length) {
+                objects.each(items, function(index, item) {
+                    var file = item.getAsFile && item.getAsFile();
+                    if (file) {
+                        files.push(file);
+                    }
+                });
+            }
+            if (pastedCallback && files.length) {
+                pastedCallback(files);
+            }
+        });
+
+        return this;
+    }
+
+    return files.pastezone = pastezone;
+
+});
+
+define('skylark-storages-diskfs/select',[
+    "./diskfs"
+],function(diskfs){
+    var fileInput,
+        fileInputForm,
+        fileSelected,
+        maxFileSize = 1 / 0;
+
+    function select(params) {
+        params = params || {};
+        var directory = params.directory || false,
+            multiple = params.multiple || false,
+            accept = params.accept || "", //'image/gif,image/jpeg,image/jpg,image/png,image/svg'
+            title = params.title || "",
+            fileSelected = params.picked;
+        if (!fileInput) {
+            var input = fileInput = document.createElement("input");
+
+            function selectFiles(pickedFiles) {
+                for (var i = pickedFiles.length; i--;) {
+                    if (pickedFiles[i].size > maxFileSize) {
+                        pickedFiles.splice(i, 1);
+                    }
+                }
+                fileSelected(pickedFiles);
+            }
+
+            input.type = "file";
+            input.style.position = "fixed";
+            input.style.left = 0;
+            input.style.top = 0;
+            input.style.opacity = .001;
+            document.body.appendChild(input);
+
+            input.onchange = function(e) {
+                var entries = e.target.webkitEntries || e.target.entries;
+
+                if (entries && entries.length) {
+                    webentry.all(entries).then(function(files) {
+                        selectFiles(files);
+                    });
+                } else {
+                    selectFiles(Array.prototype.slice.call(e.target.files));
+                }
+                // reset to "", so selecting the same file next time still trigger the change handler
+                input.value = "";
+            };
+        }
+        fileInput.multiple = multiple;
+        fileInput.accept = accept;
+        fileInput.title = title;
+
+        fileInput.webkitdirectory = directory;
+        fileInput.click();
+    }
+
+    return diskfs.select = select;
+});
+
+
+define('skylark-domx-files/picker',[
+    "skylark-langx/objects",
+    "skylark-domx-eventer",
+    "./files",
+    "skylark-storages-diskfs/select"
+],function(objects, eventer, files, select){
+    /*
+     * Make the specified element to pop-up the file selection dialog box when clicked , and read the contents the files selected from client file system by user.
+     * @param {HTMLElement} elm
+     * @param {PlainObject} params
+     */
+    function picker(elm, params) {
+        eventer.on(elm, "click", function(e) {
+            e.preventDefault();
+            select(params);
+        });
+        return this;
+    }
+
+    return files.picker = picker;
+
+});
+
+
+
+define('skylark-domx-files/main',[
+	"./files",
+	"skylark-domx-velm",
+	"skylark-domx-query",
+	"./dropzone",
+	"./pastezone",
+	"./picker"
+],function(files,velm,$){
+	velm.delegate([
+		"dropzone",
+		"pastezone",
+		"picker"
+	],files);
+
+    $.fn.pastezone = $.wraps.wrapper_every_act(files.pastezone, files);
+    $.fn.dropzone = $.wraps.wrapper_every_act(files.dropzone, files);
+    $.fn.picker = $.wraps.wrapper_every_act(files.picker, files);
+
+	return files;
+});
+define('skylark-domx-files', ['skylark-domx-files/main'], function (main) { return main; });
+
+define('skylark-domx-geom/geom',[
+    "skylark-langx/skylark",
+    "skylark-langx/langx",
+    "skylark-domx-noder",
+    "skylark-domx-styler"
+], function(skylark, langx, noder, styler) {
     var rootNodeRE = /^(?:body|html)$/i,
         px = langx.toPixel,
         offsetParent = noder.offsetParent,
@@ -8192,16 +9638,143 @@ define('skylark-utils-dom/geom',[
         geom.posit = posit;
     })();
 
-    return dom.geom = geom;
+    return skylark.attach("domx.geom", geom);
 });
-define('skylark-utils-dom/fx',[
-    "./dom",
-    "./langx",
-    "./browser",
+define('skylark-domx-geom/main',[
+    "skylark-langx/langx",
     "./geom",
-    "./styler",
-    "./eventer"
-], function(dom, langx, browser, geom, styler, eventer) {
+    "skylark-domx-velm",
+    "skylark-domx-query"        
+],function(langx,geom,velm,$){
+   // from ./geom
+    velm.delegate([
+        "borderExtents",
+        "boundingPosition",
+        "boundingRect",
+        "clientHeight",
+        "clientSize",
+        "clientWidth",
+        "contentRect",
+        "height",
+        "marginExtents",
+        "offsetParent",
+        "paddingExtents",
+        "pagePosition",
+        "pageRect",
+        "relativePosition",
+        "relativeRect",
+        "scrollIntoView",
+        "scrollLeft",
+        "scrollTop",
+        "size",
+        "width"
+    ], geom);
+
+    $.fn.offset = $.wraps.wrapper_value(geom.pagePosition, geom, geom.pagePosition);
+
+    $.fn.scrollTop = $.wraps.wrapper_value(geom.scrollTop, geom);
+
+    $.fn.scrollLeft = $.wraps.wrapper_value(geom.scrollLeft, geom);
+
+    $.fn.position =  function(options) {
+        if (!this.length) {
+            return this;
+        }
+
+        if (options) {
+            if (options.of && options.of.length) {
+                options = langx.clone(options);
+                options.of = options.of[0];
+            }
+            return this.each( function() {
+                geom.posit(this,options);
+            });
+        } else {
+            var elem = this[0];
+
+            return geom.relativePosition(elem);
+
+        }             
+    };
+
+    $.fn.offsetParent = $.wraps.wrapper_map(geom.offsetParent, geom);
+
+
+    $.fn.size = $.wraps.wrapper_value(geom.size, geom);
+
+    $.fn.width = $.wraps.wrapper_value(geom.width, geom, geom.width);
+
+    $.fn.height = $.wraps.wrapper_value(geom.height, geom, geom.height);
+
+    $.fn.clientSize = $.wraps.wrapper_value(geom.clientSize, geom.clientSize);
+    
+    ['width', 'height'].forEach(function(dimension) {
+        var offset, Dimension = dimension.replace(/./, function(m) {
+            return m[0].toUpperCase()
+        });
+
+        $.fn['outer' + Dimension] = function(margin, value) {
+            if (arguments.length) {
+                if (typeof margin !== 'boolean') {
+                    value = margin;
+                    margin = false;
+                }
+            } else {
+                margin = false;
+                value = undefined;
+            }
+
+            if (value === undefined) {
+                var el = this[0];
+                if (!el) {
+                    return undefined;
+                }
+                var cb = geom.size(el);
+                if (margin) {
+                    var me = geom.marginExtents(el);
+                    cb.width = cb.width + me.left + me.right;
+                    cb.height = cb.height + me.top + me.bottom;
+                }
+                return dimension === "width" ? cb.width : cb.height;
+            } else {
+                return this.each(function(idx, el) {
+                    var mb = {};
+                    var me = geom.marginExtents(el);
+                    if (dimension === "width") {
+                        mb.width = value;
+                        if (margin) {
+                            mb.width = mb.width - me.left - me.right
+                        }
+                    } else {
+                        mb.height = value;
+                        if (margin) {
+                            mb.height = mb.height - me.top - me.bottom;
+                        }
+                    }
+                    geom.size(el, mb);
+                })
+
+            }
+        };
+    })
+
+    $.fn.innerWidth = $.wraps.wrapper_value(geom.clientWidth, geom, geom.clientWidth);
+
+    $.fn.innerHeight = $.wraps.wrapper_value(geom.clientHeight, geom, geom.clientHeight);
+
+    return geom;
+});
+define('skylark-domx-geom', ['skylark-domx-geom/main'], function (main) { return main; });
+
+define('skylark-domx-fx/fx',[
+    "skylark-langx/skylark",
+    "skylark-langx/langx",
+    "skylark-domx-browser",
+    "skylark-domx-noder",
+    "skylark-domx-geom",
+    "skylark-domx-styler",
+    "skylark-domx-eventer"
+], function(skylark, langx, browser, noder, geom, styler, eventer) {
     var animationName,
         animationDuration,
         animationTiming,
@@ -8708,6 +10281,86 @@ define('skylark-utils-dom/fx',[
         return this;
     } 
 
+    /*   
+     *
+     * @param {Node} elm
+     * @param {Node} params
+     */
+    function overlay(elm, params) {
+        var overlayDiv = noder.createElement("div", params);
+        styler.css(overlayDiv, {
+            position: "absolute",
+            top: 0,
+            left: 0,
+            width: "100%",
+            height: "100%",
+            zIndex: 0x7FFFFFFF,
+            opacity: 0.7
+        });
+        elm.appendChild(overlayDiv);
+        return overlayDiv;
+
+    }
+    
+    /*   
+     * Replace an old node with the specified node.
+     * @param {HTMLElement} elm
+     * @param {Node} params
+     */
+    function throb(elm, params) {
+        params = params || {};
+        var self = this,
+            text = params.text,
+            style = params.style,
+            time = params.time,
+            callback = params.callback,
+            timer,
+
+            throbber = noder.createElement("div", {
+                "class": params.className || "throbber"
+            }),
+            _overlay = overlay(throbber, {
+                "class": 'overlay fade'
+            }),
+            throb = noder.createElement("div", {
+                "class": "throb"
+            }),
+            textNode = noder.createTextNode(text || ""),
+            remove = function() {
+                if (timer) {
+                    clearTimeout(timer);
+                    timer = null;
+                }
+                if (throbber) {
+                    noder.remove(throbber);
+                    throbber = null;
+                }
+            },
+            update = function(params) {
+                if (params && params.text && throbber) {
+                    textNode.nodeValue = params.text;
+                }
+            };
+        if (params.style) {
+            styler.css(throbber,params.style);
+        }
+        throb.appendChild(textNode);
+        throbber.appendChild(throb);
+        elm.appendChild(throbber);
+        var end = function() {
+            remove();
+            if (callback) callback();
+        };
+        if (time) {
+            timer = setTimeout(end, time);
+        }
+
+        return {
+            remove: remove,
+            update: update
+        };
+    }
+
     function fx() {
         return fx;
     }
@@ -8734,1272 +10387,68 @@ define('skylark-utils-dom/fx',[
         slideToggle,
         slideUp,
         show,
+        throb,
         toggle
     });
 
-    return dom.fx = fx;
+    return skylark.attach("domx.fx", fx);
 });
-define('skylark-utils-dom/query',[
-    "./dom",
-    "./langx",
-    "./noder",
-    "./datax",
-    "./eventer",
-    "./finder",
-    "./geom",
-    "./styler",
-    "./fx"
-], function(dom, langx, noder, datax, eventer, finder, geom, styler, fx) {
-    var some = Array.prototype.some,
-        push = Array.prototype.push,
-        every = Array.prototype.every,
-        concat = Array.prototype.concat,
-        slice = Array.prototype.slice,
-        map = Array.prototype.map,
-        filter = Array.prototype.filter,
-        forEach = Array.prototype.forEach,
-        indexOf = Array.prototype.indexOf,
-        sort = Array.prototype.sort,
-        isQ;
-
-    var rquickExpr = /^(?:[^#<]*(<[\w\W]+>)[^>]*$|#([\w\-]*)$)/;
-
-    var funcArg = langx.funcArg,
-        isArrayLike = langx.isArrayLike,
-        isString = langx.isString,
-        uniq = langx.uniq,
-        isFunction = langx.isFunction;
-
-    var type = langx.type,
-        isArray = langx.isArray,
-
-        isWindow = langx.isWindow,
-
-        isDocument = langx.isDocument,
-
-        isObject = langx.isObject,
-
-        isPlainObject = langx.isPlainObject,
-
-        compact = langx.compact,
-
-        flatten = langx.flatten,
-
-        camelCase = langx.camelCase,
-
-        dasherize = langx.dasherize,
-        children = finder.children;
-
-    function wrapper_map(func, context) {
-        return function() {
-            var self = this,
-                params = slice.call(arguments);
-            var result = langx.map(self, function(elem, idx) {
-                return func.apply(context, [elem].concat(params));
-            });
-            return query(uniq(result));
-        }
-    }
-
-    function wrapper_selector(func, context, last) {
-        return function(selector) {
-            var self = this,
-                params = slice.call(arguments);
-            var result = this.map(function(idx, elem) {
-                // if (elem.nodeType == 1) {
-                //if (elem.querySelector) {
-                    return func.apply(context, last ? [elem] : [elem, selector]);
-                //}
-            });
-            if (last && selector) {
-                return result.filter(selector);
-            } else {
-                return result;
-            }
-        }
-    }
-
-    function wrapper_selector_until(func, context, last) {
-        return function(util, selector) {
-            var self = this,
-                params = slice.call(arguments);
-            //if (selector === undefined) { //TODO : needs confirm?
-            //    selector = util;
-            //    util = undefined;
-            //}
-            var result = this.map(function(idx, elem) {
-                // if (elem.nodeType == 1) { // TODO
-                //if (elem.querySelector) {
-                    return func.apply(context, last ? [elem, util] : [elem, selector, util]);
-                //}
-            });
-            if (last && selector) {
-                return result.filter(selector);
-            } else {
-                return result;
-            }
-        }
-    }
-
-
-    function wrapper_every_act(func, context) {
-        return function() {
-            var self = this,
-                params = slice.call(arguments);
-            this.each(function(idx,node) {
-                func.apply(context, [this].concat(params));
-            });
-            return self;
-        }
-    }
-
-    function wrapper_every_act_firstArgFunc(func, context, oldValueFunc) {
-        return function(arg1) {
-            var self = this,
-                params = slice.call(arguments);
-            forEach.call(self, function(elem, idx) {
-                var newArg1 = funcArg(elem, arg1, idx, oldValueFunc(elem));
-                func.apply(context, [elem, arg1].concat(params.slice(1)));
-            });
-            return self;
-        }
-    }
-
-    function wrapper_some_chk(func, context) {
-        return function() {
-            var self = this,
-                params = slice.call(arguments);
-            return some.call(self, function(elem) {
-                return func.apply(context, [elem].concat(params));
-            });
-        }
-    }
-
-    function wrapper_name_value(func, context, oldValueFunc) {
-        return function(name, value) {
-            var self = this,
-                params = slice.call(arguments);
-
-            if (langx.isPlainObject(name) || langx.isDefined(value)) {
-                forEach.call(self, function(elem, idx) {
-                    var newValue;
-                    if (oldValueFunc) {
-                        newValue = funcArg(elem, value, idx, oldValueFunc(elem, name));
-                    } else {
-                        newValue = value
-                    }
-                    func.apply(context, [elem].concat(params));
-                });
-                return self;
-            } else {
-                if (self[0]) {
-                    return func.apply(context, [self[0], name]);
-                }
-            }
-
-        }
-    }
-
-    function wrapper_value(func, context, oldValueFunc) {
-        return function(value) {
-            var self = this;
-
-            if (langx.isDefined(value)) {
-                forEach.call(self, function(elem, idx) {
-                    var newValue;
-                    if (oldValueFunc) {
-                        newValue = funcArg(elem, value, idx, oldValueFunc(elem));
-                    } else {
-                        newValue = value
-                    }
-                    func.apply(context, [elem, newValue]);
-                });
-                return self;
-            } else {
-                if (self[0]) {
-                    return func.apply(context, [self[0]]);
-                }
-            }
-
-        }
-    }
-
-    var NodeList = langx.klass({
-        klassName: "SkNodeList",
-        init: function(selector, context) {
-            var self = this,
-                match, nodes, node, props;
-
-            if (selector) {
-                self.context = context = context || noder.doc();
-
-                if (isString(selector)) {
-                    // a html string or a css selector is expected
-                    self.selector = selector;
-
-                    if (selector.charAt(0) === "<" && selector.charAt(selector.length - 1) === ">" && selector.length >= 3) {
-                        match = [null, selector, null];
-                    } else {
-                        match = rquickExpr.exec(selector);
-                    }
-
-                    if (match) {
-                        if (match[1]) {
-                            // if selector is html
-                            nodes = noder.createFragment(selector);
-
-                            if (langx.isPlainObject(context)) {
-                                props = context;
-                            }
-
-                        } else {
-                            node = finder.byId(match[2], noder.ownerDoc(context));
-
-                            if (node) {
-                                // if selector is id
-                                nodes = [node];
-                            }
-
-                        }
-                    } else {
-                        // if selector is css selector
-                        if (langx.isString(context)) {
-                            context = finder.find(context);
-                        }
-
-                        nodes = finder.descendants(context, selector);
-                    }
-                } else {
-                    if (selector !== window && isArrayLike(selector)) {
-                        // a dom node array is expected
-                        nodes = selector;
-                    } else {
-                        // a dom node is expected
-                        nodes = [selector];
-                    }
-                    //self.add(selector, false);
-                }
-            }
-
-
-            if (nodes) {
-
-                push.apply(self, nodes);
-
-                if (props) {
-                    for ( var name  in props ) {
-                        // Properties of context are called as methods if possible
-                        if ( langx.isFunction( this[ name ] ) ) {
-                            this[ name ]( props[ name ] );
-                        } else {
-                            this.attr( name, props[ name ] );
-                        }
-                    }
-                }
-            }
-
-            return self;
-        }
-    });
-
-    var query = (function() {
-        isQ = function(object) {
-            return object instanceof NodeList;
-        }
-        init = function(selector, context) {
-            return new NodeList(selector, context);
-        }
-
-        var $ = function(selector, context) {
-            if (isFunction(selector)) {
-                eventer.ready(function() {
-                    selector($);
-                });
-            } else if (isQ(selector)) {
-                return selector;
-            } else {
-                if (context && isQ(context) && isString(selector)) {
-                    return context.find(selector);
-                }
-                return init(selector, context);
-            }
-        };
-
-        $.fn = NodeList.prototype;
-        langx.mixin($.fn, {
-            // `map` and `slice` in the jQuery API work differently
-            // from their array counterparts
-            length : 0,
-
-            map: function(fn) {
-                return $(uniq(langx.map(this, function(el, i) {
-                    return fn.call(el, i, el)
-                })));
-            },
-
-            slice: function() {
-                return $(slice.apply(this, arguments))
-            },
-
-            forEach: function() {
-                return forEach.apply(this,arguments);
-            },
-
-            get: function(idx) {
-                return idx === undefined ? slice.call(this) : this[idx >= 0 ? idx : idx + this.length]
-            },
-
-            indexOf: function() {
-                return indexOf.apply(this,arguments);
-            },
-
-            sort : function() {
-                return sort.apply(this,arguments);
-            },
-
-            toArray: function() {
-                return slice.call(this);
-            },
-
-            size: function() {
-                return this.length
-            },
-
-            //remove: wrapper_every_act(noder.remove, noder),
-            remove : function(selector) {
-                if (selector) {
-                    return this.find(selector).remove();
-                }
-                this.each(function(i,node){
-                    noder.remove(node);
-                });
-                return this;
-            },
-
-            each: function(callback) {
-                langx.each(this, callback);
-                return this;
-            },
-
-            filter: function(selector) {
-                if (isFunction(selector)) return this.not(this.not(selector))
-                return $(filter.call(this, function(element) {
-                    return finder.matches(element, selector)
-                }))
-            },
-
-            add: function(selector, context) {
-                return $(uniq(this.toArray().concat($(selector, context).toArray())));
-            },
-
-            is: function(selector) {
-                if (this.length > 0) {
-                    var self = this;
-                    if (langx.isString(selector)) {
-                        return some.call(self,function(elem) {
-                            return finder.matches(elem, selector);
-                        });
-                    } else if (langx.isArrayLike(selector)) {
-                       return some.call(self,function(elem) {
-                            return langx.inArray(elem, selector) > -1;
-                        });
-                    } else if (langx.isHtmlNode(selector)) {
-                       return some.call(self,function(elem) {
-                            return elem ==  selector;
-                        });
-                    }
-                }
-                return false;
-            },
-            
-            not: function(selector) {
-                var nodes = []
-                if (isFunction(selector) && selector.call !== undefined)
-                    this.each(function(idx,node) {
-                        if (!selector.call(this, idx,node)) nodes.push(this)
-                    })
-                else {
-                    var excludes = typeof selector == 'string' ? this.filter(selector) :
-                        (isArrayLike(selector) && isFunction(selector.item)) ? slice.call(selector) : $(selector)
-                    this.forEach(function(el) {
-                        if (excludes.indexOf(el) < 0) nodes.push(el)
-                    })
-                }
-                return $(nodes)
-            },
-
-            has: function(selector) {
-                return this.filter(function() {
-                    return isObject(selector) ?
-                        noder.contains(this, selector) :
-                        $(this).find(selector).size()
-                })
-            },
-
-            eq: function(idx) {
-                return idx === -1 ? this.slice(idx) : this.slice(idx, +idx + 1);
-            },
-
-            first: function() {
-                return this.eq(0);
-            },
-
-            last: function() {
-                return this.eq(-1);
-            },
-
-            find: wrapper_selector(finder.descendants, finder),
-
-            closest: wrapper_selector(finder.closest, finder),
-            /*
-                        closest: function(selector, context) {
-                            var node = this[0],
-                                collection = false
-                            if (typeof selector == 'object') collection = $(selector)
-                            while (node && !(collection ? collection.indexOf(node) >= 0 : finder.matches(node, selector)))
-                                node = node !== context && !isDocument(node) && node.parentNode
-                            return $(node)
-                        },
-            */
-
-
-            parents: wrapper_selector(finder.ancestors, finder),
-
-            parentsUntil: wrapper_selector_until(finder.ancestors, finder),
-
-
-            parent: wrapper_selector(finder.parent, finder),
-
-            children: wrapper_selector(finder.children, finder),
-
-            contents: wrapper_map(noder.contents, noder),
-
-            empty: wrapper_every_act(noder.empty, noder),
-
-            // `pluck` is borrowed from Prototype.js
-            pluck: function(property) {
-                return langx.map(this, function(el) {
-                    return el[property]
-                })
-            },
-
-            pushStack : function(elms) {
-                var ret = $(elms);
-                ret.prevObject = this;
-                return ret;
-            },
-            
-            replaceWith: function(newContent) {
-                return this.before(newContent).remove();
-            },
-
-            wrap: function(structure) {
-                var func = isFunction(structure)
-                if (this[0] && !func)
-                    var dom = $(structure).get(0),
-                        clone = dom.parentNode || this.length > 1
-
-                return this.each(function(index,node) {
-                    $(this).wrapAll(
-                        func ? structure.call(this, index,node) :
-                        clone ? dom.cloneNode(true) : dom
-                    )
-                })
-            },
-
-            wrapAll: function(wrappingElement) {
-                if (this[0]) {
-                    $(this[0]).before(wrappingElement = $(wrappingElement));
-                    var children;
-                    // drill down to the inmost element
-                    while ((children = wrappingElement.children()).length) {
-                        wrappingElement = children.first();
-                    }
-                    $(wrappingElement).append(this);
-                }
-                return this
-            },
-
-            wrapInner: function(wrappingElement) {
-                var func = isFunction(wrappingElement)
-                return this.each(function(index,node) {
-                    var self = $(this),
-                        contents = self.contents(),
-                        dom = func ? wrappingElement.call(this, index,node) : wrappingElement
-                    contents.length ? contents.wrapAll(dom) : self.append(dom)
-                })
-            },
-
-            unwrap: function(selector) {
-                if (this.parent().children().length === 0) {
-                    // remove dom without text
-                    this.parent(selector).not("body").each(function() {
-                        $(this).replaceWith(document.createTextNode(this.childNodes[0].textContent));
-                    });
-                } else {
-                    this.parent().each(function() {
-                        $(this).replaceWith($(this).children())
-                    });
-                }
-                return this
-            },
-
-            clone: function() {
-                return this.map(function() {
-                    return this.cloneNode(true)
-                })
-            },
-
-            hide: wrapper_every_act(fx.hide, fx),
-
-            toggle: function(setting) {
-                return this.each(function() {
-                    var el = $(this);
-                    (setting === undefined ? el.css("display") == "none" : setting) ? el.show(): el.hide()
-                })
-            },
-
-            prev: function(selector) {
-                return $(this.pluck('previousElementSibling')).filter(selector || '*')
-            },
-
-            prevAll: wrapper_selector(finder.previousSiblings, finder),
-
-            next: function(selector) {
-                return $(this.pluck('nextElementSibling')).filter(selector || '*')
-            },
-
-            nextAll: wrapper_selector(finder.nextSiblings, finder),
-
-            siblings: wrapper_selector(finder.siblings, finder),
-
-            html: wrapper_value(noder.html, noder, noder.html),
-
-            text: wrapper_value(datax.text, datax, datax.text),
-
-            attr: wrapper_name_value(datax.attr, datax, datax.attr),
-
-            removeAttr: wrapper_every_act(datax.removeAttr, datax),
-
-            prop: wrapper_name_value(datax.prop, datax, datax.prop),
-
-            removeProp: wrapper_every_act(datax.removeProp, datax),
-
-            data: wrapper_name_value(datax.data, datax, datax.data),
-
-            removeData: wrapper_every_act(datax.removeData, datax),
-
-            val: wrapper_value(datax.val, datax, datax.val),
-
-            offset: wrapper_value(geom.pagePosition, geom, geom.pagePosition),
-
-            style: wrapper_name_value(styler.css, styler),
-
-            css: wrapper_name_value(styler.css, styler),
-
-            index: function(elem) {
-                if (elem) {
-                    return this.indexOf($(elem)[0]);
-                } else {
-                    return this.parent().children().indexOf(this[0]);
-                }
-            },
-
-            //hasClass(name)
-            hasClass: wrapper_some_chk(styler.hasClass, styler),
-
-            //addClass(name)
-            addClass: wrapper_every_act_firstArgFunc(styler.addClass, styler, styler.className),
-
-            //removeClass(name)
-            removeClass: wrapper_every_act_firstArgFunc(styler.removeClass, styler, styler.className),
-
-            //toogleClass(name,when)
-            toggleClass: wrapper_every_act_firstArgFunc(styler.toggleClass, styler, styler.className),
-
-            scrollTop: wrapper_value(geom.scrollTop, geom),
-
-            scrollLeft: wrapper_value(geom.scrollLeft, geom),
-
-            position: function(options) {
-                if (!this.length) return
-
-                if (options) {
-                    if (options.of && options.of.length) {
-                        options = langx.clone(options);
-                        options.of = options.of[0];
-                    }
-                    return this.each( function() {
-                        geom.posit(this,options);
-                    });
-                } else {
-                    var elem = this[0];
-
-                    return geom.relativePosition(elem);
-
-                }             
-            },
-
-            offsetParent: wrapper_map(geom.offsetParent, geom)
-        });
-
-        // for now
-        $.fn.detach = $.fn.remove;
-
-        $.fn.hover = function(fnOver, fnOut) {
-            return this.mouseenter(fnOver).mouseleave(fnOut || fnOver);
-        };
-
-        $.fn.size = wrapper_value(geom.size, geom);
-
-        $.fn.width = wrapper_value(geom.width, geom, geom.width);
-
-        $.fn.height = wrapper_value(geom.height, geom, geom.height);
-
-        $.fn.clientSize = wrapper_value(geom.clientSize, geom.clientSize);
-
-        ['width', 'height'].forEach(function(dimension) {
-            var offset, Dimension = dimension.replace(/./, function(m) {
-                return m[0].toUpperCase()
-            });
-
-            $.fn['outer' + Dimension] = function(margin, value) {
-                if (arguments.length) {
-                    if (typeof margin !== 'boolean') {
-                        value = margin;
-                        margin = false;
-                    }
-                } else {
-                    margin = false;
-                    value = undefined;
-                }
-
-                if (value === undefined) {
-                    var el = this[0];
-                    if (!el) {
-                        return undefined;
-                    }
-                    var cb = geom.size(el);
-                    if (margin) {
-                        var me = geom.marginExtents(el);
-                        cb.width = cb.width + me.left + me.right;
-                        cb.height = cb.height + me.top + me.bottom;
-                    }
-                    return dimension === "width" ? cb.width : cb.height;
-                } else {
-                    return this.each(function(idx, el) {
-                        var mb = {};
-                        var me = geom.marginExtents(el);
-                        if (dimension === "width") {
-                            mb.width = value;
-                            if (margin) {
-                                mb.width = mb.width - me.left - me.right
-                            }
-                        } else {
-                            mb.height = value;
-                            if (margin) {
-                                mb.height = mb.height - me.top - me.bottom;
-                            }
-                        }
-                        geom.size(el, mb);
-                    })
-
-                }
-            };
-        })
-
-        $.fn.innerWidth = wrapper_value(geom.clientWidth, geom, geom.clientWidth);
-
-        $.fn.innerHeight = wrapper_value(geom.clientHeight, geom, geom.clientHeight);
-
-        var traverseNode = noder.traverse;
-
-        function wrapper_node_operation(func, context, oldValueFunc) {
-            return function(html) {
-                var argType, nodes = langx.map(arguments, function(arg) {
-                    argType = type(arg)
-                    return argType == "function" || argType == "object" || argType == "array" || arg == null ?
-                        arg : noder.createFragment(arg)
-                });
-                if (nodes.length < 1) {
-                    return this
-                }
-                this.each(function(idx) {
-                    func.apply(context, [this, nodes, idx > 0]);
-                });
-                return this;
-            }
-        }
-
-
-        $.fn.after = wrapper_node_operation(noder.after, noder);
-
-        $.fn.prepend = wrapper_node_operation(noder.prepend, noder);
-
-        $.fn.before = wrapper_node_operation(noder.before, noder);
-
-        $.fn.append = wrapper_node_operation(noder.append, noder);
-
-
-        langx.each( {
-            appendTo: "append",
-            prependTo: "prepend",
-            insertBefore: "before",
-            insertAfter: "after",
-            replaceAll: "replaceWith"
-        }, function( name, original ) {
-            $.fn[ name ] = function( selector ) {
-                var elems,
-                    ret = [],
-                    insert = $( selector ),
-                    last = insert.length - 1,
-                    i = 0;
-
-                for ( ; i <= last; i++ ) {
-                    elems = i === last ? this : this.clone( true );
-                    $( insert[ i ] )[ original ]( elems );
-
-                    // Support: Android <=4.0 only, PhantomJS 1 only
-                    // .get() because push.apply(_, arraylike) throws on ancient WebKit
-                    push.apply( ret, elems.get() );
-                }
-
-                return this.pushStack( ret );
-            };
-        } );
-
-/*
-        $.fn.insertAfter = function(html) {
-            $(html).after(this);
-            return this;
-        };
-
-        $.fn.insertBefore = function(html) {
-            $(html).before(this);
-            return this;
-        };
-
-        $.fn.appendTo = function(html) {
-            $(html).append(this);
-            return this;
-        };
-
-        $.fn.prependTo = function(html) {
-            $(html).prepend(this);
-            return this;
-        };
-
-        $.fn.replaceAll = function(selector) {
-            $(selector).replaceWith(this);
-            return this;
-        };
-*/
-        return $;
-    })();
-
-    (function($) {
-        $.fn.on = wrapper_every_act(eventer.on, eventer);
-
-        $.fn.off = wrapper_every_act(eventer.off, eventer);
-
-        $.fn.trigger = wrapper_every_act(eventer.trigger, eventer);
-
-        ('focusin focusout focus blur load resize scroll unload click dblclick ' +
-            'mousedown mouseup mousemove mouseover mouseout mouseenter mouseleave ' +
-            'change select keydown keypress keyup error transitionEnd').split(' ').forEach(function(event) {
-            $.fn[event] = function(data, callback) {
-                return (0 in arguments) ?
-                    this.on(event, data, callback) :
-                    this.trigger(event)
-            }
-        });
-
-        $.fn.one = function(event, selector, data, callback) {
-            if (!langx.isString(selector) && !langx.isFunction(callback)) {
-                callback = data;
-                data = selector;
-                selector = null;
-            }
-
-            if (langx.isFunction(data)) {
-                callback = data;
-                data = null;
-            }
-
-            return this.on(event, selector, data, callback, 1)
-        };
-
-        $.fn.animate = wrapper_every_act(fx.animate, fx);
-        $.fn.emulateTransitionEnd = wrapper_every_act(fx.emulateTransitionEnd, fx);
-
-        $.fn.show = wrapper_every_act(fx.show, fx);
-        $.fn.hide = wrapper_every_act(fx.hide, fx);
-        $.fn.toogle = wrapper_every_act(fx.toogle, fx);
-        $.fn.fadeTo = wrapper_every_act(fx.fadeTo, fx);
-        $.fn.fadeIn = wrapper_every_act(fx.fadeIn, fx);
-        $.fn.fadeOut = wrapper_every_act(fx.fadeOut, fx);
-        $.fn.fadeToggle = wrapper_every_act(fx.fadeToggle, fx);
-
-        $.fn.slideDown = wrapper_every_act(fx.slideDown, fx);
-        $.fn.slideToggle = wrapper_every_act(fx.slideToggle, fx);
-        $.fn.slideUp = wrapper_every_act(fx.slideUp, fx);
-
-        $.fn.scrollParent = function( includeHidden ) {
-            var position = this.css( "position" ),
-                excludeStaticParent = position === "absolute",
-                overflowRegex = includeHidden ? /(auto|scroll|hidden)/ : /(auto|scroll)/,
-                scrollParent = this.parents().filter( function() {
-                    var parent = $( this );
-                    if ( excludeStaticParent && parent.css( "position" ) === "static" ) {
-                        return false;
-                    }
-                    return overflowRegex.test( parent.css( "overflow" ) + parent.css( "overflow-y" ) +
-                        parent.css( "overflow-x" ) );
-                } ).eq( 0 );
-
-            return position === "fixed" || !scrollParent.length ?
-                $( this[ 0 ].ownerDocument || document ) :
-                scrollParent;
-        };
-    })(query);
-
-
-    (function($) {
-        $.fn.end = function() {
-            return this.prevObject || $()
-        }
-
-        $.fn.andSelf = function() {
-            return this.add(this.prevObject || $())
-        }
-
-        $.fn.addBack = function(selector) {
-            if (this.prevObject) {
-                if (selector) {
-                    return this.add(this.prevObject.filter(selector));
-                } else {
-                    return this.add(this.prevObject);
-                }
-            } else {
-                return this;
-            }
-        }
-
-        'filter,add,not,eq,first,last,find,closest,parents,parent,children,siblings,prev,prevAll,next,nextAll'.split(',').forEach(function(property) {
-            var fn = $.fn[property]
-            $.fn[property] = function() {
-                var ret = fn.apply(this, arguments)
-                ret.prevObject = this
-                return ret
-            }
-        })
-    })(query);
-
-
-    (function($) {
-        $.fn.query = $.fn.find;
-
-        $.fn.place = function(refNode, position) {
-            // summary:
-            //      places elements of this node list relative to the first element matched
-            //      by queryOrNode. Returns the original NodeList. See: `dojo/dom-construct.place`
-            // queryOrNode:
-            //      may be a string representing any valid CSS3 selector or a DOM node.
-            //      In the selector case, only the first matching element will be used
-            //      for relative positioning.
-            // position:
-            //      can be one of:
-            //
-            //      -   "last" (default)
-            //      -   "first"
-            //      -   "before"
-            //      -   "after"
-            //      -   "only"
-            //      -   "replace"
-            //
-            //      or an offset in the childNodes
-            if (langx.isString(refNode)) {
-                refNode = finder.descendant(refNode);
-            } else if (isQ(refNode)) {
-                refNode = refNode[0];
-            }
-            return this.each(function(i, node) {
-                switch (position) {
-                    case "before":
-                        noder.before(refNode, node);
-                        break;
-                    case "after":
-                        noder.after(refNode, node);
-                        break;
-                    case "replace":
-                        noder.replace(refNode, node);
-                        break;
-                    case "only":
-                        noder.empty(refNode);
-                        noder.append(refNode, node);
-                        break;
-                    case "first":
-                        noder.prepend(refNode, node);
-                        break;
-                        // else fallthrough...
-                    default: // aka: last
-                        noder.append(refNode, node);
-                }
-            });
-        };
-
-        $.fn.addContent = function(content, position) {
-            if (content.template) {
-                content = langx.substitute(content.template, content);
-            }
-            return this.append(content);
-        };
-
-        $.fn.replaceClass = function(newClass, oldClass) {
-            this.removeClass(oldClass);
-            this.addClass(newClass);
-            return this;
-        };
-
-        $.fn.replaceClass = function(newClass, oldClass) {
-            this.removeClass(oldClass);
-            this.addClass(newClass);
-            return this;
-        };
-
-        $.fn.disableSelection = ( function() {
-            var eventType = "onselectstart" in document.createElement( "div" ) ?
-                "selectstart" :
-                "mousedown";
-
-            return function() {
-                return this.on( eventType + ".ui-disableSelection", function( event ) {
-                    event.preventDefault();
-                } );
-            };
-        } )();
-
-        $.fn.enableSelection = function() {
-            return this.off( ".ui-disableSelection" );
-        };
-       
-
-    })(query);
-
-    query.fn.plugin = function(name,options) {
-        var args = slice.call( arguments, 1 ),
-            self = this,
-            returnValue = this;
-
-        this.each(function(){
-            returnValue = plugins.instantiate.apply(self,[this,name].concat(args));
-        });
-        return returnValue;
-    };
-
-    return dom.query = query;
-
-});
-define('skylark-utils-dom/elmx',[
-    "./dom",
-    "./langx",
-    "./datax",
-    "./eventer",
-    "./finder",
-    "./fx",
-    "./geom",
-    "./noder",
-    "./styler",
-    "./query"
-], function(dom, langx, datax, eventer, finder, fx, geom, noder, styler,$) {
-    var map = Array.prototype.map,
-        slice = Array.prototype.slice;
-    /*
-     * VisualElement is a skylark class type wrapping a visule dom node,
-     * provides a number of prototype methods and supports chain calls.
-     */
-    var VisualElement = langx.klass({
-        klassName: "VisualElement",
-
-        "_construct": function(node) {
-            if (langx.isString(node)) {
-                if (node.charAt(0) === "<") {
-                    //html
-                    node = noder.createFragment(node)[0];
-                } else {
-                    // id
-                    node = document.getElementById(node);
-                }
-            }
-            this._elm = node;
-        }
-    });
-
-    VisualElement.prototype.$ = VisualElement.prototype.query = function(selector) {
-        return $(selector,this._elm);
-    };
-
-    VisualElement.prototype.elm = function() {
-        return this._elm;
-    };
-
-    /*
-     * the VisualElement object wrapping document.body
-     */
-    var root = new VisualElement(document.body),
-        elmx = function(node) {
-            if (node) {
-                return new VisualElement(node);
-            } else {
-                return root;
-            }
-        };
-    /*
-     * Extend VisualElement prototype with wrapping the specified methods.
-     * @param {ArrayLike} fn
-     * @param {Object} context
-     */
-    function _delegator(fn, context) {
-        return function() {
-            var self = this,
-                elem = self._elm,
-                ret = fn.apply(context, [elem].concat(slice.call(arguments)));
-
-            if (ret) {
-                if (ret === context) {
-                    return self;
-                } else {
-                    if (ret instanceof HTMLElement) {
-                        ret = new VisualElement(ret);
-                    } else if (langx.isArrayLike(ret)) {
-                        ret = map.call(ret, function(el) {
-                            if (el instanceof HTMLElement) {
-                                return new VisualElement(el);
-                            } else {
-                                return el;
-                            }
-                        })
-                    }
-                }
-            }
-            return ret;
-        };
-    }
-
-    langx.mixin(elmx, {
-        batch: function(nodes, action, args) {
-            nodes.forEach(function(node) {
-                var elm = (node instanceof VisualElement) ? node : elmx(node);
-                elm[action].apply(elm, args);
-            });
-
-            return this;
-        },
-
-        root: new VisualElement(document.body),
-
-        VisualElement: VisualElement,
-
-        partial: function(name, fn) {
-            var props = {};
-
-            props[name] = fn;
-
-            VisualElement.partial(props);
-        },
-
-        delegate: function(names, context) {
-            var props = {};
-
-            names.forEach(function(name) {
-                props[name] = _delegator(context[name], context);
-            });
-
-            VisualElement.partial(props);
-        }
-    });
-
-    // from ./datax
-    elmx.delegate([
-        "attr",
-        "data",
-        "prop",
-        "removeAttr",
-        "removeData",
-        "text",
-        "val"
-    ], datax);
-
-    // from ./eventer
-    elmx.delegate([
-        "off",
-        "on",
-        "one",
-        "shortcuts",
-        "trigger"
-    ], eventer);
-
-    // from ./finder
-    elmx.delegate([
-        "ancestor",
-        "ancestors",
-        "children",
-        "descendant",
-        "find",
-        "findAll",
-        "firstChild",
-        "lastChild",
-        "matches",
-        "nextSibling",
-        "nextSiblings",
-        "parent",
-        "previousSibling",
-        "previousSiblings",
-        "siblings"
-    ], finder);
-
-    /*
-     * find a dom element matched by the specified selector.
-     * @param {String} selector
-     */
-    elmx.find = function(selector) {
-        if (selector === "body") {
-            return this.root;
-        } else {
-            return this.root.descendant(selector);
-        }
-    };
-
+define('skylark-domx-fx/main',[
+	"./fx",
+	"skylark-domx-velm",
+	"skylark-domx-query"	
+],function(fx,velm,$){
     // from ./fx
-    elmx.delegate([
+    velm.delegate([
         "animate",
+        "emulateTransitionEnd",
         "fadeIn",
         "fadeOut",
         "fadeTo",
         "fadeToggle",
         "hide",
         "scrollToTop",
+        "slideDown",
+        "slideToggle",
+        "slideUp",
         "show",
         "toggle"
     ], fx);
 
+    $.fn.hide =  $.wraps.wrapper_every_act(fx.hide, fx);
 
-    // from ./geom
-    elmx.delegate([
-        "borderExtents",
-        "boundingPosition",
-        "boundingRect",
-        "clientHeight",
-        "clientSize",
-        "clientWidth",
-        "contentRect",
-        "height",
-        "marginExtents",
-        "offsetParent",
-        "paddingExtents",
-        "pagePosition",
-        "pageRect",
-        "relativePosition",
-        "relativeRect",
-        "scrollIntoView",
-        "scrollLeft",
-        "scrollTop",
-        "size",
-        "width"
-    ], geom);
+    $.fn.animate = $.wraps.wrapper_every_act(fx.animate, fx);
+    $.fn.emulateTransitionEnd = $.wraps.wrapper_every_act(fx.emulateTransitionEnd, fx);
 
-    // from ./noder
-    elmx.delegate([
-        "after",
-        "append",
-        "before",
-        "clone",
-        "contains",
-        "contents",
-        "empty",
-        "html",
-        "isChildOf",
-        "isDocument",
-        "isInDocument",
-        "isWindow",
-        "ownerDoc",
-        "prepend",
-        "remove",
-        "removeChild",
-        "replace",
-        "reverse",
-        "throb",
-        "traverse",
-        "wrapper",
-        "wrapperInner",
-        "unwrap"
-    ], noder);
+    $.fn.show = $.wraps.wrapper_every_act(fx.show, fx);
+    $.fn.hide = $.wraps.wrapper_every_act(fx.hide, fx);
+    $.fn.toogle = $.wraps.wrapper_every_act(fx.toogle, fx);
+    $.fn.fadeTo = $.wraps.wrapper_every_act(fx.fadeTo, fx);
+    $.fn.fadeIn = $.wraps.wrapper_every_act(fx.fadeIn, fx);
+    $.fn.fadeOut = $.wraps.wrapper_every_act(fx.fadeOut, fx);
+    $.fn.fadeToggle = $.wraps.wrapper_every_act(fx.fadeToggle, fx);
 
-    // from ./styler
-    elmx.delegate([
-        "addClass",
-        "className",
-        "css",
-        "hasClass",
-        "hide",
-        "isInvisible",
-        "removeClass",
-        "show",
-        "toggleClass"
-    ], styler);
+    $.fn.slideDown = $.wraps.wrapper_every_act(fx.slideDown, fx);
+    $.fn.slideToggle = $.wraps.wrapper_every_act(fx.slideToggle, fx);
+    $.fn.slideUp = $.wraps.wrapper_every_act(fx.slideUp, fx);
 
-    // properties
-
-    var properties = [ 'position', 'left', 'top', 'right', 'bottom', 'width', 'height', 'border', 'borderLeft',
-    'borderTop', 'borderRight', 'borderBottom', 'borderColor', 'display', 'overflow', 'margin', 'marginLeft', 'marginTop', 'marginRight', 'marginBottom', 'padding', 'paddingLeft', 'paddingTop', 'paddingRight', 'paddingBottom', 'color',
-    'background', 'backgroundColor', 'opacity', 'fontSize', 'fontWeight', 'textAlign', 'textDecoration', 'textTransform', 'cursor', 'zIndex' ];
-
-    properties.forEach( function ( property ) {
-
-        var method = property;
-
-        VisualElement.prototype[method ] = function (value) {
-
-            this.css( property, value );
-
-            return this;
-
-        };
-
-    });
-
-    // events
-    var events = [ 'keyUp', 'keyDown', 'mouseOver', 'mouseOut', 'click', 'dblClick', 'change' ];
-
-    events.forEach( function ( event ) {
-
-        var method = event;
-
-        VisualElement.prototype[method ] = function ( callback ) {
-
-            this.on( event.toLowerCase(), callback);
-
-            return this;
-        };
-
-    });
-
-
-    return dom.elmx = elmx;
+	return fx;
 });
-define('skylark-utils-dom/plugins',[
-    "./dom",
-    "./langx",
-    "./noder",
-    "./datax",
-    "./eventer",
-    "./finder",
-    "./geom",
-    "./styler",
-    "./fx",
-    "./query",
-    "./elmx"
-], function(dom, langx, noder, datax, eventer, finder, geom, styler, fx, $, elmx) {
+define('skylark-domx-fx', ['skylark-domx-fx/main'], function (main) { return main; });
+
+define('skylark-domx-plugins/plugins',[
+    "skylark-langx/skylark",
+    "skylark-langx/langx",
+    "skylark-domx-noder",
+    "skylark-domx-data",
+    "skylark-domx-eventer",
+    "skylark-domx-finder",
+    "skylark-domx-geom",
+    "skylark-domx-styler",
+    "skylark-domx-fx",
+    "skylark-domx-query",
+    "skylark-domx-velm"
+], function(skylark, langx, noder, datax, eventer, finder, geom, styler, fx, $, elmx) {
     "use strict";
 
     var slice = Array.prototype.slice,
@@ -10046,6 +10495,7 @@ define('skylark-utils-dom/plugins',[
         return pluginInstance;
     }
 
+
     function shortcutter(pluginName,extfn) {
        /*
         * Create or get or destory a plugin instance assocated with the element,
@@ -10056,10 +10506,13 @@ define('skylark-utils-dom/plugins',[
             if ( options === "instance" ) {
               return plugin || null;
             }
+
             if (!plugin) {
                 plugin = instantiate(elm, pluginName,typeof options == 'object' && options || {});
-            }
-
+                if (typeof options != "string") {
+                  return this;
+                }
+            } 
             if (options) {
                 var args = slice.call(arguments,1); //2
                 if (extfn) {
@@ -10117,7 +10570,7 @@ define('skylark-utils-dom/plugins',[
                   this.each(function () {
                     var args2 = slice.call(args);
                     args2.unshift(this);
-                    var  ret  = shortcut.apply(null,args2);
+                    var  ret  = shortcut.apply(undefined,args2);
                     if (ret !== undefined) {
                         returnValue = ret;
                         return false;
@@ -10166,15 +10619,15 @@ define('skylark-utils-dom/plugins',[
             for (var i=0;i<ctors.length;i++) {
               ctor = ctors[i];
               if (ctor.prototype.hasOwnProperty("options")) {
-                langx.mixin(defaults,ctor.prototype.options);
+                langx.mixin(defaults,ctor.prototype.options,true);
               }
               if (ctor.hasOwnProperty("options")) {
-                langx.mixin(defaults,ctor.options);
+                langx.mixin(defaults,ctor.options,true);
               }
             }
           }
           Object.defineProperty(this,"options",{
-            value :langx.mixin({},defaults,options)
+            value :langx.mixin({},defaults,options,true)
           });
 
           //return this.options = langx.mixin({},defaults,options);
@@ -10261,6 +10714,13 @@ define('skylark-utils-dom/plugins',[
             return this;
         },
 
+        getUID : function (prefix) {
+            prefix = prefix || "plugin";
+            do prefix += ~~(Math.random() * 1000000)
+            while (document.getElementById(prefix))
+            return prefix;
+        },
+
         elm : function() {
             return this._elm;
         }
@@ -10295,8 +10755,15 @@ define('skylark-utils-dom/plugins',[
         shortcuts
     });
 
-    return plugins;
+    return  skylark.attach("domx.plugins",plugins);
 });
+define('skylark-domx-plugins/main',[
+	"./plugins"
+],function(plugins){
+	return plugins;
+});
+define('skylark-domx-plugins', ['skylark-domx-plugins/main'], function (main) { return main; });
+
 define('skylark-data-collection/collections',[
 	"skylark-langx/skylark"
 ],function(skylark){
@@ -10613,89 +11080,42 @@ define('skylark-data-collection/Map',[
     return Map;
 });
 
-define('skylark-ui-swt/swt',[
-  "skylark-langx/skylark",
-  "skylark-langx/langx",
-  "skylark-utils-dom/browser",
-  "skylark-utils-dom/eventer",
-  "skylark-utils-dom/noder",
-  "skylark-utils-dom/geom",
-  "skylark-utils-dom/query"
-],function(skylark,langx,browser,eventer,noder,geom,$){
-	var ui = skylark.ui = skylark.ui || {};
-		sbswt = ui.sbswt = {};
 
-	var CONST = {
-		BACKSPACE_KEYCODE: 8,
-		COMMA_KEYCODE: 188, // `,` & `<`
-		DELETE_KEYCODE: 46,
-		DOWN_ARROW_KEYCODE: 40,
-		ENTER_KEYCODE: 13,
-		TAB_KEYCODE: 9,
-		UP_ARROW_KEYCODE: 38
-	};
+define('skylark-data-collection/HashMap',[
+    "./collections",
+	"./Map"
+],function(collections,_Map) {
 
-	var isShiftHeld = function isShiftHeld (e) { return e.shiftKey === true; };
-
-	var isKey = function isKey (keyCode) {
-		return function compareKeycodes (e) {
-			return e.keyCode === keyCode;
-		};
-	};
-
-	var isBackspaceKey = isKey(CONST.BACKSPACE_KEYCODE);
-	var isDeleteKey = isKey(CONST.DELETE_KEYCODE);
-	var isTabKey = isKey(CONST.TAB_KEYCODE);
-	var isUpArrow = isKey(CONST.UP_ARROW_KEYCODE);
-	var isDownArrow = isKey(CONST.DOWN_ARROW_KEYCODE);
-
-	var ENCODED_REGEX = /&[^\s]*;/;
-	/*
-	 * to prevent double encoding decodes content in loop until content is encoding free
-	 */
-	var cleanInput = function cleanInput (questionableMarkup) {
-		// check for encoding and decode
-		while (ENCODED_REGEX.test(questionableMarkup)) {
-			questionableMarkup = $('<i>').html(questionableMarkup).text();
-		}
-
-		// string completely decoded now encode it
-		return $('<i>').text(questionableMarkup).html();
-	};
-
-	langx.mixin(ui, {
-		CONST: CONST,
-		cleanInput: cleanInput,
-		isBackspaceKey: isBackspaceKey,
-		isDeleteKey: isDeleteKey,
-		isShiftHeld: isShiftHeld,
-		isTabKey: isTabKey,
-		isUpArrow: isUpArrow,
-		isDownArrow: isDownArrow
+	var HashMap = collections.HashMap = _Map.inherit({
 	});
 
-	return ui;
-
+	return HashMap;
 });
-
-define('skylark-ui-swt/Widget',[
+define('skylark-widgets-base/base',[
+	"skylark-langx/skylark"
+],function(skylark){
+	return skylark.attach("widgets.base",{});
+});
+define('skylark-widgets-base/Widget',[
   "skylark-langx/skylark",
   "skylark-langx/langx",
-  "skylark-utils-dom/browser",
-  "skylark-utils-dom/datax",
-  "skylark-utils-dom/eventer",
-  "skylark-utils-dom/noder",
-  "skylark-utils-dom/geom",
-  "skylark-utils-dom/elmx",
-  "skylark-utils-dom/query",
-  "skylark-utils-dom/plugins",
-  "skylark-data-collection/Map",
-  "./swt"
-],function(skylark,langx,browser,datax,eventer,noder,geom,elmx,$,plugins,Map,swt){
+  "skylark-domx-browser",
+  "skylark-domx-data",
+  "skylark-domx-eventer",
+  "skylark-domx-noder",
+  "skylark-domx-files",
+  "skylark-domx-geom",
+  "skylark-domx-velm",
+  "skylark-domx-query",
+  "skylark-domx-fx",
+  "skylark-domx-plugins",
+  "skylark-data-collection/HashMap",
+  "./base"
+],function(skylark,langx,browser,datax,eventer,noder,files,geom,elmx,$,fx, plugins,HashMap,base){
 
 /*---------------------------------------------------------------------------------*/
 
-	var Widget = plugins.Plugin.inherit({
+  var Widget = plugins.Plugin.inherit({
     klassName: "Widget",
 
     _elmx : elmx,
@@ -10717,11 +11137,37 @@ define('skylark-ui-swt/Widget',[
         }
         
         Object.defineProperty(this,"state",{
-          value :this.options.state || new Map()
+          value :this.options.state || new HashMap()
         });
 
         //this.state = this.options.state || new Map();
         this._init();
+
+        var addonCategoryOptions = this.options.addons;
+        if (addonCategoryOptions) {
+          var widgetCtor = this.constructor,
+              addons = widgetCtor.addons;
+          for (var categoryName in addonCategoryOptions) {
+              for (var i =0;i < addonCategoryOptions[categoryName].length; i++ ) {
+                var addonOption = addonCategoryOptions[categoryName][i];
+                if (langx.isString(addonOption)) {
+                  var addonName = addonOption,
+                      addonSetting = addons[categoryName][addonName],
+                      addonCtor = addonSetting.ctor ? addonSetting.ctor : addonSetting;
+
+                  this.addon(addonCtor,addonSetting.options);
+
+                }
+
+              }
+          }
+        }
+
+        if (this._elm.parentElement) {
+          // The widget is already in document
+          this._startup();
+        }
+
      },
 
     /**
@@ -10733,7 +11179,8 @@ define('skylark-ui-swt/Widget',[
     _parse : function(elm,options) {
       var optionsAttr = datax.data(elm,"options");
       if (optionsAttr) {
-         var options1 = JSON.parse("{" + optionsAttr + "}");
+         //var options1 = JSON.parse("{" + optionsAttr + "}");
+         var options1 = eval("({" + optionsAttr + "})");
          options = langx.mixin(options1,options); 
       }
       return options || {};
@@ -10834,15 +11281,14 @@ define('skylark-ui-swt/Widget',[
       }
     },
 
-    addon : function(categoryName,addonName,setting) {
+    addon : function(ctor,setting) {
+      var categoryName = ctor.categoryName,
+          addonName = ctor.addonName;
+
       this._addons = this.addons || {};
       var category = this._addons[categoryName] = this._addons[categoryName] || {};
-      if (setting === undefined) {
-        return category[addonName] || null;      
-      } else {
-        category[addonName] = setting;
-        return this;
-      }
+      category[addonName] = new ctor(this,setting);
+      return this;
     },
 
     addons : function(categoryName,settings) {
@@ -10866,6 +11312,7 @@ define('skylark-ui-swt/Widget',[
     render: function() {
       return this._elm;
     },
+
 
 
     /**
@@ -10998,9 +11445,15 @@ define('skylark-ui-swt/Widget',[
     },
 
     throb: function(params) {
-      return noder.throb(this._elm,params);
+      return fx.throb(this._elm,params);
     },
 
+    emit : function(type,params) {
+      var e = langx.Emitter.createEvent(type,{
+        data : params
+      });
+      return langx.Emitter.prototype.emit.call(this,e,params);
+    },
 
     /**
      *  Attach the current widget element to dom document.
@@ -11082,40 +11535,51 @@ define('skylark-ui-swt/Widget',[
     return ctor;
   };
 
-	return swt.Widget = Widget;
+  return base.Widget = Widget;
 });
 
-define('skylark-graphics-canvas2d/canvas2d',[
+define('skylark-fabric/canvas2d',[
     "skylark-langx/skylark"
 ], function(skylark) {
-	return skylark.attach("graphics.canvas2d", {});
+	return skylark.attach("intg.fabric", {});
 });
-define('skylark-graphics-canvas2d/primitives/fabric',[], function() { 
-  var fabric = fabric || { version: '2.3.6' };
+define('skylark-fabric/primitives/fabric',[],function(){
+
+  /* build: `node build.js modules=ALL exclude=gestures,accessors requirejs minifier=uglifyjs` */
+  /*! Fabric.js Copyright 2008-2015, Printio (Juriy Zaytsev, Maxim Chernyak) */
+
+  var fabric =  { version: '3.6.2' };
+
+
+  /* _AMD_END_ */
   if (typeof document !== 'undefined' && typeof window !== 'undefined') {
     fabric.document = document;
     fabric.window = window;
   }
   else {
     // assume we're running under node.js when document/window are not present
-    fabric.document = require('jsdom')
-      .jsdom(
-        decodeURIComponent('%3C!DOCTYPE%20html%3E%3Chtml%3E%3Chead%3E%3C%2Fhead%3E%3Cbody%3E%3C%2Fbody%3E%3C%2Fhtml%3E'),
-        { features: {
+    var jsdom = require('jsdom');
+    var virtualWindow = new jsdom.JSDOM(
+      decodeURIComponent('%3C!DOCTYPE%20html%3E%3Chtml%3E%3Chead%3E%3C%2Fhead%3E%3Cbody%3E%3C%2Fbody%3E%3C%2Fhtml%3E'),
+      {
+        features: {
           FetchExternalResources: ['img']
-        }
-        });
+        },
+        resources: 'usable'
+      }).window;
+    fabric.document = virtualWindow.document;
     fabric.jsdomImplForWrapper = require('jsdom/lib/jsdom/living/generated/utils').implForWrapper;
     fabric.nodeCanvas = require('jsdom/lib/jsdom/utils').Canvas;
-    fabric.window = fabric.document.defaultView;
-    DOMParser = require('xmldom').DOMParser;
+    fabric.window = virtualWindow;
+    DOMParser = fabric.window.DOMParser;
   }
 
   /**
    * True when in environment that supports touch events
    * @type boolean
    */
-  fabric.isTouchSupported = 'ontouchstart' in fabric.window;
+  fabric.isTouchSupported = 'ontouchstart' in fabric.window || 'ontouchstart' in fabric.document ||
+    (fabric.window && fabric.window.navigator && fabric.window.navigator.maxTouchPoints > 0);
 
   /**
    * True when in environment that's probably Node.js
@@ -11130,15 +11594,15 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
    * @type array
    */
   fabric.SHARED_ATTRIBUTES = [
-    "display",
-    "transform",
-    "fill", "fill-opacity", "fill-rule",
-    "opacity",
-    "stroke", "stroke-dasharray", "stroke-linecap",
-    "stroke-linejoin", "stroke-miterlimit",
-    "stroke-opacity", "stroke-width",
-    "id", "paint-order",
-    "instantiated_by_use"
+    'display',
+    'transform',
+    'fill', 'fill-opacity', 'fill-rule',
+    'opacity',
+    'stroke', 'stroke-dasharray', 'stroke-linecap', 'stroke-dashoffset',
+    'stroke-linejoin', 'stroke-miterlimit',
+    'stroke-opacity', 'stroke-width',
+    'id', 'paint-order', 'vector-effect',
+    'instantiated_by_use', 'clip-path'
   ];
   /* _FROM_SVG_END_ */
 
@@ -11146,10 +11610,12 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
    * Pixel per Inch as a default value set to 96. Can be changed for more realistic conversion.
    */
   fabric.DPI = 96;
-  fabric.reNum = '(?:[-+]?(?:\\d+|\\d*\\.\\d+)(?:e[-+]?\\d+)?)';
+  fabric.reNum = '(?:[-+]?(?:\\d+|\\d*\\.\\d+)(?:[eE][-+]?\\d+)?)';
+  fabric.rePathCommand = /([-+]?((\d+\.\d+)|((\d+)|(\.\d+)))(?:[eE][-+]?\d+)?)/ig;
+  fabric.reNonWord = /[ \n\.,;!\?\-]/;
   fabric.fontPaths = { };
   fabric.iMatrix = [1, 0, 0, 1, 0, 0];
-  fabric.canvasModule = 'canvas';
+  fabric.svgNS = 'http://www.w3.org/2000/svg';
 
   /**
    * Pixel limit for cache canvases. 1Mpx , 4Mpx should be fine.
@@ -11188,6 +11654,15 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
    * @default
    */
   fabric.textureSize = 2048;
+
+  /**
+   * When 'true', style information is not retained when copy/pasting text, making
+   * pasted text use destination style.
+   * Defaults to 'false'.
+   * @type Boolean
+   * @default
+   */
+  fabric.disableStyleCopyPaste = false;
 
   /**
    * Enable webgl for filtering picture is available
@@ -11245,6 +11720,15 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
    */
   fabric.cachesBoundsOfCurve = true;
 
+  /**
+   * Skip performance testing of setupGLContext and force the use of putImageData that seems to be the one that works best on
+   * Chrome + old hardware. if your users are experiencing empty images after filtering you may try to force this to true
+   * this has to be set before instantiating the filtering backend ( before filtering the first image )
+   * @type Boolean
+   * @default false
+   */
+  fabric.forceGLPutImageData = false;
+
   fabric.initFilterBackend = function() {
     if (fabric.enableGLFiltering && fabric.isWebglSupported && fabric.isWebglSupported(fabric.textureSize)) {
       console.log('max texture size: ' + fabric.maxTextureSize);
@@ -11256,10 +11740,10 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
   };
 
 
-  //if (typeof document !== 'undefined' && typeof window !== 'undefined') {
-  //  // ensure globality even if entire library were function wrapped (as in Meteor.js packaging system)
-  //  window.fabric = fabric;
-  //}
+  if (typeof document !== 'undefined' && typeof window !== 'undefined') {
+    // ensure globality even if entire library were function wrapped (as in Meteor.js packaging system)
+    window.fabric = fabric;
+  }
 
 
   (function() {
@@ -11324,7 +11808,7 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
      */
     function stopObserving(eventName, handler) {
       if (!this.__eventListeners) {
-        return;
+        return this;
       }
 
       // remove all key/value pairs (event name -> event handler)
@@ -11357,12 +11841,12 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
      */
     function fire(eventName, options) {
       if (!this.__eventListeners) {
-        return;
+        return this;
       }
 
       var listenersForEvent = this.__eventListeners[eventName];
       if (!listenersForEvent) {
-        return;
+        return this;
       }
 
       for (var i = 0, len = listenersForEvent.length; i < len; i++) {
@@ -11675,7 +12159,6 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
     var sqrt = Math.sqrt,
         atan2 = Math.atan2,
         pow = Math.pow,
-        abs = Math.abs,
         PiBy180 = Math.PI / 180,
         PiBy2 = Math.PI / 2;
 
@@ -11837,9 +12320,15 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
       /**
        * Returns coordinates of points's bounding rectangle (left, top, width, height)
        * @param {Array} points 4 points array
+       * @param {Array} [transform] an array of 6 numbers representing a 2x3 transform matrix
        * @return {Object} Object with left, top, width, height properties
        */
-      makeBoundingBoxFromPoints: function(points) {
+      makeBoundingBoxFromPoints: function(points, transform) {
+        if (transform) {
+          for (var i = 0; i < points.length; i++) {
+            points[i] = fabric.util.transformPoint(points[i], transform);
+          }
+        }
         var xPoints = [points[0].x, points[1].x, points[2].x, points[3].x],
             minX = fabric.util.array.min(xPoints),
             maxX = fabric.util.array.max(xPoints),
@@ -12082,15 +12571,18 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
       enlivenObjects: function(objects, callback, namespace, reviver) {
         objects = objects || [];
 
-        function onLoaded() {
-          if (++numLoadedObjects === numTotalObjects) {
-            callback && callback(enlivenedObjects);
-          }
-        }
-
         var enlivenedObjects = [],
             numLoadedObjects = 0,
             numTotalObjects = objects.length;
+
+        function onLoaded() {
+          if (++numLoadedObjects === numTotalObjects) {
+            callback && callback(enlivenedObjects.filter(function(obj) {
+              // filter out undefined objects (objects that gave error)
+              return obj;
+            }));
+          }
+        }
 
         if (!numTotalObjects) {
           callback && callback(enlivenedObjects);
@@ -12163,7 +12655,7 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
        */
       groupSVGElements: function(elements, options, path) {
         var object;
-        if (elements.length === 1) {
+        if (elements && elements.length === 1) {
           return elements[0];
         }
         if (options) {
@@ -12254,6 +12746,34 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
       },
 
       /**
+       * Creates a canvas element that is a copy of another and is also painted
+       * @param {CanvasElement} canvas to copy size and content of
+       * @static
+       * @memberOf fabric.util
+       * @return {CanvasElement} initialized canvas element
+       */
+      copyCanvasElement: function(canvas) {
+        var newCanvas = fabric.util.createCanvasElement();
+        newCanvas.width = canvas.width;
+        newCanvas.height = canvas.height;
+        newCanvas.getContext('2d').drawImage(canvas, 0, 0);
+        return newCanvas;
+      },
+
+      /**
+       * since 2.6.0 moved from canvas instance to utility.
+       * @param {CanvasElement} canvasEl to copy size and content of
+       * @param {String} format 'jpeg' or 'png', in some browsers 'webp' is ok too
+       * @param {Number} quality <= 1 and > 0
+       * @static
+       * @memberOf fabric.util
+       * @return {String} data url
+       */
+      toDataURL: function(canvasEl, format, quality) {
+        return canvasEl.toDataURL('image/' + format, quality);
+      },
+
+      /**
        * Creates image element (works on client and node)
        * @static
        * @memberOf fabric.util
@@ -12299,7 +12819,7 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
       },
 
       /**
-       * Decomposes standard 2x2 matrix into transform componentes
+       * Decomposes standard 2x3 matrix into transform components
        * @static
        * @memberOf fabric.util
        * @param  {Array} a transformMatrix
@@ -12322,10 +12842,113 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
         };
       },
 
+      /**
+       * Returns a transform matrix starting from an object of the same kind of
+       * the one returned from qrDecompose, useful also if you want to calculate some
+       * transformations from an object that is not enlived yet
+       * @static
+       * @memberOf fabric.util
+       * @param  {Object} options
+       * @param  {Number} [options.angle] angle in degrees
+       * @return {Number[]} transform matrix
+       */
+      calcRotateMatrix: function(options) {
+        if (!options.angle) {
+          return fabric.iMatrix.concat();
+        }
+        var theta = fabric.util.degreesToRadians(options.angle),
+            cos = fabric.util.cos(theta),
+            sin = fabric.util.sin(theta);
+        return [cos, sin, -sin, cos, 0, 0];
+      },
+
+      /**
+       * Returns a transform matrix starting from an object of the same kind of
+       * the one returned from qrDecompose, useful also if you want to calculate some
+       * transformations from an object that is not enlived yet.
+       * is called DimensionsTransformMatrix because those properties are the one that influence
+       * the size of the resulting box of the object.
+       * @static
+       * @memberOf fabric.util
+       * @param  {Object} options
+       * @param  {Number} [options.scaleX]
+       * @param  {Number} [options.scaleY]
+       * @param  {Boolean} [options.flipX]
+       * @param  {Boolean} [options.flipY]
+       * @param  {Number} [options.skewX]
+       * @param  {Number} [options.skewX]
+       * @return {Number[]} transform matrix
+       */
+      calcDimensionsMatrix: function(options) {
+        var scaleX = typeof options.scaleX === 'undefined' ? 1 : options.scaleX,
+            scaleY = typeof options.scaleY === 'undefined' ? 1 : options.scaleY,
+            scaleMatrix = [
+              options.flipX ? -scaleX : scaleX,
+              0,
+              0,
+              options.flipY ? -scaleY : scaleY,
+              0,
+              0],
+            multiply = fabric.util.multiplyTransformMatrices,
+            degreesToRadians = fabric.util.degreesToRadians;
+        if (options.skewX) {
+          scaleMatrix = multiply(
+            scaleMatrix,
+            [1, 0, Math.tan(degreesToRadians(options.skewX)), 1],
+            true);
+        }
+        if (options.skewY) {
+          scaleMatrix = multiply(
+            scaleMatrix,
+            [1, Math.tan(degreesToRadians(options.skewY)), 0, 1],
+            true);
+        }
+        return scaleMatrix;
+      },
+
+      /**
+       * Returns a transform matrix starting from an object of the same kind of
+       * the one returned from qrDecompose, useful also if you want to calculate some
+       * transformations from an object that is not enlived yet
+       * @static
+       * @memberOf fabric.util
+       * @param  {Object} options
+       * @param  {Number} [options.angle]
+       * @param  {Number} [options.scaleX]
+       * @param  {Number} [options.scaleY]
+       * @param  {Boolean} [options.flipX]
+       * @param  {Boolean} [options.flipY]
+       * @param  {Number} [options.skewX]
+       * @param  {Number} [options.skewX]
+       * @param  {Number} [options.translateX]
+       * @param  {Number} [options.translateY]
+       * @return {Number[]} transform matrix
+       */
+      composeMatrix: function(options) {
+        var matrix = [1, 0, 0, 1, options.translateX || 0, options.translateY || 0],
+            multiply = fabric.util.multiplyTransformMatrices;
+        if (options.angle) {
+          matrix = multiply(matrix, fabric.util.calcRotateMatrix(options));
+        }
+        if (options.scaleX || options.scaleY || options.skewX || options.skewY || options.flipX || options.flipY) {
+          matrix = multiply(matrix, fabric.util.calcDimensionsMatrix(options));
+        }
+        return matrix;
+      },
+
+      /**
+       * Returns a transform matrix that has the same effect of scaleX, scaleY and skewX.
+       * Is deprecated for composeMatrix. Please do not use it.
+       * @static
+       * @deprecated since 3.4.0
+       * @memberOf fabric.util
+       * @param  {Number} scaleX
+       * @param  {Number} scaleY
+       * @param  {Number} skewX
+       * @return {Number[]} transform matrix
+       */
       customTransformMatrix: function(scaleX, scaleY, skewX) {
-        var skewMatrixX = [1, 0, abs(Math.tan(skewX * PiBy180)), 1],
-            scaleMatrix = [abs(scaleX), 0, 0, abs(scaleY)];
-        return fabric.util.multiplyTransformMatrices(scaleMatrix, skewMatrixX, true);
+        return fabric.util.composeMatrix({ scaleX: scaleX, scaleY: scaleY, skewX: skewX });
       },
 
       /**
@@ -12495,6 +13118,19 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
 
       findScaleToCover: function(source, destination) {
         return Math.max(destination.width / source.width, destination.height / source.height);
+      },
+
+      /**
+       * given an array of 6 number returns something like `"matrix(...numbers)"`
+       * @memberOf fabric.util
+       * @param {Array} trasnform an array with 6 numbers
+       * @return {String} transform matrix for svg
+       * @return {Object.y} Limited dimensions by Y
+       */
+      matrixToSVG: function(transform) {
+        return 'matrix(' + transform.map(function(value) {
+          return fabric.util.toFixed(value, fabric.Object.NUM_FRACTION_DIGITS);
+        }).join(' ') + ')';
       }
     };
   })(typeof exports !== 'undefined' ? exports : this);
@@ -12856,7 +13492,10 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
   (function() {
     /**
      * Copies all enumerable properties of one js object to another
+     * this does not and cannot compete with generic utils.
      * Does not clone or extend fabric.Object subclasses.
+     * This is mostly for internal use and has extra handling for fabricJS objects
+     * it skips the canvas property in deep cloning.
      * @memberOf fabric.util.object
      * @param {Object} destination Where to copy to
      * @param {Object} source Where to copy from
@@ -12880,7 +13519,10 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
         }
         else if (source && typeof source === 'object') {
           for (var property in source) {
-            if (source.hasOwnProperty(property)) {
+            if (property === 'canvas') {
+              destination[property] = extend({ }, source[property]);
+            }
+            else if (source.hasOwnProperty(property)) {
               destination[property] = extend({ }, source[property], deep);
             }
           }
@@ -13148,170 +13790,8 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
 
 
   (function () {
-
-    var unknown = 'unknown';
-
-    /* EVENT HANDLING */
-
-    function areHostMethods(object) {
-      var methodNames = Array.prototype.slice.call(arguments, 1),
-          t, i, len = methodNames.length;
-      for (i = 0; i < len; i++) {
-        t = typeof object[methodNames[i]];
-        if (!(/^(?:function|object|unknown)$/).test(t)) {
-          return false;
-        }
-      }
-      return true;
-    }
-
-    /** @ignore */
-    var getElement,
-        setElement,
-        getUniqueId = (function () {
-          var uid = 0;
-          return function (element) {
-            return element.__uniqueID || (element.__uniqueID = 'uniqueID__' + uid++);
-          };
-        })();
-
-    (function () {
-      var elements = { };
-      /** @ignore */
-      getElement = function (uid) {
-        return elements[uid];
-      };
-      /** @ignore */
-      setElement = function (uid, element) {
-        elements[uid] = element;
-      };
-    })();
-
-    function createListener(uid, handler) {
-      return {
-        handler: handler,
-        wrappedHandler: createWrappedHandler(uid, handler)
-      };
-    }
-
-    function createWrappedHandler(uid, handler) {
-      return function (e) {
-        handler.call(getElement(uid), e || fabric.window.event);
-      };
-    }
-
-    function createDispatcher(uid, eventName) {
-      return function (e) {
-        if (handlers[uid] && handlers[uid][eventName]) {
-          var handlersForEvent = handlers[uid][eventName];
-          for (var i = 0, len = handlersForEvent.length; i < len; i++) {
-            handlersForEvent[i].call(this, e || fabric.window.event);
-          }
-        }
-      };
-    }
-
-    var shouldUseAddListenerRemoveListener = (
-          areHostMethods(fabric.document.documentElement, 'addEventListener', 'removeEventListener') &&
-          areHostMethods(fabric.window, 'addEventListener', 'removeEventListener')),
-
-        shouldUseAttachEventDetachEvent = (
-          areHostMethods(fabric.document.documentElement, 'attachEvent', 'detachEvent') &&
-          areHostMethods(fabric.window, 'attachEvent', 'detachEvent')),
-
-        // IE branch
-        listeners = { },
-
-        // DOM L0 branch
-        handlers = { },
-
-        addListener, removeListener;
-
-    if (shouldUseAddListenerRemoveListener) {
-      /** @ignore */
-      addListener = function (element, eventName, handler, options) {
-        // since ie10 or ie9 can use addEventListener but they do not support options, i need to check
-        element && element.addEventListener(eventName, handler, shouldUseAttachEventDetachEvent ? false : options);
-      };
-      /** @ignore */
-      removeListener = function (element, eventName, handler, options) {
-        element && element.removeEventListener(eventName, handler, shouldUseAttachEventDetachEvent ? false : options);
-      };
-    }
-
-    else if (shouldUseAttachEventDetachEvent) {
-      /** @ignore */
-      addListener = function (element, eventName, handler) {
-        if (!element) {
-          return;
-        }
-        var uid = getUniqueId(element);
-        setElement(uid, element);
-        if (!listeners[uid]) {
-          listeners[uid] = { };
-        }
-        if (!listeners[uid][eventName]) {
-          listeners[uid][eventName] = [];
-
-        }
-        var listener = createListener(uid, handler);
-        listeners[uid][eventName].push(listener);
-        element.attachEvent('on' + eventName, listener.wrappedHandler);
-      };
-      /** @ignore */
-      removeListener = function (element, eventName, handler) {
-        if (!element) {
-          return;
-        }
-        var uid = getUniqueId(element), listener;
-        if (listeners[uid] && listeners[uid][eventName]) {
-          for (var i = 0, len = listeners[uid][eventName].length; i < len; i++) {
-            listener = listeners[uid][eventName][i];
-            if (listener && listener.handler === handler) {
-              element.detachEvent('on' + eventName, listener.wrappedHandler);
-              listeners[uid][eventName][i] = null;
-            }
-          }
-        }
-      };
-    }
-    else {
-      /** @ignore */
-      addListener = function (element, eventName, handler) {
-        if (!element) {
-          return;
-        }
-        var uid = getUniqueId(element);
-        if (!handlers[uid]) {
-          handlers[uid] = { };
-        }
-        if (!handlers[uid][eventName]) {
-          handlers[uid][eventName] = [];
-          var existingHandler = element['on' + eventName];
-          if (existingHandler) {
-            handlers[uid][eventName].push(existingHandler);
-          }
-          element['on' + eventName] = createDispatcher(uid, eventName);
-        }
-        handlers[uid][eventName].push(handler);
-      };
-      /** @ignore */
-      removeListener = function (element, eventName, handler) {
-        if (!element) {
-          return;
-        }
-        var uid = getUniqueId(element);
-        if (handlers[uid] && handlers[uid][eventName]) {
-          var handlersForEvent = handlers[uid][eventName];
-          for (var i = 0, len = handlersForEvent.length; i < len; i++) {
-            if (handlersForEvent[i] === handler) {
-              handlersForEvent.splice(i, 1);
-            }
-          }
-        }
-      };
-    }
-
+    // since ie10 or ie9 can use addEventListener but they do not support options, i need to check
+    var couldUseAttachEvent = !!fabric.document.createElement('div').attachEvent;
     /**
      * Adds an event listener to an element
      * @function
@@ -13320,7 +13800,9 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
      * @param {String} eventName
      * @param {Function} handler
      */
-    fabric.util.addListener = addListener;
+    fabric.util.addListener = function(element, eventName, handler, options) {
+      element && element.addEventListener(eventName, handler, couldUseAttachEvent ? false : options);
+    };
 
     /**
      * Removes an event listener from an element
@@ -13330,60 +13812,27 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
      * @param {String} eventName
      * @param {Function} handler
      */
-    fabric.util.removeListener = removeListener;
+    fabric.util.removeListener = function(element, eventName, handler, options) {
+      element && element.removeEventListener(eventName, handler, couldUseAttachEvent ? false : options);
+    };
 
-    /**
-     * Cross-browser wrapper for getting event's coordinates
-     * @memberOf fabric.util
-     * @param {Event} event Event object
-     */
-    function getPointer(event) {
-      event || (event = fabric.window.event);
+    function getTouchInfo(event) {
+      var touchProp = event.changedTouches;
+      if (touchProp && touchProp[0]) {
+        return touchProp[0];
+      }
+      return event;
+    }
 
-      var element = event.target ||
-                    (typeof event.srcElement !== unknown ? event.srcElement : null),
-
-          scroll = fabric.util.getScrollLeftTop(element);
+    fabric.util.getPointer = function(event) {
+      var element = event.target,
+          scroll = fabric.util.getScrollLeftTop(element),
+          _evt = getTouchInfo(event);
       return {
-        x: pointerX(event) + scroll.left,
-        y: pointerY(event) + scroll.top
+        x: _evt.clientX + scroll.left,
+        y: _evt.clientY + scroll.top
       };
-    }
-
-    var pointerX = function(event) {
-          return event.clientX;
-        },
-
-        pointerY = function(event) {
-          return event.clientY;
-        };
-
-    function _getPointer(event, pageProp, clientProp) {
-      var touchProp = event.type === 'touchend' ? 'changedTouches' : 'touches';
-      var pointer, eventTouchProp = event[touchProp];
-
-      if (eventTouchProp && eventTouchProp[0]) {
-        pointer = eventTouchProp[0][clientProp];
-      }
-
-      if (typeof pointer === 'undefined') {
-        pointer = event[clientProp];
-      }
-
-      return pointer;
-    }
-
-    if (fabric.isTouchSupported) {
-      pointerX = function(event) {
-        return _getPointer(event, 'pageX', 'clientX');
-      };
-      pointerY = function(event) {
-        return _getPointer(event, 'pageY', 'clientY');
-      };
-    }
-
-    fabric.util.getPointer = getPointer;
-
+    };
   })();
 
 
@@ -13788,24 +14237,6 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
       return url + (/\?/.test(url) ? '&' : '?') + param;
     }
 
-    var makeXHR = (function() {
-      var factories = [
-        function() { return new fabric.window.XMLHttpRequest(); },
-        function() { return new ActiveXObject('Microsoft.XMLHTTP'); },
-        function() { return new ActiveXObject('Msxml2.XMLHTTP'); },
-        function() { return new ActiveXObject('Msxml2.XMLHTTP.3.0'); }
-      ];
-      for (var i = factories.length; i--; ) {
-        try {
-          var req = factories[i]();
-          if (req) {
-            return factories[i];
-          }
-        }
-        catch (err) { }
-      }
-    })();
-
     function emptyFn() { }
 
     /**
@@ -13824,7 +14255,7 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
 
       var method = options.method ? options.method.toUpperCase() : 'GET',
           onComplete = options.onComplete || function() { },
-          xhr = makeXHR(),
+          xhr = new fabric.window.XMLHttpRequest(),
           body = options.body || options.parameters;
 
       /** @ignore */
@@ -13860,35 +14291,23 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
    * Wrapper around `console.log` (when available)
    * @param {*} [values] Values to log
    */
-  fabric.log = function() { };
+  fabric.log = console.log;
 
   /**
    * Wrapper around `console.warn` (when available)
    * @param {*} [values] Values to log as a warning
    */
-  fabric.warn = function() { };
-
-  /* eslint-disable */
-  if (typeof console !== 'undefined') {
-
-    ['log', 'warn'].forEach(function(methodName) {
-
-      if (typeof console[methodName] !== 'undefined' &&
-          typeof console[methodName].apply === 'function') {
-
-        fabric[methodName] = function() {
-          return console[methodName].apply(console, arguments);
-        };
-      }
-    });
-  }
-  /* eslint-enable */
+  fabric.warn = console.warn;
 
 
   (function() {
 
     function noop() {
       return false;
+    }
+
+    function defaultEasing(t, b, c, d) {
+      return -c * Math.cos(t / d * (Math.PI / 2)) + c + b;
     }
 
     /**
@@ -13902,6 +14321,7 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
      * @param {Number} [options.byValue=100] Value to modify the property by
      * @param {Function} [options.easing] Easing function
      * @param {Number} [options.duration=500] Duration of change (in ms)
+     * @param {Function} [options.abort] Additional function with logic. If returns true, onComplete is called.
      */
     function animate(options) {
 
@@ -13914,7 +14334,7 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
             onChange = options.onChange || noop,
             abort = options.abort || noop,
             onComplete = options.onComplete || noop,
-            easing = options.easing || function(t, b, c, d) {return -c * Math.cos(t / d * (Math.PI / 2)) + c + b;},
+            easing = options.easing || defaultEasing,
             startValue = 'startValue' in options ? options.startValue : 0,
             endValue = 'endValue' in options ? options.endValue : 100,
             byValue = options.byValue || endValue - startValue;
@@ -13922,24 +14342,28 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
         options.onStart && options.onStart();
 
         (function tick(ticktime) {
-          if (abort()) {
-            onComplete(endValue, 1, 1);
-            return;
-          }
+          // TODO: move abort call after calculation
+          // and pass (current,valuePerc, timePerc) as arguments
           time = ticktime || +new Date();
           var currentTime = time > finish ? duration : (time - start),
               timePerc = currentTime / duration,
               current = easing(currentTime, startValue, byValue, duration),
               valuePerc = Math.abs((current - startValue) / byValue);
-          onChange(current, valuePerc, timePerc);
-          if (time > finish) {
-            options.onComplete && options.onComplete();
+          if (abort()) {
+            onComplete(endValue, 1, 1);
             return;
           }
-          requestAnimFrame(tick);
+          if (time > finish) {
+            onChange(endValue, 1, 1);
+            onComplete(endValue, 1, 1);
+            return;
+          }
+          else {
+            onChange(current, valuePerc, timePerc);
+            requestAnimFrame(tick);
+          }
         })(start);
       });
-
     }
 
     var _requestAnimFrame = fabric.window.requestAnimationFrame       ||
@@ -13999,6 +14423,7 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
      * @param {Function} [options.onChange] Callback; invoked on every value change
      * @param {Function} [options.onComplete] Callback; invoked when value change is completed
      * @param {Function} [options.colorEasing] Easing function. Note that this function only take two arguments (currentTime, duration). Thus the regular animation easing functions cannot be used.
+     * @param {Function} [options.abort] Additional function with logic. If returns true, onComplete is called.
      */
     function animateColor(fromColor, toColor, duration, options) {
       var startColor = new fabric.Color(fromColor).getSource(),
@@ -14434,7 +14859,7 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
      * @namespace
      */
 
-    var //fabric = global.fabric || (global.fabric = { }),
+    var fabric = global.fabric || (global.fabric = { }),
         extend = fabric.util.object.extend,
         clone = fabric.util.object.clone,
         toFixed = fabric.util.toFixed,
@@ -14442,10 +14867,10 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
         multiplyTransformMatrices = fabric.util.multiplyTransformMatrices,
 
         svgValidTagNames = ['path', 'circle', 'polygon', 'polyline', 'ellipse', 'rect', 'line',
-          'image', 'text', 'linearGradient', 'radialGradient', 'stop'],
+          'image', 'text'],
         svgViewBoxElements = ['symbol', 'image', 'marker', 'pattern', 'view', 'svg'],
         svgInvalidAncestors = ['pattern', 'defs', 'symbol', 'metadata', 'clipPath', 'mask', 'desc'],
-        svgValidParents = ['symbol', 'g', 'a', 'svg'],
+        svgValidParents = ['symbol', 'g', 'a', 'svg', 'clipPath', 'defs'],
 
         attributesMap = {
           cx:                   'left',
@@ -14465,6 +14890,7 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
           'letter-spacing':     'charSpacing',
           'paint-order':        'paintFirst',
           'stroke-dasharray':   'strokeDashArray',
+          'stroke-dashoffset':  'strokeDashOffset',
           'stroke-linecap':     'strokeLineCap',
           'stroke-linejoin':    'strokeLineJoin',
           'stroke-miterlimit':  'strokeMiterLimit',
@@ -14472,13 +14898,18 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
           'stroke-width':       'strokeWidth',
           'text-decoration':    'textDecoration',
           'text-anchor':        'textAnchor',
-          opacity:              'opacity'
+          opacity:              'opacity',
+          'clip-path':          'clipPath',
+          'clip-rule':          'clipRule',
+          'vector-effect':      'strokeUniform'
         },
 
         colorAttributes = {
           stroke: 'strokeOpacity',
           fill:   'fillOpacity'
-        };
+        },
+
+        fSize = 'font-size', cPath = 'clip-path';
 
     fabric.svgValidTagNamesRegEx = getSvgRegex(svgValidTagNames);
     fabric.svgViewBoxElementsRegEx = getSvgRegex(svgViewBoxElements);
@@ -14487,6 +14918,7 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
 
     fabric.cssRules = { };
     fabric.gradientDefs = { };
+    fabric.clipPaths = { };
 
     function normalizeAttr(attr) {
       // transform attribute names
@@ -14503,14 +14935,15 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
       if ((attr === 'fill' || attr === 'stroke') && value === 'none') {
         value = '';
       }
+      else if (attr === 'vector-effect') {
+        value = value === 'non-scaling-stroke';
+      }
       else if (attr === 'strokeDashArray') {
         if (value === 'none') {
           value = null;
         }
         else {
-          value = value.replace(/,/g, ' ').split(/\s+/).map(function(n) {
-            return parseFloat(n);
-          });
+          value = value.replace(/,/g, ' ').split(/\s+/).map(parseFloat);
         }
       }
       else if (attr === 'transformMatrix') {
@@ -14552,6 +14985,9 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
         else if (fillIndex === -1 && strokeIndex > -1) {
           value = 'stroke';
         }
+      }
+      else if (attr === 'href' || attr === 'xlink:href') {
+        return value;
       }
       else {
         parsed = isArray ? value.map(parseUnit) : parseUnit(value, fontSize);
@@ -14653,14 +15089,7 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
       }
 
       // identity matrix
-      var iMatrix = [
-            1, // a
-            0, // b
-            0, // c
-            1, // d
-            0, // e
-            0  // f
-          ],
+      var iMatrix = fabric.iMatrix,
 
           // == begin transform regexp
           number = fabric.reNum,
@@ -14866,7 +15295,7 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
 
     /**
      * @private
-     * to support IE8 missing getElementById on SVGdocument
+     * to support IE8 missing getElementById on SVGdocument and on node xmlDOM
      */
     function elementById(doc, id) {
       var el;
@@ -14888,7 +15317,6 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
      */
     function parseUseDirectives(doc) {
       var nodelist = _getMultipleNodes(doc, ['use', 'svg:use']), i = 0;
-
       while (nodelist.length && i < nodelist.length) {
         var el = nodelist[i],
             xlink = (el.getAttribute('xlink:href') || el.getAttribute('href')).substr(1),
@@ -14896,14 +15324,14 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
             y = el.getAttribute('y') || 0,
             el2 = elementById(doc, xlink).cloneNode(true),
             currentTrans = (el2.getAttribute('transform') || '') + ' translate(' + x + ', ' + y + ')',
-            parentNode, oldLength = nodelist.length, attr, j, attrs, len;
+            parentNode, oldLength = nodelist.length, attr, j, attrs, len, namespace = fabric.svgNS;
 
         applyViewboxTransform(el2);
         if (/^svg$/i.test(el2.nodeName)) {
-          var el3 = el2.ownerDocument.createElement('g');
+          var el3 = el2.ownerDocument.createElementNS(namespace, 'g');
           for (j = 0, attrs = el2.attributes, len = attrs.length; j < len; j++) {
             attr = attrs.item(j);
-            el3.setAttribute(attr.nodeName, attr.nodeValue);
+            el3.setAttributeNS(namespace, attr.nodeName, attr.nodeValue);
           }
           // el2.firstChild != null
           while (el2.firstChild) {
@@ -14985,12 +15413,14 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
         parsedDim.height = parseUnit(heightAttr);
         return parsedDim;
       }
-
       minX = -parseFloat(viewBoxAttr[1]);
       minY = -parseFloat(viewBoxAttr[2]);
       viewBoxWidth = parseFloat(viewBoxAttr[3]);
       viewBoxHeight = parseFloat(viewBoxAttr[4]);
-
+      parsedDim.minX = minX;
+      parsedDim.minY = minY;
+      parsedDim.viewBoxWidth = viewBoxWidth;
+      parsedDim.viewBoxHeight = viewBoxHeight;
       if (!missingDimAttr) {
         parsedDim.width = parseUnit(widthAttr);
         parsedDim.height = parseUnit(heightAttr);
@@ -15044,9 +15474,9 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
                     scaleY + ' ' +
                     (minX * scaleX + widthDiff) + ' ' +
                     (minY * scaleY + heightDiff) + ') ';
-
+      parsedDim.viewboxTransform = fabric.parseTransformAttribute(matrix);
       if (element.nodeName === 'svg') {
-        el = element.ownerDocument.createElement('g');
+        el = element.ownerDocument.createElementNS(fabric.svgNS, 'g');
         // element.firstChild != null
         while (element.firstChild) {
           el.appendChild(element.firstChild);
@@ -15057,7 +15487,6 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
         el = element;
         matrix = el.getAttribute('transform') + matrix;
       }
-
       el.setAttribute('transform', matrix);
       return parsedDim;
     }
@@ -15118,16 +15547,50 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
         callback && callback([], {});
         return;
       }
-
+      var clipPaths = { };
+      descendants.filter(function(el) {
+        return el.nodeName.replace('svg:', '') === 'clipPath';
+      }).forEach(function(el) {
+        var id = el.getAttribute('id');
+        clipPaths[id] = fabric.util.toArray(el.getElementsByTagName('*')).filter(function(el) {
+          return fabric.svgValidTagNamesRegEx.test(el.nodeName.replace('svg:', ''));
+        });
+      });
       fabric.gradientDefs[svgUid] = fabric.getGradientDefs(doc);
       fabric.cssRules[svgUid] = fabric.getCSSRules(doc);
+      fabric.clipPaths[svgUid] = clipPaths;
       // Precedence of rules:   style > class > attribute
       fabric.parseElements(elements, function(instances, elements) {
         if (callback) {
           callback(instances, options, elements, descendants);
+          delete fabric.gradientDefs[svgUid];
+          delete fabric.cssRules[svgUid];
+          delete fabric.clipPaths[svgUid];
         }
       }, clone(options), reviver, parsingOptions);
     };
+
+    function recursivelyParseGradientsXlink(doc, gradient) {
+      var gradientsAttrs = ['gradientTransform', 'x1', 'x2', 'y1', 'y2', 'gradientUnits', 'cx', 'cy', 'r', 'fx', 'fy'],
+          xlinkAttr = 'xlink:href',
+          xLink = gradient.getAttribute(xlinkAttr).substr(1),
+          referencedGradient = elementById(doc, xLink);
+      if (referencedGradient && referencedGradient.getAttribute(xlinkAttr)) {
+        recursivelyParseGradientsXlink(doc, referencedGradient);
+      }
+      gradientsAttrs.forEach(function(attr) {
+        if (referencedGradient && !gradient.hasAttribute(attr) && referencedGradient.hasAttribute(attr)) {
+          gradient.setAttribute(attr, referencedGradient.getAttribute(attr));
+        }
+      });
+      if (!gradient.children.length) {
+        var referenceClone = referencedGradient.cloneNode(true);
+        while (referenceClone.firstChild) {
+          gradient.appendChild(referenceClone.firstChild);
+        }
+      }
+      gradient.removeAttribute(xlinkAttr);
+    }
 
     var reFontDeclaration = new RegExp(
       '(normal|italic)?\\s*(normal|small-caps)?\\s*' +
@@ -15190,26 +15653,14 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
               'svg:linearGradient',
               'svg:radialGradient'],
             elList = _getMultipleNodes(doc, tagArray),
-            el, j = 0, id, xlink,
-            gradientDefs = { }, idsToXlinkMap = { };
+            el, j = 0, gradientDefs = { };
         j = elList.length;
-
         while (j--) {
           el = elList[j];
-          xlink = el.getAttribute('xlink:href');
-          id = el.getAttribute('id');
-          if (xlink) {
-            idsToXlinkMap[id] = xlink.substr(1);
+          if (el.getAttribute('xlink:href')) {
+            recursivelyParseGradientsXlink(doc, el);
           }
-          gradientDefs[id] = el;
-        }
-
-        for (id in idsToXlinkMap) {
-          var el2 = gradientDefs[idsToXlinkMap[id]].cloneNode(true);
-          el = gradientDefs[id];
-          while (el2.firstChild) {
-            el.appendChild(el2.firstChild);
-          }
+          gradientDefs[el.getAttribute('id')] = el;
         }
         return gradientDefs;
       },
@@ -15231,7 +15682,7 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
 
         var value,
             parentAttributes = { },
-            fontSize;
+            fontSize, parentFontSize;
 
         if (typeof svgUid === 'undefined') {
           svgUid = element.getAttribute('svgUid');
@@ -15240,8 +15691,6 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
         if (element.parentNode && fabric.svgValidParentsRegEx.test(element.parentNode.nodeName)) {
           parentAttributes = fabric.parseAttributes(element.parentNode, attributes, svgUid);
         }
-        fontSize = (parentAttributes && parentAttributes.fontSize ) ||
-                   element.getAttribute('font-size') || fabric.Text.DEFAULT_SVG_FONT_SIZE;
 
         var ownAttributes = attributes.reduce(function(memo, attr) {
           value = element.getAttribute(attr);
@@ -15252,8 +15701,22 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
         }, { });
         // add values parsed from style, which take precedence over attributes
         // (see: http://www.w3.org/TR/SVG/styling.html#UsingPresentationAttributes)
-        ownAttributes = extend(ownAttributes,
-          extend(getGlobalStylesForElement(element, svgUid), fabric.parseStyleAttribute(element)));
+        var cssAttrs = extend(
+          getGlobalStylesForElement(element, svgUid),
+          fabric.parseStyleAttribute(element)
+        );
+        ownAttributes = extend(
+          ownAttributes,
+          cssAttrs
+        );
+        if (cssAttrs[cPath]) {
+          element.setAttribute(cPath, cssAttrs[cPath]);
+        }
+        fontSize = parentFontSize = parentAttributes.fontSize || fabric.Text.DEFAULT_SVG_FONT_SIZE;
+        if (ownAttributes[fSize]) {
+          // looks like the minimum should be 9px when dealing with ems. this is what looks like in browsers.
+          ownAttributes[fSize] = fontSize = parseUnit(ownAttributes[fSize], parentFontSize);
+        }
 
         var normalizedAttr, normalizedValue, normalizedStyle = {};
         for (var attr in ownAttributes) {
@@ -15425,6 +15888,7 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
           }
           if (!xml || !xml.documentElement) {
             callback && callback(null);
+            return false;
           }
 
           fabric.parseSVGDocument(xml.documentElement, function (results, _options, elements, allElements) {
@@ -15445,8 +15909,8 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
       loadSVGFromString: function(string, callback, reviver, options) {
         string = string.trim();
         var doc;
-        if (typeof DOMParser !== 'undefined') {
-          var parser = new DOMParser();
+        if (typeof fabric.window.DOMParser !== 'undefined') {
+          var parser = new fabric.window.DOMParser();
           if (parser && parser.parseFromString) {
             doc = parser.parseFromString(string, 'text/xml');
           }
@@ -15467,7 +15931,7 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
   })(typeof exports !== 'undefined' ? exports : this);
 
 
-  fabric.ElementsParser = function(elements, callback, options, reviver, parsingOptions) {
+  fabric.ElementsParser = function(elements, callback, options, reviver, parsingOptions, doc) {
     this.elements = elements;
     this.callback = callback;
     this.options = options;
@@ -15475,529 +15939,147 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
     this.svgUid = (options && options.svgUid) || 0;
     this.parsingOptions = parsingOptions;
     this.regexUrl = /^url\(['"]?#([^'"]+)['"]?\)/g;
+    this.doc = doc;
   };
 
-  fabric.ElementsParser.prototype.parse = function() {
-    this.instances = new Array(this.elements.length);
-    this.numElements = this.elements.length;
-
-    this.createObjects();
-  };
-
-  fabric.ElementsParser.prototype.createObjects = function() {
-    for (var i = 0, len = this.elements.length; i < len; i++) {
-      this.elements[i].setAttribute('svgUid', this.svgUid);
-      (function(_obj, i) {
-        setTimeout(function() {
-          _obj.createObject(_obj.elements[i], i);
-        }, 0);
-      })(this, i);
-    }
-  };
-
-  fabric.ElementsParser.prototype.createObject = function(el, index) {
-    var klass = fabric[fabric.util.string.capitalize(el.tagName.replace('svg:', ''))];
-    if (klass && klass.fromElement) {
-      try {
-        this._createObject(klass, el, index);
-      }
-      catch (err) {
-        fabric.log(err);
-      }
-    }
-    else {
-      this.checkIfDone();
-    }
-  };
-
-  fabric.ElementsParser.prototype._createObject = function(klass, el, index) {
-    klass.fromElement(el, this.createCallback(index, el), this.options);
-  };
-
-  fabric.ElementsParser.prototype.createCallback = function(index, el) {
-    var _this = this;
-    return function(obj) {
-      var _options;
-      _this.resolveGradient(obj, 'fill');
-      _this.resolveGradient(obj, 'stroke');
-      if (obj instanceof fabric.Image) {
-        _options = obj.parsePreserveAspectRatioAttribute(el);
-      }
-      obj._removeTransformMatrix(_options);
-      _this.reviver && _this.reviver(el, obj);
-      _this.instances[index] = obj;
-      _this.checkIfDone();
+  (function(proto) {
+    proto.parse = function() {
+      this.instances = new Array(this.elements.length);
+      this.numElements = this.elements.length;
+      this.createObjects();
     };
-  };
 
-  fabric.ElementsParser.prototype.resolveGradient = function(obj, property) {
-
-    var instanceFillValue = obj[property];
-    if (!(/^url\(/).test(instanceFillValue)) {
-      return;
-    }
-    var gradientId = this.regexUrl.exec(instanceFillValue)[1];
-    this.regexUrl.lastIndex = 0;
-    if (fabric.gradientDefs[this.svgUid][gradientId]) {
-      obj.set(property,
-        fabric.Gradient.fromElement(fabric.gradientDefs[this.svgUid][gradientId], obj));
-    }
-  };
-
-  fabric.ElementsParser.prototype.checkIfDone = function() {
-    if (--this.numElements === 0) {
-      this.instances = this.instances.filter(function(el) {
-        // eslint-disable-next-line no-eq-null, eqeqeq
-        return el != null;
+    proto.createObjects = function() {
+      var _this = this;
+      this.elements.forEach(function(element, i) {
+        element.setAttribute('svgUid', _this.svgUid);
+        _this.createObject(element, i);
       });
-      this.callback(this.instances, this.elements);
-    }
-  };
+    };
 
-(function() {
+    proto.findTag = function(el) {
+      return fabric[fabric.util.string.capitalize(el.tagName.replace('svg:', ''))];
+    };
 
-  /**
-   * Creates accessors (getXXX, setXXX) for a "class", based on "stateProperties" array
-   * @static
-   * @memberOf fabric.util
-   * @param {Object} klass "Class" to create accessors for
-   */
-  fabric.util.createAccessors = function(klass) {
-    var proto = klass.prototype, i, propName,
-        capitalizedPropName, setterName, getterName;
-
-    for (i = proto.stateProperties.length; i--; ) {
-
-      propName = proto.stateProperties[i];
-      capitalizedPropName = propName.charAt(0).toUpperCase() + propName.slice(1);
-      setterName = 'set' + capitalizedPropName;
-      getterName = 'get' + capitalizedPropName;
-
-      // using `new Function` for better introspection
-      if (!proto[getterName]) {
-        proto[getterName] = (function(property) {
-          return new Function('return this.get("' + property + '")');
-        })(propName);
+    proto.createObject = function(el, index) {
+      var klass = this.findTag(el);
+      if (klass && klass.fromElement) {
+        try {
+          klass.fromElement(el, this.createCallback(index, el), this.options);
+        }
+        catch (err) {
+          fabric.log(err);
+        }
       }
-      if (!proto[setterName]) {
-        proto[setterName] = (function(property) {
-          return new Function('value', 'return this.set("' + property + '", value)');
-        })(propName);
+      else {
+        this.checkIfDone();
       }
-    }
-  };
+    };
 
-  /** @lends fabric.Text.Prototype */
-  /**
-   * Retrieves object's fontSize
-   * @method getFontSize
-   * @memberOf fabric.Text.prototype
-   * @return {String} Font size (in pixels)
-   */
+    proto.createCallback = function(index, el) {
+      var _this = this;
+      return function(obj) {
+        var _options;
+        _this.resolveGradient(obj, el, 'fill');
+        _this.resolveGradient(obj, el, 'stroke');
+        if (obj instanceof fabric.Image && obj._originalElement) {
+          _options = obj.parsePreserveAspectRatioAttribute(el);
+        }
+        obj._removeTransformMatrix(_options);
+        _this.resolveClipPath(obj, el);
+        _this.reviver && _this.reviver(el, obj);
+        _this.instances[index] = obj;
+        _this.checkIfDone();
+      };
+    };
 
-  /**
-   * Sets object's fontSize
-   * Does not update the object .width and .height,
-   * call .initDimensions() to update the values.
-   * @method setFontSize
-   * @memberOf fabric.Text.prototype
-   * @param {Number} fontSize Font size (in pixels)
-   * @return {fabric.Text}
-   * @chainable
-   */
+    proto.extractPropertyDefinition = function(obj, property, storage) {
+      var value = obj[property], regex = this.regexUrl;
+      if (!regex.test(value)) {
+        return;
+      }
+      regex.lastIndex = 0;
+      var id = regex.exec(value)[1];
+      regex.lastIndex = 0;
+      return fabric[storage][this.svgUid][id];
+    };
 
-  /**
-   * Retrieves object's fontWeight
-   * @method getFontWeight
-   * @memberOf fabric.Text.prototype
-   * @return {(String|Number)} Font weight
-   */
+    proto.resolveGradient = function(obj, el, property) {
+      var gradientDef = this.extractPropertyDefinition(obj, property, 'gradientDefs');
+      if (gradientDef) {
+        var opacityAttr = el.getAttribute(property + '-opacity');
+        var gradient = fabric.Gradient.fromElement(gradientDef, obj, opacityAttr, this.options);
+        obj.set(property, gradient);
+      }
+    };
 
-  /**
-   * Sets object's fontWeight
-   * Does not update the object .width and .height,
-   * call .initDimensions() to update the values.
-   * @method setFontWeight
-   * @memberOf fabric.Text.prototype
-   * @param {(Number|String)} fontWeight Font weight
-   * @return {fabric.Text}
-   * @chainable
-   */
+    proto.createClipPathCallback = function(obj, container) {
+      return function(_newObj) {
+        _newObj._removeTransformMatrix();
+        _newObj.fillRule = _newObj.clipRule;
+        container.push(_newObj);
+      };
+    };
 
-  /**
-   * Retrieves object's fontFamily
-   * @method getFontFamily
-   * @memberOf fabric.Text.prototype
-   * @return {String} Font family
-   */
+    proto.resolveClipPath = function(obj, usingElement) {
+      var clipPath = this.extractPropertyDefinition(obj, 'clipPath', 'clipPaths'),
+          element, klass, objTransformInv, container, gTransform, options;
+      if (clipPath) {
+        container = [];
+        objTransformInv = fabric.util.invertTransform(obj.calcTransformMatrix());
+        // move the clipPath tag as sibling to the real element that is using it
+        var clipPathTag = clipPath[0].parentNode;
+        var clipPathOwner = usingElement;
+        while (clipPathOwner.parentNode && clipPathOwner.getAttribute('clip-path') !== obj.clipPath) {
+          clipPathOwner = clipPathOwner.parentNode;
+        }
+        clipPathOwner.parentNode.appendChild(clipPathTag);
+        for (var i = 0; i < clipPath.length; i++) {
+          element = clipPath[i];
+          klass = this.findTag(element);
+          klass.fromElement(
+            element,
+            this.createClipPathCallback(obj, container),
+            this.options
+          );
+        }
+        if (container.length === 1) {
+          clipPath = container[0];
+        }
+        else {
+          clipPath = new fabric.Group(container);
+        }
+        gTransform = fabric.util.multiplyTransformMatrices(
+          objTransformInv,
+          clipPath.calcTransformMatrix()
+        );
+        if (clipPath.clipPath) {
+          this.resolveClipPath(clipPath, clipPathOwner);
+        }
+        var options = fabric.util.qrDecompose(gTransform);
+        clipPath.flipX = false;
+        clipPath.flipY = false;
+        clipPath.set('scaleX', options.scaleX);
+        clipPath.set('scaleY', options.scaleY);
+        clipPath.angle = options.angle;
+        clipPath.skewX = options.skewX;
+        clipPath.skewY = 0;
+        clipPath.setPositionByOrigin({ x: options.translateX, y: options.translateY }, 'center', 'center');
+        obj.clipPath = clipPath;
+      }
+    };
 
-  /**
-   * Sets object's fontFamily
-   * Does not update the object .width and .height,
-   * call .initDimensions() to update the values.
-   * @method setFontFamily
-   * @memberOf fabric.Text.prototype
-   * @param {String} fontFamily Font family
-   * @return {fabric.Text}
-   * @chainable
-   */
+    proto.checkIfDone = function() {
+      if (--this.numElements === 0) {
+        this.instances = this.instances.filter(function(el) {
+          // eslint-disable-next-line no-eq-null, eqeqeq
+          return el != null;
+        });
+        this.callback(this.instances, this.elements);
+      }
+    };
+  })(fabric.ElementsParser.prototype);
 
-  /**
-   * Retrieves object's text
-   * @method getText
-   * @memberOf fabric.Text.prototype
-   * @return {String} text
-   */
-
-  /**
-   * Sets object's text
-   * Does not update the object .width and .height,
-   * call .initDimensions() to update the values.
-   * @method setText
-   * @memberOf fabric.Text.prototype
-   * @param {String} text Text
-   * @return {fabric.Text}
-   * @chainable
-   */
-
-  /**
-   * Retrieves object's underline
-   * @method getUnderline
-   * @memberOf fabric.Text.prototype
-   * @return {Boolean} underline enabled or disabled
-   */
-
-  /**
-   * Sets object's underline
-   * @method setUnderline
-   * @memberOf fabric.Text.prototype
-   * @param {Boolean} underline Text decoration
-   * @return {fabric.Text}
-   * @chainable
-   */
-
-  /**
-   * Retrieves object's fontStyle
-   * @method getFontStyle
-   * @memberOf fabric.Text.prototype
-   * @return {String} Font style
-   */
-
-  /**
-   * Sets object's fontStyle
-   * Does not update the object .width and .height,
-   * call .initDimensions() to update the values.
-   * @method setFontStyle
-   * @memberOf fabric.Text.prototype
-   * @param {String} fontStyle Font style
-   * @return {fabric.Text}
-   * @chainable
-   */
-
-  /**
-   * Retrieves object's lineHeight
-   * @method getLineHeight
-   * @memberOf fabric.Text.prototype
-   * @return {Number} Line height
-   */
-
-  /**
-   * Sets object's lineHeight
-   * @method setLineHeight
-   * @memberOf fabric.Text.prototype
-   * @param {Number} lineHeight Line height
-   * @return {fabric.Text}
-   * @chainable
-   */
-
-  /**
-   * Retrieves object's textAlign
-   * @method getTextAlign
-   * @memberOf fabric.Text.prototype
-   * @return {String} Text alignment
-   */
-
-  /**
-   * Sets object's textAlign
-   * @method setTextAlign
-   * @memberOf fabric.Text.prototype
-   * @param {String} textAlign Text alignment
-   * @return {fabric.Text}
-   * @chainable
-   */
-
-  /**
-   * Retrieves object's textBackgroundColor
-   * @method getTextBackgroundColor
-   * @memberOf fabric.Text.prototype
-   * @return {String} Text background color
-   */
-
-  /**
-   * Sets object's textBackgroundColor
-   * @method setTextBackgroundColor
-   * @memberOf fabric.Text.prototype
-   * @param {String} textBackgroundColor Text background color
-   * @return {fabric.Text}
-   * @chainable
-   */
-
-  /** @lends fabric.Object.Prototype */
-  /**
-   * Retrieves object's {@link fabric.Object#clipTo|clipping function}
-   * @method getClipTo
-   * @memberOf fabric.Object.prototype
-   * @return {Function}
-   */
-
-  /**
-   * Sets object's {@link fabric.Object#clipTo|clipping function}
-   * @method setClipTo
-   * @memberOf fabric.Object.prototype
-   * @param {Function} clipTo Clipping function
-   * @return {fabric.Object} thisArg
-   * @chainable
-   */
-
-  /**
-   * Retrieves object's {@link fabric.Object#transformMatrix|transformMatrix}
-   * @method getTransformMatrix
-   * @memberOf fabric.Object.prototype
-   * @return {Array} transformMatrix
-   */
-
-  /**
-   * Sets object's {@link fabric.Object#transformMatrix|transformMatrix}
-   * @method setTransformMatrix
-   * @memberOf fabric.Object.prototype
-   * @param {Array} transformMatrix
-   * @return {fabric.Object} thisArg
-   * @chainable
-   */
-
-  /**
-   * Retrieves object's {@link fabric.Object#visible|visible} state
-   * @method getVisible
-   * @memberOf fabric.Object.prototype
-   * @return {Boolean} True if visible
-   */
-
-  /**
-   * Sets object's {@link fabric.Object#visible|visible} state
-   * @method setVisible
-   * @memberOf fabric.Object.prototype
-   * @param {Boolean} value visible value
-   * @return {fabric.Object} thisArg
-   * @chainable
-   */
-
-  /**
-   * Retrieves object's {@link fabric.Object#shadow|shadow}
-   * @method getShadow
-   * @memberOf fabric.Object.prototype
-   * @return {Object} Shadow instance
-   */
-
-  /**
-   * Retrieves object's {@link fabric.Object#stroke|stroke}
-   * @method getStroke
-   * @memberOf fabric.Object.prototype
-   * @return {String} stroke value
-   */
-
-  /**
-   * Sets object's {@link fabric.Object#stroke|stroke}
-   * @method setStroke
-   * @memberOf fabric.Object.prototype
-   * @param {String} value stroke value
-   * @return {fabric.Object} thisArg
-   * @chainable
-   */
-
-  /**
-   * Retrieves object's {@link fabric.Object#strokeWidth|strokeWidth}
-   * @method getStrokeWidth
-   * @memberOf fabric.Object.prototype
-   * @return {Number} strokeWidth value
-   */
-
-  /**
-   * Sets object's {@link fabric.Object#strokeWidth|strokeWidth}
-   * @method setStrokeWidth
-   * @memberOf fabric.Object.prototype
-   * @param {Number} value strokeWidth value
-   * @return {fabric.Object} thisArg
-   * @chainable
-   */
-
-  /**
-   * Retrieves object's {@link fabric.Object#originX|originX}
-   * @method getOriginX
-   * @memberOf fabric.Object.prototype
-   * @return {String} originX value
-   */
-
-  /**
-   * Sets object's {@link fabric.Object#originX|originX}
-   * @method setOriginX
-   * @memberOf fabric.Object.prototype
-   * @param {String} value originX value
-   * @return {fabric.Object} thisArg
-   * @chainable
-   */
-
-  /**
-   * Retrieves object's {@link fabric.Object#originY|originY}
-   * @method getOriginY
-   * @memberOf fabric.Object.prototype
-   * @return {String} originY value
-   */
-
-  /**
-   * Sets object's {@link fabric.Object#originY|originY}
-   * @method setOriginY
-   * @memberOf fabric.Object.prototype
-   * @param {String} value originY value
-   * @return {fabric.Object} thisArg
-   * @chainable
-   */
-
-  /**
-   * Retrieves object's {@link fabric.Object#fill|fill}
-   * @method getFill
-   * @memberOf fabric.Object.prototype
-   * @return {String} Fill value
-   */
-
-  /**
-   * Sets object's {@link fabric.Object#fill|fill}
-   * @method setFill
-   * @memberOf fabric.Object.prototype
-   * @param {String} value Fill value
-   * @return {fabric.Object} thisArg
-   * @chainable
-   */
-
-  /**
-   * Retrieves object's {@link fabric.Object#opacity|opacity}
-   * @method getOpacity
-   * @memberOf fabric.Object.prototype
-   * @return {Number} Opacity value (0-1)
-   */
-
-  /**
-   * Sets object's {@link fabric.Object#opacity|opacity}
-   * @method setOpacity
-   * @memberOf fabric.Object.prototype
-   * @param {Number} value Opacity value (0-1)
-   * @return {fabric.Object} thisArg
-   * @chainable
-   */
-
-  /**
-   * Retrieves object's {@link fabric.Object#angle|angle} (in degrees)
-   * @method getAngle
-   * @memberOf fabric.Object.prototype
-   * @return {Number}
-   */
-
-  /**
-   * Retrieves object's {@link fabric.Object#top|top position}
-   * @method getTop
-   * @memberOf fabric.Object.prototype
-   * @return {Number} Top value (in pixels)
-   */
-
-  /**
-   * Sets object's {@link fabric.Object#top|top position}
-   * @method setTop
-   * @memberOf fabric.Object.prototype
-   * @param {Number} value Top value (in pixels)
-   * @return {fabric.Object} thisArg
-   * @chainable
-   */
-
-  /**
-   * Retrieves object's {@link fabric.Object#left|left position}
-   * @method getLeft
-   * @memberOf fabric.Object.prototype
-   * @return {Number} Left value (in pixels)
-   */
-
-  /**
-   * Sets object's {@link fabric.Object#left|left position}
-   * @method setLeft
-   * @memberOf fabric.Object.prototype
-   * @param {Number} value Left value (in pixels)
-   * @return {fabric.Object} thisArg
-   * @chainable
-   */
-
-  /**
-   * Retrieves object's {@link fabric.Object#scaleX|scaleX} value
-   * @method getScaleX
-   * @memberOf fabric.Object.prototype
-   * @return {Number} scaleX value
-   */
-
-  /**
-   * Sets object's {@link fabric.Object#scaleX|scaleX} value
-   * @method setScaleX
-   * @memberOf fabric.Object.prototype
-   * @param {Number} value scaleX value
-   * @return {fabric.Object} thisArg
-   * @chainable
-   */
-
-  /**
-   * Retrieves object's {@link fabric.Object#scaleY|scaleY} value
-   * @method getScaleY
-   * @memberOf fabric.Object.prototype
-   * @return {Number} scaleY value
-   */
-
-  /**
-   * Sets object's {@link fabric.Object#scaleY|scaleY} value
-   * @method setScaleY
-   * @memberOf fabric.Object.prototype
-   * @param {Number} value scaleY value
-   * @return {fabric.Object} thisArg
-   * @chainable
-   */
-
-  /**
-   * Retrieves object's {@link fabric.Object#flipX|flipX} value
-   * @method getFlipX
-   * @memberOf fabric.Object.prototype
-   * @return {Boolean} flipX value
-   */
-
-  /**
-   * Sets object's {@link fabric.Object#flipX|flipX} value
-   * @method setFlipX
-   * @memberOf fabric.Object.prototype
-   * @param {Boolean} value flipX value
-   * @return {fabric.Object} thisArg
-   * @chainable
-   */
-
-  /**
-   * Retrieves object's {@link fabric.Object#flipY|flipY} value
-   * @method getFlipY
-   * @memberOf fabric.Object.prototype
-   * @return {Boolean} flipY value
-   */
-
-  /**
-   * Sets object's {@link fabric.Object#flipY|flipY} value
-   * @method setFlipY
-   * @memberOf fabric.Object.prototype
-   * @param {Boolean} value flipY value
-   * @return {fabric.Object} thisArg
-   * @chainable
-   */
-
-})(typeof exports !== 'undefined' ? exports : this);
 
   (function(global) {
 
@@ -16005,7 +16087,7 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
 
     /* Adaptation of work of Kevin Lindsey (kevin@kevlindev.com) */
 
-    //var fabric = global.fabric || (global.fabric = { });
+    var fabric = global.fabric || (global.fabric = { });
 
     if (fabric.Point) {
       fabric.warn('fabric.Point is already defined');
@@ -16343,7 +16425,7 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
     'use strict';
 
     /* Adaptation of work of Kevin Lindsey (kevin@kevlindev.com) */
-    //var fabric = global.fabric || (global.fabric = { });
+    var fabric = global.fabric || (global.fabric = { });
 
     if (fabric.Intersection) {
       fabric.warn('fabric.Intersection is already defined');
@@ -16516,7 +16598,7 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
 
     'use strict';
 
-    //var fabric = global.fabric || (global.fabric = { });
+    var fabric = global.fabric || (global.fabric = { });
 
     if (fabric.Color) {
       fabric.warn('fabric.Color is already defined.');
@@ -17153,7 +17235,7 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
   (function() {
 
     /* _FROM_SVG_START_ */
-    function getColorStop(el) {
+    function getColorStop(el, multiplier) {
       var style = el.getAttribute('style'),
           offset = el.getAttribute('offset') || 0,
           color, colorAlpha, opacity, i;
@@ -17193,7 +17275,7 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
       color = new fabric.Color(color);
       colorAlpha = color.getAlpha();
       opacity = isNaN(parseFloat(opacity)) ? 1 : parseFloat(opacity);
-      opacity *= colorAlpha;
+      opacity *= colorAlpha * multiplier;
 
       return {
         offset: offset,
@@ -17248,17 +17330,67 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
       offsetY: 0,
 
       /**
+       * A transform matrix to apply to the gradient before painting.
+       * Imported from svg gradients, is not applied with the current transform in the center.
+       * Before this transform is applied, the origin point is at the top left corner of the object
+       * plus the addition of offsetY and offsetX.
+       * @type Number[]
+       * @default null
+       */
+      gradientTransform: null,
+
+      /**
+       * coordinates units for coords.
+       * If `pixels`, the number of coords are in the same unit of width / height.
+       * If set as `percentage` the coords are still a number, but 1 means 100% of width
+       * for the X and 100% of the height for the y. It can be bigger than 1 and negative.
+       * allowed values pixels or percentage.
+       * @type String
+       * @default 'pixels'
+       */
+      gradientUnits: 'pixels',
+
+      /**
+       * Gradient type linear or radial
+       * @type String
+       * @default 'pixels'
+       */
+      type: 'linear',
+
+      /**
        * Constructor
-       * @param {Object} [options] Options object with type, coords, gradientUnits and colorStops
+       * @param {Object} options Options object with type, coords, gradientUnits and colorStops
+       * @param {Object} [options.type] gradient type linear or radial
+       * @param {Object} [options.gradientUnits] gradient units
+       * @param {Object} [options.offsetX] SVG import compatibility
+       * @param {Object} [options.offsetY] SVG import compatibility
+       * @param {Object[]} options.colorStops contains the colorstops.
+       * @param {Object} options.coords contains the coords of the gradient
+       * @param {Number} [options.coords.x1] X coordiante of the first point for linear or of the focal point for radial
+       * @param {Number} [options.coords.y1] Y coordiante of the first point for linear or of the focal point for radial
+       * @param {Number} [options.coords.x2] X coordiante of the second point for linear or of the center point for radial
+       * @param {Number} [options.coords.y2] Y coordiante of the second point for linear or of the center point for radial
+       * @param {Number} [options.coords.r1] only for radial gradient, radius of the inner circle
+       * @param {Number} [options.coords.r2] only for radial gradient, radius of the external circle
        * @return {fabric.Gradient} thisArg
        */
       initialize: function(options) {
         options || (options = { });
+        options.coords || (options.coords = { });
 
-        var coords = { };
+        var coords, _this = this;
 
-        this.id = fabric.Object.__uid++;
-        this.type = options.type || 'linear';
+        // sets everything, then coords and colorstops get sets again
+        Object.keys(options).forEach(function(option) {
+          _this[option] = options[option];
+        });
+
+        if (this.id) {
+          this.id += '_' + fabric.Object.__uid++;
+        }
+        else {
+          this.id = fabric.Object.__uid++;
+        }
 
         coords = {
           x1: options.coords.x1 || 0,
@@ -17271,13 +17403,9 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
           coords.r1 = options.coords.r1 || 0;
           coords.r2 = options.coords.r2 || 0;
         }
+
         this.coords = coords;
         this.colorStops = options.colorStops.slice();
-        if (options.gradientTransform) {
-          this.gradientTransform = options.gradientTransform;
-        }
-        this.offsetX = options.offsetX || this.offsetX;
-        this.offsetY = options.offsetY || this.offsetY;
       },
 
       /**
@@ -17309,6 +17437,7 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
           colorStops: this.colorStops,
           offsetX: this.offsetX,
           offsetY: this.offsetY,
+          gradientUnits: this.gradientUnits,
           gradientTransform: this.gradientTransform ? this.gradientTransform.concat() : this.gradientTransform
         };
         fabric.util.populateWithProperties(this, object, propertiesToInclude);
@@ -17322,33 +17451,41 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
        * @param {Object} object Object to create a gradient for
        * @return {String} SVG representation of an gradient (linear/radial)
        */
-      toSVG: function(object) {
-        var coords = clone(this.coords, true), i, len,
+      toSVG: function(object, options) {
+        var coords = clone(this.coords, true), i, len, options = options || {},
             markup, commonAttributes, colorStops = clone(this.colorStops, true),
             needsSwap = coords.r1 > coords.r2,
-            offsetX = object.width / 2, offsetY = object.height / 2;
+            transform = this.gradientTransform ? this.gradientTransform.concat() : fabric.iMatrix.concat(),
+            offsetX = -this.offsetX, offsetY = -this.offsetY,
+            withViewport = !!options.additionalTransform,
+            gradientUnits = this.gradientUnits === 'pixels' ? 'userSpaceOnUse' : 'objectBoundingBox';
         // colorStops must be sorted ascending
         colorStops.sort(function(a, b) {
           return a.offset - b.offset;
         });
+
+        if (gradientUnits === 'objectBoundingBox') {
+          offsetX /= object.width;
+          offsetY /= object.height;
+        }
+        else {
+          offsetX += object.width / 2;
+          offsetY += object.height / 2;
+        }
         if (object.type === 'path') {
           offsetX -= object.pathOffset.x;
           offsetY -= object.pathOffset.y;
         }
-        for (var prop in coords) {
-          if (prop === 'x1' || prop === 'x2') {
-            coords[prop] += this.offsetX - offsetX;
-          }
-          else if (prop === 'y1' || prop === 'y2') {
-            coords[prop] += this.offsetY - offsetY;
-          }
-        }
+
+
+        transform[4] -= offsetX;
+        transform[5] -= offsetY;
 
         commonAttributes = 'id="SVGID_' + this.id +
-                       '" gradientUnits="userSpaceOnUse"';
-        if (this.gradientTransform) {
-          commonAttributes += ' gradientTransform="matrix(' + this.gradientTransform.join(' ') + ')" ';
-        }
+                       '" gradientUnits="' + gradientUnits + '"';
+        commonAttributes += ' gradientTransform="' + (withViewport ?
+          options.additionalTransform + ' ' : '') + fabric.util.matrixToSVG(transform) + '" ';
+
         if (this.type === 'linear') {
           markup = [
             '<linearGradient ',
@@ -17414,28 +17551,34 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
       /**
        * Returns an instance of CanvasGradient
        * @param {CanvasRenderingContext2D} ctx Context to render on
+       * @param {fabric.Object} object the fabric.Object for which the gradient is
        * @return {CanvasGradient}
        */
-      toLive: function(ctx) {
-        var gradient, coords = fabric.util.object.clone(this.coords), i, len;
+      toLive: function(ctx, object) {
+        var gradient, coords = fabric.util.object.clone(this.coords), i, len,
+            x1 = coords.x1, y1 = coords.y1, x2 = coords.x2, y2 = coords.y2,
+            stops = this.colorStops;
 
         if (!this.type) {
           return;
         }
 
+        if (object instanceof fabric.Text && this.gradientUnits === 'percentage') {
+          x1 *= object.width;
+          y1 *= object.height;
+          x2 *= object.width;
+          y2 *= object.height;
+        }
         if (this.type === 'linear') {
-          gradient = ctx.createLinearGradient(
-            coords.x1, coords.y1, coords.x2, coords.y2);
+          gradient = ctx.createLinearGradient(x1, y1, x2, y2);
         }
         else if (this.type === 'radial') {
-          gradient = ctx.createRadialGradient(
-            coords.x1, coords.y1, coords.r1, coords.x2, coords.y2, coords.r2);
+          gradient = ctx.createRadialGradient(x1, y1, coords.r1, x2, y2, coords.r2);
         }
-
-        for (i = 0, len = this.colorStops.length; i < len; i++) {
-          var color = this.colorStops[i].color,
-              opacity = this.colorStops[i].opacity,
-              offset = this.colorStops[i].offset;
+        for (i = 0, len = stops.length; i < len; i++) {
+          var color = stops[i].color,
+              opacity = stops[i].opacity,
+              offset = stops[i].offset;
 
           if (typeof opacity !== 'undefined') {
             color = new fabric.Color(color).setAlpha(opacity).toRgba();
@@ -17456,11 +17599,18 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
        * @memberOf fabric.Gradient
        * @param {SVGGradientElement} el SVG gradient element
        * @param {fabric.Object} instance
+       * @param {String} opacityAttr A fill-opacity or stroke-opacity attribute to multiply to each stop's opacity.
+       * @param {Object} svgOptions an object containing the size of the SVG in order to parse correctly graidents
+       * that uses gradientUnits as 'userSpaceOnUse' and percentages.
+       * @param {Object.number} viewBoxWidth width part of the viewBox attribute on svg
+       * @param {Object.number} viewBoxHeight height part of the viewBox attribute on svg
+       * @param {Object.number} width width part of the svg tag if viewBox is not specified
+       * @param {Object.number} height height part of the svg tag if viewBox is not specified
        * @return {fabric.Gradient} Gradient instance
        * @see http://www.w3.org/TR/SVG/pservers.html#LinearGradientElement
        * @see http://www.w3.org/TR/SVG/pservers.html#RadialGradientElement
        */
-      fromElement: function(el, instance) {
+      fromElement: function(el, instance, opacityAttr, svgOptions) {
         /**
          *  @example:
          *
@@ -17494,44 +17644,52 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
          *
          */
 
+        var multiplier = parseFloat(opacityAttr) / (/%$/.test(opacityAttr) ? 100 : 1);
+        multiplier = multiplier < 0 ? 0 : multiplier > 1 ? 1 : multiplier;
+        if (isNaN(multiplier)) {
+          multiplier = 1;
+        }
+
         var colorStopEls = el.getElementsByTagName('stop'),
             type,
-            gradientUnits = el.getAttribute('gradientUnits') || 'objectBoundingBox',
-            gradientTransform = el.getAttribute('gradientTransform'),
+            gradientUnits = el.getAttribute('gradientUnits') === 'userSpaceOnUse' ?
+              'pixels' : 'percentage',
+            gradientTransform = el.getAttribute('gradientTransform') || '',
             colorStops = [],
-            coords, ellipseMatrix, i;
-
+            coords, i, offsetX = 0, offsetY = 0,
+            transformMatrix;
         if (el.nodeName === 'linearGradient' || el.nodeName === 'LINEARGRADIENT') {
           type = 'linear';
+          coords = getLinearCoords(el);
         }
         else {
           type = 'radial';
-        }
-
-        if (type === 'linear') {
-          coords = getLinearCoords(el);
-        }
-        else if (type === 'radial') {
           coords = getRadialCoords(el);
         }
 
         for (i = colorStopEls.length; i--; ) {
-          colorStops.push(getColorStop(colorStopEls[i]));
+          colorStops.push(getColorStop(colorStopEls[i], multiplier));
         }
 
-        ellipseMatrix = _convertPercentUnitsToValues(instance, coords, gradientUnits);
+        transformMatrix = fabric.parseTransformAttribute(gradientTransform);
+
+        __convertPercentUnitsToValues(instance, coords, svgOptions, gradientUnits);
+
+        if (gradientUnits === 'pixels') {
+          offsetX = -instance.left;
+          offsetY = -instance.top;
+        }
 
         var gradient = new fabric.Gradient({
+          id: el.getAttribute('id'),
           type: type,
           coords: coords,
           colorStops: colorStops,
-          offsetX: -instance.left,
-          offsetY: -instance.top
+          gradientUnits: gradientUnits,
+          gradientTransform: transformMatrix,
+          offsetX: offsetX,
+          offsetY: offsetY,
         });
-
-        if (gradientTransform || ellipseMatrix !== '') {
-          gradient.gradientTransform = fabric.parseTransformAttribute((gradientTransform || '') + ellipseMatrix);
-        }
 
         return gradient;
       },
@@ -17539,14 +17697,20 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
 
       /**
        * Returns {@link fabric.Gradient} instance from its object representation
+       * this function is uniquely used by Object.setGradient and is deprecated with it.
        * @static
+       * @deprecated since 3.4.0
        * @memberOf fabric.Gradient
        * @param {Object} obj
        * @param {Object} [options] Options object
        */
       forObject: function(obj, options) {
         options || (options = { });
-        _convertPercentUnitsToValues(obj, options.coords, 'userSpaceOnUse');
+        __convertPercentUnitsToValues(obj, options.coords, options.gradientUnits, {
+          // those values are to avoid errors. this function is uniquely used by
+          viewBoxWidth: 100,
+          viewBoxHeight: 100,
+        });
         return new fabric.Gradient(options);
       }
     });
@@ -17554,47 +17718,33 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
     /**
      * @private
      */
-    function _convertPercentUnitsToValues(object, options, gradientUnits) {
-      var propValue, addFactor = 0, multFactor = 1, ellipseMatrix = '';
-      for (var prop in options) {
-        if (options[prop] === 'Infinity') {
-          options[prop] = 1;
+    function __convertPercentUnitsToValues(instance, options, svgOptions, gradientUnits) {
+      var propValue, finalValue;
+      Object.keys(options).forEach(function(prop) {
+        propValue = options[prop];
+        if (propValue === 'Infinity') {
+          finalValue = 1;
         }
-        else if (options[prop] === '-Infinity') {
-          options[prop] = 0;
-        }
-        propValue = parseFloat(options[prop], 10);
-        if (typeof options[prop] === 'string' && /^(\d+\.\d+)%|(\d+)%$/.test(options[prop])) {
-          multFactor = 0.01;
+        else if (propValue === '-Infinity') {
+          finalValue = 0;
         }
         else {
-          multFactor = 1;
+          finalValue = parseFloat(options[prop], 10);
+          if (typeof propValue === 'string' && /^(\d+\.\d+)%|(\d+)%$/.test(propValue)) {
+            finalValue *= 0.01;
+            if (gradientUnits === 'pixels') {
+              // then we need to fix those percentages here in svg parsing
+              if (prop === 'x1' || prop === 'x2' || prop === 'r2') {
+                finalValue *= svgOptions.viewBoxWidth || svgOptions.width;
+              }
+              if (prop === 'y1' || prop === 'y2') {
+                finalValue *= svgOptions.viewBoxHeight || svgOptions.height;
+              }
+            }
+          }
         }
-        if (prop === 'x1' || prop === 'x2' || prop === 'r2') {
-          multFactor *= gradientUnits === 'objectBoundingBox' ? object.width : 1;
-          addFactor = gradientUnits === 'objectBoundingBox' ? object.left || 0 : 0;
-        }
-        else if (prop === 'y1' || prop === 'y2') {
-          multFactor *= gradientUnits === 'objectBoundingBox' ? object.height : 1;
-          addFactor = gradientUnits === 'objectBoundingBox' ? object.top || 0 : 0;
-        }
-        options[prop] = propValue * multFactor + addFactor;
-      }
-      if (object.type === 'ellipse' &&
-          options.r2 !== null &&
-          gradientUnits === 'objectBoundingBox' &&
-          object.rx !== object.ry) {
-
-        var scaleFactor = object.ry / object.rx;
-        ellipseMatrix = ' scale(1, ' + scaleFactor + ')';
-        if (options.y1) {
-          options.y1 /= scaleFactor;
-        }
-        if (options.y2) {
-          options.y2 /= scaleFactor;
-        }
-      }
-      return ellipseMatrix;
+        options[prop] = finalValue;
+      });
     }
   })();
 
@@ -17804,7 +17954,7 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
 
     'use strict';
 
-    var //fabric = global.fabric || (global.fabric = { }),
+    var fabric = global.fabric || (global.fabric = { }),
         toFixed = fabric.util.toFixed;
 
     if (fabric.Shadow) {
@@ -17860,6 +18010,15 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
        * @default
        */
       includeDefaultValues: true,
+
+      /**
+       * When `false`, the shadow will scale with the object.
+       * When `true`, the shadow's offsetX, offsetY, and blur will not be affected by the object's scale.
+       * default to false
+       * @type Boolean
+       * @default
+       */
+      nonScaling: false,
 
       /**
        * Constructor
@@ -17960,12 +18119,13 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
             blur: this.blur,
             offsetX: this.offsetX,
             offsetY: this.offsetY,
-            affectStroke: this.affectStroke
+            affectStroke: this.affectStroke,
+            nonScaling: this.nonScaling
           };
         }
         var obj = { }, proto = fabric.Shadow.prototype;
 
-        ['color', 'blur', 'offsetX', 'offsetY', 'affectStroke'].forEach(function(prop) {
+        ['color', 'blur', 'offsetX', 'offsetY', 'affectStroke', 'nonScaling'].forEach(function(prop) {
           if (this[prop] !== proto[prop]) {
             obj[prop] = this[prop];
           }
@@ -18003,6 +18163,8 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
         toFixed = fabric.util.toFixed,
         transformPoint = fabric.util.transformPoint,
         invertTransform = fabric.util.invertTransform,
+        getNodeCanvas = fabric.util.getNodeCanvas,
+        createCanvasElement = fabric.util.createCanvasElement,
 
         CANVAS_INIT_ERROR = new Error('Could not initialize `canvas` element');
 
@@ -18048,6 +18210,9 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
        * <b>Backwards incompatibility note:</b> The "backgroundImageOpacity"
        * and "backgroundImageStretch" properties are deprecated since 1.3.9.
        * Use {@link fabric.Image#opacity}, {@link fabric.Image#width} and {@link fabric.Image#height}.
+       * since 2.4.0 image caching is active, please when putting an image as background, add to the
+       * canvas property a reference to the canvas it is on. Otherwise the image cannot detect the zoom
+       * vale. As an alternative you can disable image objectCaching
        * @type fabric.Image
        * @default
        */
@@ -18068,6 +18233,9 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
        * <b>Backwards incompatibility note:</b> The "overlayImageLeft"
        * and "overlayImageTop" properties are deprecated since 1.3.9.
        * Use {@link fabric.Image#left} and {@link fabric.Image#top}.
+       * since 2.4.0 image caching is active, please when putting an image as overlay, add to the
+       * canvas property a reference to the canvas it is on. Otherwise the image cannot detect the zoom
+       * vale. As an alternative you can disable image objectCaching
        * @type fabric.Image
        * @default
        */
@@ -18075,6 +18243,7 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
 
       /**
        * Indicates whether toObject/toDatalessObject should include default values
+       * if set to false, takes precedence over the object value.
        * @type Boolean
        * @default
        */
@@ -18195,6 +18364,15 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
       skipOffscreen: true,
 
       /**
+       * a fabricObject that, without stroke define a clipping area with their shape. filled in black
+       * the clipPath object gets used when the canvas has rendered, and the context is placed in the
+       * top left corner of the canvas.
+       * clipPath will clip away controls, if you do not want this to happen use controlsAboveOverlay = true
+       * @type fabric.Object
+       */
+      clipPath: undefined,
+
+      /**
        * @private
        * @param {HTMLElement | String} el &lt;canvas> element to initialize instance on
        * @param {Object} [options] Options object
@@ -18247,11 +18425,19 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
         if (!this._isRetinaScaling()) {
           return;
         }
-        this.lowerCanvasEl.setAttribute('width', this.width * fabric.devicePixelRatio);
-        this.lowerCanvasEl.setAttribute('height', this.height * fabric.devicePixelRatio);
-
-        this.contextContainer.scale(fabric.devicePixelRatio, fabric.devicePixelRatio);
+        var scaleRatio = fabric.devicePixelRatio;
+        this.__initRetinaScaling(scaleRatio, this.lowerCanvasEl, this.contextContainer);
+        if (this.upperCanvasEl) {
+          this.__initRetinaScaling(scaleRatio, this.upperCanvasEl, this.contextTop);
+        }
       },
+
+      __initRetinaScaling: function(scaleRatio, canvas, context) {
+        canvas.setAttribute('width', this.width * scaleRatio);
+        canvas.setAttribute('height', this.height * scaleRatio);
+        context.scale(scaleRatio, scaleRatio);
+      },
+
 
       /**
        * Calculates canvas element offset relative to the document
@@ -18362,6 +18548,7 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
        *   crossOrigin: 'anonymous'
        * });
        */
+      // TODO: fix stretched examples
       setBackgroundImage: function (image, callback, options) {
         return this.__setBgOverlayImage('backgroundImage', image, callback, options);
       },
@@ -18439,13 +18626,18 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
       __setBgOverlayImage: function(property, image, callback, options) {
         if (typeof image === 'string') {
           fabric.util.loadImage(image, function(img) {
-            img && (this[property] = new fabric.Image(img, options));
+            if (img) {
+              var instance = new fabric.Image(img, options);
+              this[property] = instance;
+              instance.canvas = this;
+            }
             callback && callback(img);
           }, this, options && options.crossOrigin);
         }
         else {
           options && image.setOptions(options);
           this[property] = image;
+          image && (image.canvas = this);
           callback && callback(image);
         }
 
@@ -18470,7 +18662,7 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
        * @private
        */
       _createCanvasElement: function() {
-        var element = fabric.util.createCanvasElement();
+        var element = createCanvasElement();
         if (!element) {
           throw CANVAS_INIT_ERROR;
         }
@@ -18488,20 +18680,21 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
        * @param {Object} [options] Options object
        */
       _initOptions: function (options) {
+        var lowerCanvasEl = this.lowerCanvasEl;
         this._setOptions(options);
 
-        this.width = this.width || parseInt(this.lowerCanvasEl.width, 10) || 0;
-        this.height = this.height || parseInt(this.lowerCanvasEl.height, 10) || 0;
+        this.width = this.width || parseInt(lowerCanvasEl.width, 10) || 0;
+        this.height = this.height || parseInt(lowerCanvasEl.height, 10) || 0;
 
         if (!this.lowerCanvasEl.style) {
           return;
         }
 
-        this.lowerCanvasEl.width = this.width;
-        this.lowerCanvasEl.height = this.height;
+        lowerCanvasEl.width = this.width;
+        lowerCanvasEl.height = this.height;
 
-        this.lowerCanvasEl.style.width = this.width + 'px';
-        this.lowerCanvasEl.style.height = this.height + 'px';
+        lowerCanvasEl.style.width = this.width + 'px';
+        lowerCanvasEl.style.height = this.height + 'px';
 
         this.viewportTransform = this.viewportTransform.slice();
       },
@@ -18889,11 +19082,11 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
        * @chainable
        */
       renderCanvas: function(ctx, objects) {
-        var v = this.viewportTransform;
+        var v = this.viewportTransform, path = this.clipPath;
         this.cancelRequestedRender();
         this.calcViewportBoundaries();
         this.clearContext(ctx);
-        this.fire('before:render');
+        this.fire('before:render', { ctx: ctx, });
         if (this.clipTo) {
           fabric.util.clipContext(this, ctx);
         }
@@ -18910,11 +19103,36 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
         if (this.clipTo) {
           ctx.restore();
         }
+        if (path) {
+          path.canvas = this;
+          // needed to setup a couple of variables
+          path.shouldCache();
+          path._transformDone = true;
+          path.renderCache({ forClipping: true });
+          this.drawClipPathOnCanvas(ctx);
+        }
         this._renderOverlay(ctx);
         if (this.controlsAboveOverlay && this.interactive) {
           this.drawControls(ctx);
         }
-        this.fire('after:render');
+        this.fire('after:render', { ctx: ctx, });
+      },
+
+      /**
+       * Paint the cached clipPath on the lowerCanvasEl
+       * @param {CanvasRenderingContext2D} ctx Context to render on
+       */
+      drawClipPathOnCanvas: function(ctx) {
+        var v = this.viewportTransform, path = this.clipPath;
+        ctx.save();
+        ctx.transform(v[0], v[1], v[2], v[3], v[4], v[5]);
+        // DEBUG: uncomment this line, comment the following
+        // ctx.globalAlpha = 0.4;
+        ctx.globalCompositeOperation = 'destination-in';
+        path.transform(ctx);
+        ctx.scale(1 / path.zoomX, 1 / path.zoomY);
+        ctx.drawImage(path._cacheCanvas, -path.cacheTranslationX, -path.cacheTranslationY);
+        ctx.restore();
       },
 
       /**
@@ -18935,27 +19153,38 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
        * @param {string} property 'background' or 'overlay'
        */
       _renderBackgroundOrOverlay: function(ctx, property) {
-        var object = this[property + 'Color'], v;
-        if (object) {
-          ctx.fillStyle = object.toLive
-            ? object.toLive(ctx, this)
-            : object;
-
-          ctx.fillRect(
-            object.offsetX || 0,
-            object.offsetY || 0,
-            this.width,
-            this.height);
+        var fill = this[property + 'Color'], object = this[property + 'Image'],
+            v = this.viewportTransform, needsVpt = this[property + 'Vpt'];
+        if (!fill && !object) {
+          return;
         }
-        object = this[property + 'Image'];
+        if (fill) {
+          ctx.save();
+          ctx.beginPath();
+          ctx.moveTo(0, 0);
+          ctx.lineTo(this.width, 0);
+          ctx.lineTo(this.width, this.height);
+          ctx.lineTo(0, this.height);
+          ctx.closePath();
+          ctx.fillStyle = fill.toLive
+            ? fill.toLive(ctx, this)
+            : fill;
+          if (needsVpt) {
+            ctx.transform(v[0], v[1], v[2], v[3], v[4], v[5]);
+          }
+          ctx.transform(1, 0, 0, 1, fill.offsetX || 0, fill.offsetY || 0);
+          var m = fill.gradientTransform || fill.patternTransform;
+          m && ctx.transform(m[0], m[1], m[2], m[3], m[4], m[5]);
+          ctx.fill();
+          ctx.restore();
+        }
         if (object) {
-          if (this[property + 'Vpt']) {
-            v = this.viewportTransform;
-            ctx.save();
+          ctx.save();
+          if (needsVpt) {
             ctx.transform(v[0], v[1], v[2], v[3], v[4], v[5]);
           }
           object.render(ctx);
-          this[property + 'Vpt'] && ctx.restore();
+          ctx.restore();
         }
       },
 
@@ -19111,11 +19340,13 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
        */
       _toObjectMethod: function (methodName, propertiesToInclude) {
 
-        var data = {
+        var clipPath = this.clipPath, data = {
           version: fabric.version,
-          objects: this._toObjects(methodName, propertiesToInclude)
+          objects: this._toObjects(methodName, propertiesToInclude),
         };
-
+        if (clipPath) {
+          data.clipPath = this._toObject(this.clipPath, methodName, propertiesToInclude);
+        }
         extend(data, this.__serializeBgOverlay(methodName, propertiesToInclude));
 
         fabric.util.populateWithProperties(this, data, propertiesToInclude);
@@ -19227,18 +19458,21 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
        */
       toSVG: function(options, reviver) {
         options || (options = { });
-
+        options.reviver = reviver;
         var markup = [];
 
         this._setSVGPreamble(markup, options);
         this._setSVGHeader(markup, options);
-
-        this._setSVGBgOverlayColor(markup, 'backgroundColor');
+        if (this.clipPath) {
+          markup.push('<g clip-path="url(#' + this.clipPath.clipPathId + ')" >\n');
+        }
+        this._setSVGBgOverlayColor(markup, 'background');
         this._setSVGBgOverlayImage(markup, 'backgroundImage', reviver);
-
         this._setSVGObjects(markup, reviver);
-
-        this._setSVGBgOverlayColor(markup, 'overlayColor');
+        if (this.clipPath) {
+          markup.push('</g>\n');
+        }
+        this._setSVGBgOverlayColor(markup, 'overlay');
         this._setSVGBgOverlayImage(markup, 'overlayImage', reviver);
 
         markup.push('</svg>');
@@ -19300,8 +19534,20 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
           '<defs>\n',
           this.createSVGFontFacesMarkup(),
           this.createSVGRefElementsMarkup(),
+          this.createSVGClipPathMarkup(options),
           '</defs>\n'
         );
+      },
+
+      createSVGClipPathMarkup: function(options) {
+        var clipPath = this.clipPath;
+        if (clipPath) {
+          clipPath.clipPathId = 'CLIPPATH_' + fabric.Object.__uid++;
+          return  '<clipPath id="' + clipPath.clipPathId + '" >\n' +
+            this.clipPath.toClipPathSVG(options.reviver) +
+            '</clipPath>\n';
+        }
+        return '';
       },
 
       /**
@@ -19310,10 +19556,18 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
        */
       createSVGRefElementsMarkup: function() {
         var _this = this,
-            markup = ['backgroundColor', 'overlayColor'].map(function(prop) {
-              var fill = _this[prop];
+            markup = ['background', 'overlay'].map(function(prop) {
+              var fill = _this[prop + 'Color'];
               if (fill && fill.toLive) {
-                return fill.toSVG(_this, false);
+                var shouldTransform = _this[prop + 'Vpt'], vpt = _this.viewportTransform,
+                    object = {
+                      width: _this.width / (shouldTransform ? vpt[0] : 1),
+                      height: _this.height / (shouldTransform ? vpt[3] : 1)
+                    };
+                return fill.toSVG(
+                  object,
+                  { additionalTransform: shouldTransform ? fabric.util.matrixToSVG(vpt) : '' }
+                );
               }
             });
         return markup.join('');
@@ -19410,16 +19664,18 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
        * @private
        */
       _setSVGBgOverlayColor: function(markup, property) {
-        var filler = this[property], vpt = this.viewportTransform, finalWidth = this.width / vpt[0],
-            finalHeight = this.height / vpt[3];
+        var filler = this[property + 'Color'], vpt = this.viewportTransform, finalWidth = this.width,
+            finalHeight = this.height;
         if (!filler) {
           return;
         }
         if (filler.toLive) {
-          var repeat = filler.repeat;
+          var repeat = filler.repeat, iVpt = fabric.util.invertTransform(vpt), shouldInvert = this[property + 'Vpt'],
+              additionalTransform = shouldInvert ? fabric.util.matrixToSVG(iVpt) : '';
           markup.push(
-            '<rect transform="translate(', finalWidth / 2, ',', finalHeight / 2, ')"',
-            ' x="', filler.offsetX - finalWidth / 2, '" y="', filler.offsetY - finalHeight / 2, '" ',
+            '<rect transform="' + additionalTransform + ' translate(', finalWidth / 2, ',', finalHeight / 2, ')"',
+            ' x="', filler.offsetX - finalWidth / 2,
+            '" y="', filler.offsetY - finalHeight / 2, '" ',
             'width="',
             (repeat === 'repeat-y' || repeat === 'no-repeat'
               ? filler.source.width
@@ -19435,7 +19691,7 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
         else {
           markup.push(
             '<rect x="0" y="0" width="100%" height="100%" ',
-            'fill="', this[property], '"',
+            'fill="', filler, '"',
             '></rect>\n'
           );
         }
@@ -19717,12 +19973,12 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
        * (either those of HTMLCanvasElement itself, or rendering context)
        *
        * @param {String} methodName Method to check support for;
-       *                            Could be one of "getImageData", "toDataURL", "toDataURLWithQuality" or "setLineDash"
+       *                            Could be one of "setLineDash"
        * @return {Boolean | null} `true` if method is supported (or at least exists),
        *                          `null` if canvas element or context can not be initialized
        */
       supports: function (methodName) {
-        var el = fabric.util.createCanvasElement();
+        var el = createCanvasElement();
 
         if (!el || !el.getContext) {
           return null;
@@ -19735,22 +19991,8 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
 
         switch (methodName) {
 
-          case 'getImageData':
-            return typeof ctx.getImageData !== 'undefined';
-
           case 'setLineDash':
             return typeof ctx.setLineDash !== 'undefined';
-
-          case 'toDataURL':
-            return typeof el.toDataURL !== 'undefined';
-
-          case 'toDataURLWithQuality':
-            try {
-              el.toDataURL('image/jpeg', 0);
-              return true;
-            }
-            catch (e) { }
-            return false;
 
           default:
             return null;
@@ -19777,11 +20019,11 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
 
     if (fabric.isLikelyNode) {
       fabric.StaticCanvas.prototype.createPNGStream = function() {
-        var impl = fabric.util.getNodeCanvas(this.lowerCanvasEl);
+        var impl = getNodeCanvas(this.lowerCanvasEl);
         return impl && impl.createPNGStream();
       };
       fabric.StaticCanvas.prototype.createJPEGStream = function(opts) {
-        var impl = fabric.util.getNodeCanvas(this.lowerCanvasEl);
+        var impl = getNodeCanvas(this.lowerCanvasEl);
         return impl && impl.createJPEGStream(opts);
       };
     }
@@ -19893,13 +20135,23 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
         return;
       }
 
-      var ctx = this.canvas.contextTop,
-          zoom = this.canvas.getZoom();
+      var canvas = this.canvas,
+          shadow = this.shadow,
+          ctx = canvas.contextTop,
+          zoom = canvas.getZoom();
+      if (canvas && canvas._isRetinaScaling()) {
+        zoom *= fabric.devicePixelRatio;
+      }
 
-      ctx.shadowColor = this.shadow.color;
-      ctx.shadowBlur = this.shadow.blur * zoom;
-      ctx.shadowOffsetX = this.shadow.offsetX * zoom;
-      ctx.shadowOffsetY = this.shadow.offsetY * zoom;
+      ctx.shadowColor = shadow.color;
+      ctx.shadowBlur = shadow.blur * zoom;
+      ctx.shadowOffsetX = shadow.offsetX * zoom;
+      ctx.shadowOffsetY = shadow.offsetY * zoom;
+    },
+
+    needsFullRender: function() {
+      var color = new fabric.Color(this.color);
+      return color.getAlpha() < 1 || !!this.shadow;
     },
 
     /**
@@ -19916,13 +20168,19 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
 
 
   (function() {
-
     /**
      * PencilBrush class
      * @class fabric.PencilBrush
      * @extends fabric.BaseBrush
      */
     fabric.PencilBrush = fabric.util.createClass(fabric.BaseBrush, /** @lends fabric.PencilBrush.prototype */ {
+
+      /**
+       * Discard points that are less than `decimate` pixel distant from each other
+       * @type Number
+       * @default 0.4
+       */
+      decimate: 0.4,
 
       /**
        * Constructor
@@ -19948,7 +20206,10 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
        * Inovoked on mouse down
        * @param {Object} pointer
        */
-      onMouseDown: function(pointer) {
+      onMouseDown: function(pointer, options) {
+        if (!this.canvas._isMainEvent(options.e)) {
+          return;
+        }
         this._prepareForDrawing(pointer);
         // capture coordinates immediately
         // this allows to draw dots (when movement never occurs)
@@ -19960,9 +20221,12 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
        * Inovoked on mouse move
        * @param {Object} pointer
        */
-      onMouseMove: function(pointer) {
+      onMouseMove: function(pointer, options) {
+        if (!this.canvas._isMainEvent(options.e)) {
+          return;
+        }
         if (this._captureDrawingPath(pointer) && this._points.length > 1) {
-          if (this.needsFullRender) {
+          if (this.needsFullRender()) {
             // redraw curve
             // clear top canvas
             this.canvas.clearContext(this.canvas.contextTop);
@@ -19986,9 +20250,13 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
       /**
        * Invoked on mouse up
        */
-      onMouseUp: function() {
+      onMouseUp: function(options) {
+        if (!this.canvas._isMainEvent(options.e)) {
+          return true;
+        }
         this.oldEnd = undefined;
         this._finalizeAndAddPath();
+        return false;
       },
 
       /**
@@ -20021,10 +20289,8 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
        * @private
        */
       _reset: function() {
-        this._points.length = 0;
+        this._points = [];
         this._setBrushStyles();
-        var color = new fabric.Color(this.color);
-        this.needsFullRender = (color.getAlpha() < 1);
         this._setShadow();
       },
 
@@ -20085,7 +20351,7 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
         var path = [], i, width = this.width / 1000,
             p1 = new fabric.Point(points[0].x, points[0].y),
             p2 = new fabric.Point(points[1].x, points[1].y),
-            len = points.length, multSignX = 1, multSignY = 1, manyPoints = len > 2;
+            len = points.length, multSignX = 1, multSignY = 0, manyPoints = len > 2;
 
         if (manyPoints) {
           multSignX = points[2].x < p2.x ? -1 : points[2].x === p2.x ? 0 : 1;
@@ -20128,16 +20394,35 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
           strokeLineJoin: this.strokeLineJoin,
           strokeDashArray: this.strokeDashArray,
         });
-        var position = new fabric.Point(path.left + path.width / 2, path.top + path.height / 2);
-        position = path.translateToGivenOrigin(position, 'center', 'center', path.originX, path.originY);
-        path.top = position.y;
-        path.left = position.x;
         if (this.shadow) {
           this.shadow.affectStroke = true;
           path.setShadow(this.shadow);
         }
 
         return path;
+      },
+
+      /**
+       * Decimate poins array with the decimate value
+       */
+      decimatePoints: function(points, distance) {
+        if (points.length <= 2) {
+          return points;
+        }
+        var zoom = this.canvas.getZoom(), adjustedDistance = Math.pow(distance / zoom, 2),
+            i, l = points.length - 1, lastPoint = points[0], newPoints = [lastPoint],
+            cDistance;
+        for (i = 1; i < l; i++) {
+          cDistance = Math.pow(lastPoint.x - points[i].x, 2) + Math.pow(lastPoint.y - points[i].y, 2);
+          if (cDistance >= adjustedDistance) {
+            lastPoint = points[i];
+            newPoints.push(lastPoint);
+          }
+        }
+        if (newPoints.length === 1) {
+          newPoints.push(new fabric.Point(newPoints[0].x, newPoints[0].y));
+        }
+        return newPoints;
       },
 
       /**
@@ -20148,7 +20433,9 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
       _finalizeAndAddPath: function() {
         var ctx = this.canvas.contextTop;
         ctx.closePath();
-
+        if (this.decimate) {
+          this._points = this.decimatePoints(this._points, this.decimate);
+        }
         var pathData = this.convertPointsToSVGPath(this._points).join('');
         if (pathData === 'M 0 0 Q 0 0 0 0 L 0 0') {
           // do not create 0 width/height paths, as they are
@@ -20162,7 +20449,7 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
         var path = this.createPath(pathData);
         this.canvas.clearContext(this.canvas.contextTop);
         this.canvas.add(path);
-        this.canvas.renderAll();
+        this.canvas.requestRenderAll();
         path.setCoords();
         this._resetShadow();
 
@@ -20205,13 +20492,16 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
       var point = this.addPoint(pointer),
           ctx = this.canvas.contextTop;
       this._saveAndTransform(ctx);
+      this.dot(ctx, point);
+      ctx.restore();
+    },
+
+    dot: function(ctx, point) {
       ctx.fillStyle = point.fill;
       ctx.beginPath();
       ctx.arc(point.x, point.y, point.radius, 0, Math.PI * 2, false);
       ctx.closePath();
       ctx.fill();
-
-      ctx.restore();
     },
 
     /**
@@ -20230,15 +20520,10 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
      */
     _render: function() {
       var ctx  = this.canvas.contextTop, i, len,
-          points = this.points, point;
+          points = this.points;
       this._saveAndTransform(ctx);
       for (i = 0, len = points.length; i < len; i++) {
-        point = points[i];
-        ctx.fillStyle = point.fill;
-        ctx.beginPath();
-        ctx.arc(point.x, point.y, point.radius, 0, Math.PI * 2, false);
-        ctx.closePath();
-        ctx.fill();
+        this.dot(ctx, points[i]);
       }
       ctx.restore();
     },
@@ -20248,7 +20533,14 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
      * @param {Object} pointer
      */
     onMouseMove: function(pointer) {
-      this.drawDot(pointer);
+      if (this.needsFullRender()) {
+        this.canvas.clearContext(this.canvas.contextTop);
+        this.addPoint(pointer);
+        this._render();
+      }
+      else {
+        this.drawDot(pointer);
+      }
     },
 
     /**
@@ -20607,38 +20899,40 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
      * @tutorial {@link http://fabricjs.com/fabric-intro-part-1#canvas}
      * @see {@link fabric.Canvas#initialize} for constructor definition
      *
-     * @fires object:modified
-     * @fires object:rotated
-     * @fires object:scaled
-     * @fires object:moved
-     * @fires object:skewed
-     * @fires object:rotating
-     * @fires object:scaling
-     * @fires object:moving
-     * @fires object:skewing
+     * @fires object:modified at the end of a transform or any change when statefull is true
+     * @fires object:rotated at the end of a rotation transform
+     * @fires object:scaled at the end of a scale transform
+     * @fires object:moved at the end of translation transform
+     * @fires object:skewed at the end of a skew transform
+     * @fires object:rotating while an object is being rotated from the control
+     * @fires object:scaling while an object is being scaled by controls
+     * @fires object:moving while an object is being dragged
+     * @fires object:skewing while an object is being skewed from the controls
      * @fires object:selected this event is deprecated. use selection:created
      *
-     * @fires before:transform
+     * @fires before:transform before a transform is is started
      * @fires before:selection:cleared
      * @fires selection:cleared
      * @fires selection:updated
      * @fires selection:created
      *
-     * @fires path:created
+     * @fires path:created after a drawing operation ends and the path is added
      * @fires mouse:down
      * @fires mouse:move
      * @fires mouse:up
-     * @fires mouse:down:before
-     * @fires mouse:move:before
-     * @fires mouse:up:before
+     * @fires mouse:down:before  on mouse down, before the inner fabric logic runs
+     * @fires mouse:move:before on mouse move, before the inner fabric logic runs
+     * @fires mouse:up:before on mouse up, before the inner fabric logic runs
      * @fires mouse:over
      * @fires mouse:out
-     * @fires mouse:dblclick
+     * @fires mouse:dblclick whenever a native dbl click event fires on the canvas.
      *
      * @fires dragover
      * @fires dragenter
      * @fires dragleave
      * @fires drop
+     * @fires after:render at the end of the render process, receives the context in the callback
+     * @fires before:render at start the render process, receives the context in the callback
      *
      */
     fabric.Canvas = fabric.util.createClass(fabric.StaticCanvas, /** @lends fabric.Canvas.prototype */ {
@@ -20922,6 +21216,26 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
       fireMiddleClick: false,
 
       /**
+       * Keep track of the subTargets for Mouse Events
+       * @type fabric.Object[]
+       */
+      targets: [],
+
+      /**
+       * Keep track of the hovered target
+       * @type fabric.Object
+       * @private
+       */
+      _hoveredTarget: null,
+
+      /**
+       * hold the list of nested targets hovered
+       * @type fabric.Object[]
+       * @private
+       */
+      _hoveredTargets: [],
+
+      /**
        * @private
        */
       _initInteractive: function() {
@@ -20989,13 +21303,17 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
       },
 
       renderTopLayer: function(ctx) {
+        ctx.save();
         if (this.isDrawingMode && this._isCurrentlyDrawing) {
           this.freeDrawingBrush && this.freeDrawingBrush._render();
+          this.contextTopDirty = true;
         }
         // we render the top context - last object
         if (this.selection && this._groupSelector) {
           this._drawSelection(ctx);
+          this.contextTopDirty = true;
         }
+        ctx.restore();
       },
 
       /**
@@ -21009,7 +21327,6 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
         this.clearContext(ctx);
         this.renderTopLayer(ctx);
         this.fire('after:render');
-        this.contextTopDirty = true;
         return this;
       },
 
@@ -21097,13 +21414,15 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
        * @return {Boolean}
        */
       isTargetTransparent: function (target, x, y) {
-        if (target.shouldCache() && target._cacheCanvas) {
+        // in case the target is the activeObject, we cannot execute this optimization
+        // because we need to draw controls too.
+        if (target.shouldCache() && target._cacheCanvas && target !== this._activeObject) {
           var normalizedPointer = this._normalizePointer(target, {x: x, y: y}),
-              targetRelativeX = target.cacheTranslationX + (normalizedPointer.x * target.zoomX),
-              targetRelativeY = target.cacheTranslationY + (normalizedPointer.y * target.zoomY);
+              targetRelativeX = Math.max(target.cacheTranslationX + (normalizedPointer.x * target.zoomX), 0),
+              targetRelativeY = Math.max(target.cacheTranslationY + (normalizedPointer.y * target.zoomY), 0);
 
           var isTransparent = fabric.util.isTransparent(
-            target._cacheContext, targetRelativeX, targetRelativeY, this.targetFindTolerance);
+            target._cacheContext, Math.round(targetRelativeX), Math.round(targetRelativeY), this.targetFindTolerance);
 
           return isTransparent;
         }
@@ -21233,9 +21552,13 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
 
       /**
        * @private
+       * @param {Boolean} alreadySelected true if target is already selected
+       * @param {String} corner a string representing the corner ml, mr, tl ...
+       * @param {Event} e Event object
+       * @param {fabric.Object} [target] inserted back to help overriding. Unused
        */
-      _getActionFromCorner: function(target, corner, e) {
-        if (!corner) {
+      _getActionFromCorner: function(alreadySelected, corner, e /* target */) {
+        if (!corner || !alreadySelected) {
           return 'drag';
         }
 
@@ -21258,14 +21581,14 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
        * @param {Event} e Event object
        * @param {fabric.Object} target
        */
-      _setupCurrentTransform: function (e, target) {
+      _setupCurrentTransform: function (e, target, alreadySelected) {
         if (!target) {
           return;
         }
 
         var pointer = this.getPointer(e),
             corner = target._findTargetCorner(this.getPointer(e, true)),
-            action = this._getActionFromCorner(target, corner, e),
+            action = this._getActionFromCorner(alreadySelected, corner, e, target),
             origin = this._getOriginFromCorner(target, corner);
 
         this._currentTransform = {
@@ -21482,12 +21805,22 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
        */
       _setObjectScale: function(localMouse, transform, lockScalingX, lockScalingY, by, lockScalingFlip, _dim) {
         var target = transform.target, forbidScalingX = false, forbidScalingY = false, scaled = false,
-            changeX, changeY, scaleX, scaleY;
+            scaleX = localMouse.x * target.scaleX / _dim.x,
+            scaleY = localMouse.y * target.scaleY / _dim.y,
+            changeX = target.scaleX !== scaleX,
+            changeY = target.scaleY !== scaleY;
 
-        scaleX = localMouse.x * target.scaleX / _dim.x;
-        scaleY = localMouse.y * target.scaleY / _dim.y;
-        changeX = target.scaleX !== scaleX;
-        changeY = target.scaleY !== scaleY;
+        transform.newScaleX = scaleX;
+        transform.newScaleY = scaleY;
+        if (fabric.Textbox && by === 'x' && target instanceof fabric.Textbox) {
+          var w = target.width * (localMouse.x / _dim.x);
+          if (w >= target.getMinWidth()) {
+            scaled = w !== target.width;
+            target.set('width', w);
+            return scaled;
+          }
+          return false;
+        }
 
         if (lockScalingFlip && scaleX <= 0 && scaleX < target.scaleX) {
           forbidScalingX = true;
@@ -21507,13 +21840,11 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
           forbidScalingY || lockScalingY || (target.set('scaleY', scaleY) && (scaled = scaled || changeY));
         }
         else if (by === 'x' && !target.get('lockUniScaling')) {
-          forbidScalingX || lockScalingX || (target.set('scaleX', scaleX) && (scaled = scaled || changeX));
+          forbidScalingX || lockScalingX || (target.set('scaleX', scaleX) && (scaled = changeX));
         }
         else if (by === 'y' && !target.get('lockUniScaling')) {
-          forbidScalingY || lockScalingY || (target.set('scaleY', scaleY) && (scaled = scaled || changeY));
+          forbidScalingY || lockScalingY || (target.set('scaleY', scaleY) && (scaled = changeY));
         }
-        transform.newScaleX = scaleX;
-        transform.newScaleY = scaleY;
         forbidScalingX || forbidScalingY || this._flipObject(transform, by);
         return scaled;
       },
@@ -21528,15 +21859,15 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
             lastDist = _dim.y * transform.original.scaleY / target.scaleY +
                        _dim.x * transform.original.scaleX / target.scaleX,
             scaled, signX = localMouse.x < 0 ? -1 : 1,
-            signY = localMouse.y < 0 ? -1 : 1;
+            signY = localMouse.y < 0 ? -1 : 1, newScaleX, newScaleY;
 
         // We use transform.scaleX/Y instead of target.scaleX/Y
         // because the object may have a min scale and we'll loose the proportions
-        transform.newScaleX = signX * Math.abs(transform.original.scaleX * dist / lastDist);
-        transform.newScaleY = signY * Math.abs(transform.original.scaleY * dist / lastDist);
-        scaled = transform.newScaleX !== target.scaleX || transform.newScaleY !== target.scaleY;
-        target.set('scaleX', transform.newScaleX);
-        target.set('scaleY', transform.newScaleY);
+        newScaleX = signX * Math.abs(transform.original.scaleX * dist / lastDist);
+        newScaleY = signY * Math.abs(transform.original.scaleY * dist / lastDist);
+        scaled = newScaleX !== target.scaleX || newScaleY !== target.scaleY;
+        target.set('scaleX', newScaleX);
+        target.set('scaleY', newScaleY);
         return scaled;
       },
 
@@ -21738,8 +22069,11 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
       /**
        * Method that determines what object we are clicking on
        * the skipGroup parameter is for internal use, is needed for shift+click action
+       * 11/09/2018 TODO: would be cool if findTarget could discern between being a full target
+       * or the outside part of the corner.
        * @param {Event} e mouse event
        * @param {Boolean} skipGroup when true, activeGroup is skipped and only objects are traversed through
+       * @return {fabric.Object} the target found
        */
       findTarget: function (e, skipGroup) {
         if (this.skipTargetFind) {
@@ -21784,15 +22118,20 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
       },
 
       /**
+       * Checks point is inside the object.
+       * @param {Object} [pointer] x,y object of point coordinates we want to check.
+       * @param {fabric.Object} obj Object to test against
+       * @param {Object} [globalPointer] x,y object of point coordinates relative to canvas used to search per pixel target.
+       * @return {Boolean} true if point is contained within an area of given object
        * @private
        */
-      _checkTarget: function(pointer, obj) {
+      _checkTarget: function(pointer, obj, globalPointer) {
         if (obj &&
             obj.visible &&
             obj.evented &&
             this.containsPoint(null, obj, pointer)){
           if ((this.perPixelTargetFind || obj.perPixelTargetFind) && !obj.isEditing) {
-            var isTransparent = this.isTargetTransparent(obj, pointer.x, pointer.y);
+            var isTransparent = this.isTargetTransparent(obj, globalPointer.x, globalPointer.y);
             if (!isTransparent) {
               return true;
             }
@@ -21804,20 +22143,25 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
       },
 
       /**
+       * Function used to search inside objects an object that contains pointer in bounding box or that contains pointerOnCanvas when painted
+       * @param {Array} [objects] objects array to look into
+       * @param {Object} [pointer] x,y object of point coordinates we want to check.
+       * @return {fabric.Object} object that contains pointer
        * @private
        */
       _searchPossibleTargets: function(objects, pointer) {
-
         // Cache all targets where their bounding box contains point.
-        var target, i = objects.length, normalizedPointer, subTarget;
+        var target, i = objects.length, subTarget;
         // Do not check for currently grouped objects, since we check the parent group itself.
         // until we call this function specifically to search inside the activeGroup
         while (i--) {
-          if (this._checkTarget(pointer, objects[i])) {
+          var objToCheck = objects[i];
+          var pointerToUse = objToCheck.group && objToCheck.group.type !== 'activeSelection' ?
+            this._normalizePointer(objToCheck.group, pointer) : pointer;
+          if (this._checkTarget(pointerToUse, objToCheck, pointer)) {
             target = objects[i];
             if (target.subTargetCheck && target instanceof fabric.Group) {
-              normalizedPointer = this._normalizePointer(target, pointer);
-              subTarget = this._searchPossibleTargets(target._objects, normalizedPointer);
+              subTarget = this._searchPossibleTargets(target._objects, pointer);
               subTarget && this.targets.push(subTarget);
             }
             break;
@@ -21888,6 +22232,12 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
           pointer = this.restorePointerVpt(pointer);
         }
 
+        var retinaScaling = this.getRetinaScaling();
+        if (retinaScaling !== 1) {
+          pointer.x /= retinaScaling;
+          pointer.y /= retinaScaling;
+        }
+
         if (boundsWidth === 0 || boundsHeight === 0) {
           // If bounds are not available (i.e. not visible), do not apply scale.
           cssScale = { width: 1, height: 1 };
@@ -21910,22 +22260,24 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
        * @throws {CANVAS_INIT_ERROR} If canvas can not be initialized
        */
       _createUpperCanvas: function () {
-        var lowerCanvasClass = this.lowerCanvasEl.className.replace(/\s*lower-canvas\s*/, '');
+        var lowerCanvasClass = this.lowerCanvasEl.className.replace(/\s*lower-canvas\s*/, ''),
+            lowerCanvasEl = this.lowerCanvasEl, upperCanvasEl = this.upperCanvasEl;
 
         // there is no need to create a new upperCanvas element if we have already one.
-        if (this.upperCanvasEl) {
-          this.upperCanvasEl.className = '';
+        if (upperCanvasEl) {
+          upperCanvasEl.className = '';
         }
         else {
-          this.upperCanvasEl = this._createCanvasElement();
+          upperCanvasEl = this._createCanvasElement();
+          this.upperCanvasEl = upperCanvasEl;
         }
-        fabric.util.addClass(this.upperCanvasEl, 'upper-canvas ' + lowerCanvasClass);
+        fabric.util.addClass(upperCanvasEl, 'upper-canvas ' + lowerCanvasClass);
 
-        this.wrapperEl.appendChild(this.upperCanvasEl);
+        this.wrapperEl.appendChild(upperCanvasEl);
 
-        this._copyCanvasStyle(this.lowerCanvasEl, this.upperCanvasEl);
-        this._applyCanvasStyle(this.upperCanvasEl);
-        this.contextTop = this.upperCanvasEl.getContext('2d');
+        this._copyCanvasStyle(lowerCanvasEl, upperCanvasEl);
+        this._applyCanvasStyle(upperCanvasEl);
+        this.contextTop = upperCanvasEl.getContext('2d');
       },
 
       /**
@@ -21967,7 +22319,8 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
           height: height + 'px',
           left: 0,
           top: 0,
-          'touch-action': this.allowTouchScrolling ? 'manipulation' : 'none'
+          'touch-action': this.allowTouchScrolling ? 'manipulation' : 'none',
+          '-ms-touch-action': this.allowTouchScrolling ? 'manipulation' : 'none'
         });
         element.width = width;
         element.height = height;
@@ -22037,8 +22390,9 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
           this.fire('selection:cleared', { target: obj });
           obj.fire('deselected');
         }
-        if (this._hoveredTarget === obj) {
+        if (obj === this._hoveredTarget){
           this._hoveredTarget = null;
+          this._hoveredTargets = [];
         }
         this.callSuper('_onObjectRemoved', obj);
       },
@@ -22149,9 +22503,9 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
        * @chainable
        */
       discardActiveObject: function (e) {
-        var currentActives = this.getActiveObjects();
+        var currentActives = this.getActiveObjects(), activeObject = this.getActiveObject();
         if (currentActives.length) {
-          this.fire('before:selection:cleared', { target: currentActives[0], e: e });
+          this.fire('before:selection:cleared', { target: activeObject, e: e });
         }
         this._discardActiveObject(e);
         this._fireSelectionEvents(currentActives, e);
@@ -22281,11 +22635,6 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
         fabric.Canvas[prop] = fabric.StaticCanvas[prop];
       }
     }
-
-    if (fabric.isTouchSupported) {
-      /** @ignore */
-      fabric.Canvas.prototype._setCursorFromEvent = function() { };
-    }
   })();
 
 
@@ -22307,7 +22656,7 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
         addEventOptions = { passive: false };
 
     function checkClick(e, value) {
-      return 'which' in e ? e.which === value : e.button === value - 1;
+      return e.button && (e.button === value - 1);
     }
 
     fabric.util.object.extend(fabric.Canvas.prototype, /** @lends fabric.Canvas.prototype */ {
@@ -22328,6 +22677,13 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
       ],
 
       /**
+       * Contains the id of the touch event that owns the fabric transform
+       * @type Number
+       * @private
+       */
+      mainTouchId: null,
+
+      /**
        * Adds mouse listeners to canvas
        * @private
        */
@@ -22340,27 +22696,38 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
         this.addOrRemove(addListener, 'add');
       },
 
+      /**
+       * return an event prefix pointer or mouse.
+       * @private
+       */
+      _getEventPrefix: function () {
+        return this.enablePointerEvents ? 'pointer' : 'mouse';
+      },
+
       addOrRemove: function(functor, eventjsFunctor) {
+        var canvasElement = this.upperCanvasEl,
+            eventTypePrefix = this._getEventPrefix();
         functor(fabric.window, 'resize', this._onResize);
-        functor(this.upperCanvasEl, 'mousedown', this._onMouseDown);
-        functor(this.upperCanvasEl, 'mousemove', this._onMouseMove, addEventOptions);
-        functor(this.upperCanvasEl, 'mouseout', this._onMouseOut);
-        functor(this.upperCanvasEl, 'mouseenter', this._onMouseEnter);
-        functor(this.upperCanvasEl, 'wheel', this._onMouseWheel);
-        functor(this.upperCanvasEl, 'contextmenu', this._onContextMenu);
-        functor(this.upperCanvasEl, 'dblclick', this._onDoubleClick);
-        functor(this.upperCanvasEl, 'touchstart', this._onMouseDown, addEventOptions);
-        functor(this.upperCanvasEl, 'touchmove', this._onMouseMove, addEventOptions);
-        functor(this.upperCanvasEl, 'dragover', this._onDragOver);
-        functor(this.upperCanvasEl, 'dragenter', this._onDragEnter);
-        functor(this.upperCanvasEl, 'dragleave', this._onDragLeave);
-        functor(this.upperCanvasEl, 'drop', this._onDrop);
+        functor(canvasElement, eventTypePrefix + 'down', this._onMouseDown);
+        functor(canvasElement, eventTypePrefix + 'move', this._onMouseMove, addEventOptions);
+        functor(canvasElement, eventTypePrefix + 'out', this._onMouseOut);
+        functor(canvasElement, eventTypePrefix + 'enter', this._onMouseEnter);
+        functor(canvasElement, 'wheel', this._onMouseWheel);
+        functor(canvasElement, 'contextmenu', this._onContextMenu);
+        functor(canvasElement, 'dblclick', this._onDoubleClick);
+        functor(canvasElement, 'dragover', this._onDragOver);
+        functor(canvasElement, 'dragenter', this._onDragEnter);
+        functor(canvasElement, 'dragleave', this._onDragLeave);
+        functor(canvasElement, 'drop', this._onDrop);
+        if (!this.enablePointerEvents) {
+          functor(canvasElement, 'touchstart', this._onTouchStart, addEventOptions);
+        }
         if (typeof eventjs !== 'undefined' && eventjsFunctor in eventjs) {
-          eventjs[eventjsFunctor](this.upperCanvasEl, 'gesture', this._onGesture);
-          eventjs[eventjsFunctor](this.upperCanvasEl, 'drag', this._onDrag);
-          eventjs[eventjsFunctor](this.upperCanvasEl, 'orientation', this._onOrientationChange);
-          eventjs[eventjsFunctor](this.upperCanvasEl, 'shake', this._onShake);
-          eventjs[eventjsFunctor](this.upperCanvasEl, 'longpress', this._onLongPress);
+          eventjs[eventjsFunctor](canvasElement, 'gesture', this._onGesture);
+          eventjs[eventjsFunctor](canvasElement, 'drag', this._onDrag);
+          eventjs[eventjsFunctor](canvasElement, 'orientation', this._onOrientationChange);
+          eventjs[eventjsFunctor](canvasElement, 'shake', this._onShake);
+          eventjs[eventjsFunctor](canvasElement, 'longpress', this._onLongPress);
         }
       },
 
@@ -22370,9 +22737,10 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
       removeListeners: function() {
         this.addOrRemove(removeListener, 'remove');
         // if you dispose on a mouseDown, before mouse up, you need to clean document to...
-        removeListener(fabric.document, 'mouseup', this._onMouseUp);
-        removeListener(fabric.document, 'touchend', this._onMouseUp, addEventOptions);
-        removeListener(fabric.document, 'mousemove', this._onMouseMove, addEventOptions);
+        var eventTypePrefix = this._getEventPrefix();
+        removeListener(fabric.document, eventTypePrefix + 'up', this._onMouseUp);
+        removeListener(fabric.document, 'touchend', this._onTouchEnd, addEventOptions);
+        removeListener(fabric.document, eventTypePrefix + 'move', this._onMouseMove, addEventOptions);
         removeListener(fabric.document, 'touchmove', this._onMouseMove, addEventOptions);
       },
 
@@ -22385,8 +22753,10 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
           return;
         }
         this._onMouseDown = this._onMouseDown.bind(this);
+        this._onTouchStart = this._onTouchStart.bind(this);
         this._onMouseMove = this._onMouseMove.bind(this);
         this._onMouseUp = this._onMouseUp.bind(this);
+        this._onTouchEnd = this._onTouchEnd.bind(this);
         this._onResize = this._onResize.bind(this);
         this._onGesture = this._onGesture.bind(this);
         this._onDrag = this._onDrag.bind(this);
@@ -22440,6 +22810,14 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
         this.fire('mouse:out', { target: target, e: e });
         this._hoveredTarget = null;
         target && target.fire('mouseout', { e: e });
+
+        var _this = this;
+        this._hoveredTargets.forEach(function(_target){
+          _this.fire('mouse:out', { target: target, e: e });
+          _target && target.fire('mouseout', { e: e });
+        });
+        this._hoveredTargets = [];
+
         if (this._iTextInstances) {
           this._iTextInstances.forEach(function(obj) {
             if (obj.isEditing) {
@@ -22454,9 +22832,16 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
        * @param {Event} e Event object fired on mouseenter
        */
       _onMouseEnter: function(e) {
-        if (!this.findTarget(e)) {
+        // This find target and consequent 'mouse:over' is used to
+        // clear old instances on hovered target.
+        // calling findTarget has the side effect of killing target.__corner.
+        // as a short term fix we are not firing this if we are currently transforming.
+        // as a long term fix we need to separate the action of finding a target with the
+        // side effects we added to it.
+        if (!this.currentTransform && !this.findTarget(e)) {
           this.fire('mouse:over', { target: null, e: e });
           this._hoveredTarget = null;
+          this._hoveredTargets = [];
         }
       },
 
@@ -22521,26 +22906,104 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
       },
 
       /**
+       * Return a the id of an event.
+       * returns either the pointerId or the identifier or 0 for the mouse event
+       * @private
+       * @param {Event} evt Event object
+       */
+      getPointerId: function(evt) {
+        var changedTouches = evt.changedTouches;
+
+        if (changedTouches) {
+          return changedTouches[0] && changedTouches[0].identifier;
+        }
+
+        if (this.enablePointerEvents) {
+          return evt.pointerId;
+        }
+
+        return -1;
+      },
+
+      /**
+       * Determines if an event has the id of the event that is considered main
+       * @private
+       * @param {evt} event Event object
+       */
+      _isMainEvent: function(evt) {
+        if (evt.isPrimary === true) {
+          return true;
+        }
+        if (evt.isPrimary === false) {
+          return false;
+        }
+        if (evt.type === 'touchend' && evt.touches.length === 0) {
+          return true;
+        }
+        if (evt.changedTouches) {
+          return evt.changedTouches[0].identifier === this.mainTouchId;
+        }
+        return true;
+      },
+
+      /**
+       * @private
+       * @param {Event} e Event object fired on mousedown
+       */
+      _onTouchStart: function(e) {
+        e.preventDefault();
+        if (this.mainTouchId === null) {
+          this.mainTouchId = this.getPointerId(e);
+        }
+        this.__onMouseDown(e);
+        this._resetTransformEventData();
+        var canvasElement = this.upperCanvasEl,
+            eventTypePrefix = this._getEventPrefix();
+        addListener(fabric.document, 'touchend', this._onTouchEnd, addEventOptions);
+        addListener(fabric.document, 'touchmove', this._onMouseMove, addEventOptions);
+        // Unbind mousedown to prevent double triggers from touch devices
+        removeListener(canvasElement, eventTypePrefix + 'down', this._onMouseDown);
+      },
+
+      /**
        * @private
        * @param {Event} e Event object fired on mousedown
        */
       _onMouseDown: function (e) {
         this.__onMouseDown(e);
         this._resetTransformEventData();
-        addListener(fabric.document, 'touchend', this._onMouseUp, addEventOptions);
-        addListener(fabric.document, 'touchmove', this._onMouseMove, addEventOptions);
+        var canvasElement = this.upperCanvasEl,
+            eventTypePrefix = this._getEventPrefix();
+        removeListener(canvasElement, eventTypePrefix + 'move', this._onMouseMove, addEventOptions);
+        addListener(fabric.document, eventTypePrefix + 'up', this._onMouseUp);
+        addListener(fabric.document, eventTypePrefix + 'move', this._onMouseMove, addEventOptions);
+      },
 
-        removeListener(this.upperCanvasEl, 'mousemove', this._onMouseMove, addEventOptions);
-        removeListener(this.upperCanvasEl, 'touchmove', this._onMouseMove, addEventOptions);
-
-        if (e.type === 'touchstart') {
-          // Unbind mousedown to prevent double triggers from touch devices
-          removeListener(this.upperCanvasEl, 'mousedown', this._onMouseDown);
+      /**
+       * @private
+       * @param {Event} e Event object fired on mousedown
+       */
+      _onTouchEnd: function(e) {
+        if (e.touches.length > 0) {
+          // if there are still touches stop here
+          return;
         }
-        else {
-          addListener(fabric.document, 'mouseup', this._onMouseUp);
-          addListener(fabric.document, 'mousemove', this._onMouseMove, addEventOptions);
+        this.__onMouseUp(e);
+        this._resetTransformEventData();
+        this.mainTouchId = null;
+        var eventTypePrefix = this._getEventPrefix();
+        removeListener(fabric.document, 'touchend', this._onTouchEnd, addEventOptions);
+        removeListener(fabric.document, 'touchmove', this._onMouseMove, addEventOptions);
+        var _this = this;
+        if (this._willAddMouseDown) {
+          clearTimeout(this._willAddMouseDown);
         }
+        this._willAddMouseDown = setTimeout(function() {
+          // Wait 400ms before rebinding mousedown to prevent double triggers
+          // from touch devices
+          addListener(_this.upperCanvasEl, eventTypePrefix + 'down', _this._onMouseDown);
+          _this._willAddMouseDown = 0;
+        }, 400);
       },
 
       /**
@@ -22550,22 +23013,12 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
       _onMouseUp: function (e) {
         this.__onMouseUp(e);
         this._resetTransformEventData();
-        removeListener(fabric.document, 'mouseup', this._onMouseUp);
-        removeListener(fabric.document, 'touchend', this._onMouseUp, addEventOptions);
-
-        removeListener(fabric.document, 'mousemove', this._onMouseMove, addEventOptions);
-        removeListener(fabric.document, 'touchmove', this._onMouseMove, addEventOptions);
-
-        addListener(this.upperCanvasEl, 'mousemove', this._onMouseMove, addEventOptions);
-        addListener(this.upperCanvasEl, 'touchmove', this._onMouseMove, addEventOptions);
-
-        if (e.type === 'touchend') {
-          // Wait 400ms before rebinding mousedown to prevent double triggers
-          // from touch devices
-          var _this = this;
-          setTimeout(function() {
-            addListener(_this.upperCanvasEl, 'mousedown', _this._onMouseDown);
-          }, 400);
+        var canvasElement = this.upperCanvasEl,
+            eventTypePrefix = this._getEventPrefix();
+        if (this._isMainEvent(e)) {
+          removeListener(fabric.document, eventTypePrefix + 'up', this._onMouseUp);
+          removeListener(fabric.document, eventTypePrefix + 'move', this._onMouseMove, addEventOptions);
+          addListener(canvasElement, eventTypePrefix + 'move', this._onMouseMove, addEventOptions);
         }
       },
 
@@ -22589,31 +23042,24 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
        * Decides whether the canvas should be redrawn in mouseup and mousedown events.
        * @private
        * @param {Object} target
-       * @param {Object} pointer
        */
-      _shouldRender: function(target, pointer) {
+      _shouldRender: function(target) {
         var activeObject = this._activeObject;
 
-        if (activeObject && activeObject.isEditing && target === activeObject) {
+        if (
+          !!activeObject !== !!target ||
+          (activeObject && target && (activeObject !== target))
+        ) {
+          // this covers: switch of target, from target to no target, selection of target
+          // multiSelection with key and mouse
+          return true;
+        }
+        else if (activeObject && activeObject.isEditing) {
           // if we mouse up/down over a editing textbox a cursor change,
           // there is no need to re render
           return false;
         }
-        return !!(
-          (target && (
-            target.isMoving ||
-            target !== activeObject))
-          ||
-          (!target && !!activeObject)
-          ||
-          (!target && !activeObject && !this._groupSelector)
-          ||
-          (pointer &&
-            this._previousPointer &&
-            this.selection && (
-              pointer.x !== this._previousPointer.x ||
-            pointer.y !== this._previousPointer.y))
-        );
+        return false;
       },
 
       /**
@@ -22625,7 +23071,7 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
        */
       __onMouseUp: function (e) {
         var target, transform = this._currentTransform,
-            groupSelector = this._groupSelector,
+            groupSelector = this._groupSelector, shouldRender = false,
             isClick = (!groupSelector || (groupSelector.left === 0 && groupSelector.top === 0));
         this._cacheTransformEventData(e);
         target = this._target;
@@ -22652,14 +23098,17 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
           return;
         }
 
+        if (!this._isMainEvent(e)) {
+          return;
+        }
         if (transform) {
           this._finalizeCurrentTransform(e);
+          shouldRender = transform.actionPerformed;
         }
 
-        var shouldRender = this._shouldRender(target, this._absolutePointer);
-
-        if (target || !isClick) {
+        if (!isClick) {
           this._maybeGroupObjects(e);
+          shouldRender || (shouldRender = this._shouldRender(target));
         }
         if (target) {
           target.isMoving = false;
@@ -22668,8 +23117,14 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
         this._handleEvent(e, 'up', LEFT_CLICK, isClick);
         this._groupSelector = null;
         this._currentTransform = null;
+        // reset the target information about which corner is selected
         target && (target.__corner = 0);
-        shouldRender && this.requestRenderAll();
+        if (shouldRender) {
+          this.requestRenderAll();
+        }
+        else if (!isClick) {
+          this.renderTop();
+        }
       },
 
       /**
@@ -22812,7 +23267,7 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
           fabric.util.clipContext(this, this.contextTop);
         }
         var pointer = this.getPointer(e);
-        this.freeDrawingBrush.onMouseDown(pointer);
+        this.freeDrawingBrush.onMouseDown(pointer, { e: e, pointer: pointer });
         this._handleEvent(e, 'down');
       },
 
@@ -22823,7 +23278,7 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
       _onMouseMoveInDrawingMode: function(e) {
         if (this._isCurrentlyDrawing) {
           var pointer = this.getPointer(e);
-          this.freeDrawingBrush.onMouseMove(pointer);
+          this.freeDrawingBrush.onMouseMove(pointer, { e: e, pointer: pointer });
         }
         this.setCursor(this.freeDrawingCursor);
         this._handleEvent(e, 'move');
@@ -22834,11 +23289,11 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
        * @param {Event} e Event object fired on mouseup
        */
       _onMouseUpInDrawingMode: function(e) {
-        this._isCurrentlyDrawing = false;
         if (this.clipTo) {
           this.contextTop.restore();
         }
-        this.freeDrawingBrush.onMouseUp();
+        var pointer = this.getPointer(e);
+        this._isCurrentlyDrawing = this.freeDrawingBrush.onMouseUp({ e: e, pointer: pointer });
         this._handleEvent(e, 'up');
       },
 
@@ -22874,6 +23329,10 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
           return;
         }
 
+        if (!this._isMainEvent(e)) {
+          return;
+        }
+
         // ignore if some object is being transformed at this moment
         if (this._currentTransform) {
           return;
@@ -22882,7 +23341,7 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
         var pointer = this._pointer;
         // save pointer for check in __onMouseUp event
         this._previousPointer = pointer;
-        var shouldRender = this._shouldRender(target, pointer),
+        var shouldRender = this._shouldRender(target),
             shouldGroup = this._shouldGroup(e, target);
         if (this._shouldClearSelection(e, target)) {
           this.discardActiveObject(e);
@@ -22903,16 +23362,17 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
         }
 
         if (target) {
+          var alreadySelected = target === this._activeObject;
           if (target.selectable) {
             this.setActiveObject(target, e);
           }
           if (target === this._activeObject && (target.__corner || !shouldGroup)) {
-            this._setupCurrentTransform(e, target);
+            this._setupCurrentTransform(e, target, alreadySelected);
           }
         }
         this._handleEvent(e, 'down');
         // we must renderAll so that we update the visuals
-        shouldRender && this.requestRenderAll();
+        (shouldRender || shouldGroup) && this.requestRenderAll();
       },
 
       /**
@@ -22956,7 +23416,7 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
 
       /**
        * Method that defines the actions when mouse is hovering the canvas.
-       * The currentTransform parameter will definde whether the user is rotating/scaling/translating
+       * The currentTransform parameter will define whether the user is rotating/scaling/translating
        * an image or neither of them (only hovering). A group selection is also possible and would cancel
        * all any other type of action.
        * In case of an image transformation only the top canvas will be rendered.
@@ -22972,7 +23432,8 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
           this._onMouseMoveInDrawingMode(e);
           return;
         }
-        if (typeof e.touches !== 'undefined' && e.touches.length > 1) {
+
+        if (!this._isMainEvent(e)) {
           return;
         }
 
@@ -23006,13 +23467,26 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
        * @private
        */
       _fireOverOutEvents: function(target, e) {
-        this.fireSynteticInOutEvents(target, e, {
-          targetName: '_hoveredTarget',
-          canvasEvtOut: 'mouse:out',
+        var _hoveredTarget = this._hoveredTarget,
+            _hoveredTargets = this._hoveredTargets, targets = this.targets,
+            length = Math.max(_hoveredTargets.length, targets.length);
+
+        this.fireSyntheticInOutEvents(target, e, {
+          oldTarget: _hoveredTarget,
           evtOut: 'mouseout',
-          canvasEvtIn: 'mouse:over',
+          canvasEvtOut: 'mouse:out',
           evtIn: 'mouseover',
+          canvasEvtIn: 'mouse:over',
         });
+        for (var i = 0; i < length; i++){
+          this.fireSyntheticInOutEvents(targets[i], e, {
+            oldTarget: _hoveredTargets[i],
+            evtOut: 'mouseout',
+            evtIn: 'mouseover',
+          });
+        }
+        this._hoveredTarget = target;
+        this._hoveredTargets = this.targets.concat();
       },
 
       /**
@@ -23022,15 +23496,27 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
        * @private
        */
       _fireEnterLeaveEvents: function(target, e) {
-        this.fireSynteticInOutEvents(target, e, {
-          targetName: '_draggedoverTarget',
+        var _draggedoverTarget = this._draggedoverTarget,
+            _hoveredTargets = this._hoveredTargets, targets = this.targets,
+            length = Math.max(_hoveredTargets.length, targets.length);
+
+        this.fireSyntheticInOutEvents(target, e, {
+          oldTarget: _draggedoverTarget,
           evtOut: 'dragleave',
           evtIn: 'dragenter',
         });
+        for (var i = 0; i < length; i++) {
+          this.fireSyntheticInOutEvents(targets[i], e, {
+            oldTarget: _hoveredTargets[i],
+            evtOut: 'dragleave',
+            evtIn: 'dragenter',
+          });
+        }
+        this._draggedoverTarget = target;
       },
 
       /**
-       * Manage the syntetic in/out events for the fabric objects on the canvas
+       * Manage the synthetic in/out events for the fabric objects on the canvas
        * @param {Fabric.Object} target the target where the target from the supported events
        * @param {Event} e Event object fired
        * @param {Object} config configuration for the function to work
@@ -23041,13 +23527,12 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
        * @param {String} config.evtIn name of the event to fire for in
        * @private
        */
-      fireSynteticInOutEvents: function(target, e, config) {
-        var inOpt, outOpt, oldTarget = this[config.targetName], outFires, inFires,
+      fireSyntheticInOutEvents: function(target, e, config) {
+        var inOpt, outOpt, oldTarget = config.oldTarget, outFires, inFires,
             targetChanged = oldTarget !== target, canvasEvtIn = config.canvasEvtIn, canvasEvtOut = config.canvasEvtOut;
         if (targetChanged) {
           inOpt = { e: e, target: target, previousTarget: oldTarget };
           outOpt = { e: e, target: oldTarget, nextTarget: target };
-          this[config.targetName] = target;
         }
         inFires = target && targetChanged;
         outFires = oldTarget && targetChanged;
@@ -23162,9 +23647,9 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
       /**
        * @private
        * @param {Event} e Event object
-       * @param {Object} transform current tranform
+       * @param {Object} transform current transform
        * @param {Number} x mouse position x from origin
-       * @param {Number} y mouse poistion y from origin
+       * @param {Number} y mouse position y from origin
        * @return {Boolean} true if the scaling occurred
        */
       _onScale: function(e, transform, x, y) {
@@ -23204,7 +23689,6 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
           this.setCursor(this.defaultCursor);
           return false;
         }
-
         var hoverCursor = target.hoverCursor || this.hoverCursor,
             activeSelection = this._activeObject && this._activeObject.type === 'activeSelection' ?
               this._activeObject : null,
@@ -23213,6 +23697,13 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
                       && target._findTargetCorner(this.getPointer(e, true));
 
         if (!corner) {
+          if (target.subTargetCheck){
+            // hoverCursor should come from top-most subTarget,
+            // so we walk the array backwards
+            this.targets.concat().reverse().map(function(_target){
+              hoverCursor = _target.hoverCursor || hoverCursor;
+            });
+          }
           this.setCursor(hoverCursor);
         }
         else {
@@ -23292,9 +23783,8 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
        */
       _shouldGroup: function(e, target) {
         var activeObject = this._activeObject;
-
         return activeObject && this._isSelectionKeyPressed(e) && target && target.selectable && this.selection &&
-              (activeObject !== target || activeObject.type === 'activeSelection');
+              (activeObject !== target || activeObject.type === 'activeSelection') && !target.onSelect({ e: e });
       },
 
       /**
@@ -23304,6 +23794,7 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
        */
       _handleGrouping: function (e, target) {
         var activeObject = this._activeObject;
+        // avoid multi select when shift click on a corner
         if (activeObject.__corner) {
           return;
         }
@@ -23311,7 +23802,7 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
           // if it's a group, find target again, using activeGroup objects
           target = this.findTarget(e, true);
           // if even object is not found or we are on activeObjectCorner, bail out
-          if (!target) {
+          if (!target || !target.selectable) {
             return;
           }
         }
@@ -23332,6 +23823,7 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
         if (activeSelection.contains(target)) {
           activeSelection.removeWithUpdate(target);
           this._hoveredTarget = target;
+          this._hoveredTargets = this.targets.concat();
           if (activeSelection.size() === 1) {
             // activate last remaining object
             this._setActiveObject(activeSelection.item(0), e);
@@ -23340,6 +23832,7 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
         else {
           activeSelection.addWithUpdate(target);
           this._hoveredTarget = activeSelection;
+          this._hoveredTargets = this.targets.concat();
         }
         this._fireSelectionEvents(currentActiveObjects, e);
       },
@@ -23350,6 +23843,9 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
       _createActiveSelection: function(target, e) {
         var currentActives = this.getActiveObjects(), group = this._createGroup(target);
         this._hoveredTarget = group;
+        // ISSUE 4115: should we consider subTargets here?
+        // this._hoveredTargets = [];
+        // this._hoveredTargets = this.targets.concat();
         this._setActiveObject(group, e);
         this._fireSelectionEvents(currentActives, e);
       },
@@ -23376,7 +23872,7 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
        */
       _groupSelectedObjects: function (e) {
 
-        var group = this._collectObjects(),
+        var group = this._collectObjects(e),
             aGroup;
 
         // do not create group for 1 element only
@@ -23394,7 +23890,7 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
       /**
        * @private
        */
-      _collectObjects: function() {
+      _collectObjects: function(e) {
         var group = [],
             currentObject,
             x1 = this._groupSelector.ex,
@@ -23419,12 +23915,17 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
               (allowIntersect && currentObject.containsPoint(selectionX2Y2))
           ) {
             group.push(currentObject);
-
             // only add one object if it's a click
             if (isClick) {
               break;
             }
           }
+        }
+
+        if (group.length > 1) {
+          group = group.filter(function(object) {
+            return !object.onSelect({ e: e });
+          });
         }
 
         return group;
@@ -23447,9 +23948,6 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
 
 
   (function () {
-
-    var supportQuality = fabric.StaticCanvas.supports('toDataURLWithQuality');
-
     fabric.util.object.extend(fabric.StaticCanvas.prototype, /** @lends fabric.StaticCanvas.prototype */ {
 
       /**
@@ -23489,74 +23987,59 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
 
         var format = options.format || 'png',
             quality = options.quality || 1,
-            multiplier = (options.multiplier || 1) * (options.enableRetinaScaling ? 1 : 1 / this.getRetinaScaling()),
-            cropping = {
-              left: options.left || 0,
-              top: options.top || 0,
-              width: options.width || 0,
-              height: options.height || 0,
-            };
-        return this.__toDataURLWithMultiplier(format, quality, cropping, multiplier);
+            multiplier = (options.multiplier || 1) * (options.enableRetinaScaling ? this.getRetinaScaling() : 1),
+            canvasEl = this.toCanvasElement(multiplier, options);
+        return fabric.util.toDataURL(canvasEl, format, quality);
       },
 
       /**
-       * @private
+       * Create a new HTMLCanvas element painted with the current canvas content.
+       * No need to resize the actual one or repaint it.
+       * Will transfer object ownership to a new canvas, paint it, and set everything back.
+       * This is an intermediary step used to get to a dataUrl but also it is useful to
+       * create quick image copies of a canvas without passing for the dataUrl string
+       * @param {Number} [multiplier] a zoom factor.
+       * @param {Object} [cropping] Cropping informations
+       * @param {Number} [cropping.left] Cropping left offset.
+       * @param {Number} [cropping.top] Cropping top offset.
+       * @param {Number} [cropping.width] Cropping width.
+       * @param {Number} [cropping.height] Cropping height.
        */
-      __toDataURLWithMultiplier: function(format, quality, cropping, multiplier) {
-
-        var origWidth = this.width,
-            origHeight = this.height,
-            scaledWidth = (cropping.width || this.width) * multiplier,
+      toCanvasElement: function(multiplier, cropping) {
+        multiplier = multiplier || 1;
+        cropping = cropping || { };
+        var scaledWidth = (cropping.width || this.width) * multiplier,
             scaledHeight = (cropping.height || this.height) * multiplier,
             zoom = this.getZoom(),
+            originalWidth = this.width,
+            originalHeight = this.height,
             newZoom = zoom * multiplier,
             vp = this.viewportTransform,
-            translateX = (vp[4] - cropping.left) * multiplier,
-            translateY = (vp[5] - cropping.top) * multiplier,
-            newVp = [newZoom, 0, 0, newZoom, translateX, translateY],
+            translateX = (vp[4] - (cropping.left || 0)) * multiplier,
+            translateY = (vp[5] - (cropping.top || 0)) * multiplier,
             originalInteractive = this.interactive,
-            originalSkipOffScreen = this.skipOffscreen,
-            needsResize = origWidth !== scaledWidth || origHeight !== scaledHeight;
-
-        this.viewportTransform = newVp;
-        this.skipOffscreen = false;
-        // setting interactive to false avoid exporting controls
+            newVp = [newZoom, 0, 0, newZoom, translateX, translateY],
+            originalRetina = this.enableRetinaScaling,
+            canvasEl = fabric.util.createCanvasElement(),
+            originalContextTop = this.contextTop;
+        canvasEl.width = scaledWidth;
+        canvasEl.height = scaledHeight;
+        this.contextTop = null;
+        this.enableRetinaScaling = false;
         this.interactive = false;
-        if (needsResize) {
-          this.setDimensions({ width: scaledWidth, height: scaledHeight }, { backstoreOnly: true });
-        }
-        // call a renderAll to force sync update. This will cancel the scheduled requestRenderAll
-        // from setDimensions
-        this.renderAll();
-        var data = this.__toDataURL(format, quality, cropping);
-        this.interactive = originalInteractive;
-        this.skipOffscreen = originalSkipOffScreen;
+        this.viewportTransform = newVp;
+        this.width = scaledWidth;
+        this.height = scaledHeight;
+        this.calcViewportBoundaries();
+        this.renderCanvas(canvasEl.getContext('2d'), this._objects);
         this.viewportTransform = vp;
-        //setDimensions with no option object is taking care of:
-        //this.width, this.height, this.requestRenderAll()
-        if (needsResize) {
-          this.setDimensions({ width: origWidth, height: origHeight }, { backstoreOnly: true });
-        }
-        this.renderAll();
-        return data;
-      },
-
-      /**
-       * @private
-       */
-      __toDataURL: function(format, quality) {
-
-        var canvasEl = this.contextContainer.canvas;
-        // to avoid common confusion https://github.com/kangax/fabric.js/issues/806
-        if (format === 'jpg') {
-          format = 'jpeg';
-        }
-
-        var data = supportQuality
-          ? canvasEl.toDataURL('image/' + format, quality)
-          : canvasEl.toDataURL('image/' + format);
-
-        return data;
+        this.width = originalWidth;
+        this.height = originalHeight;
+        this.calcViewportBoundaries();
+        this.interactive = originalInteractive;
+        this.enableRetinaScaling = originalRetina;
+        this.contextTop = originalContextTop;
+        return canvasEl;
       },
     });
 
@@ -23614,34 +24097,58 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
         : fabric.util.object.clone(json);
 
       var _this = this,
+          clipPath = serialized.clipPath,
           renderOnAddRemove = this.renderOnAddRemove;
+
       this.renderOnAddRemove = false;
+
+      delete serialized.clipPath;
 
       this._enlivenObjects(serialized.objects, function (enlivenedObjects) {
         _this.clear();
         _this._setBgOverlay(serialized, function () {
-          enlivenedObjects.forEach(function(obj, index) {
-            // we splice the array just in case some custom classes restored from JSON
-            // will add more object to canvas at canvas init.
-            _this.insertAt(obj, index);
-          });
-          _this.renderOnAddRemove = renderOnAddRemove;
-          // remove parts i cannot set as options
-          delete serialized.objects;
-          delete serialized.backgroundImage;
-          delete serialized.overlayImage;
-          delete serialized.background;
-          delete serialized.overlay;
-          // this._initOptions does too many things to just
-          // call it. Normally loading an Object from JSON
-          // create the Object instance. Here the Canvas is
-          // already an instance and we are just loading things over it
-          _this._setOptions(serialized);
-          _this.renderAll();
-          callback && callback();
+          if (clipPath) {
+            _this._enlivenObjects([clipPath], function (enlivenedCanvasClip) {
+              _this.clipPath = enlivenedCanvasClip[0];
+              _this.__setupCanvas.call(_this, serialized, enlivenedObjects, renderOnAddRemove, callback);
+            });
+          }
+          else {
+            _this.__setupCanvas.call(_this, serialized, enlivenedObjects, renderOnAddRemove, callback);
+          }
         });
       }, reviver);
       return this;
+    },
+
+    /**
+     * @private
+     * @param {Object} serialized Object with background and overlay information
+     * @param {Array} restored canvas objects
+     * @param {Function} cached renderOnAddRemove callback
+     * @param {Function} callback Invoked after all background and overlay images/patterns loaded
+     */
+    __setupCanvas: function(serialized, enlivenedObjects, renderOnAddRemove, callback) {
+      var _this = this;
+      enlivenedObjects.forEach(function(obj, index) {
+        // we splice the array just in case some custom classes restored from JSON
+        // will add more object to canvas at canvas init.
+        _this.insertAt(obj, index);
+      });
+      this.renderOnAddRemove = renderOnAddRemove;
+      // remove parts i cannot set as options
+      delete serialized.objects;
+      delete serialized.backgroundImage;
+      delete serialized.overlayImage;
+      delete serialized.background;
+      delete serialized.overlay;
+      // this._initOptions does too many things to just
+      // call it. Normally loading an Object from JSON
+      // create the Object instance. Here the Canvas is
+      // already an instance and we are just loading things over it
+      this._setOptions(serialized);
+      this.renderAll();
+      callback && callback();
     },
 
     /**
@@ -23792,7 +24299,7 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
 
     'use strict';
 
-    var //fabric = global.fabric || (global.fabric = { }),
+    var fabric = global.fabric || (global.fabric = { }),
         extend = fabric.util.object.extend,
         clone = fabric.util.object.clone,
         toFixed = fabric.util.toFixed,
@@ -24112,6 +24619,13 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
       strokeDashArray:          null,
 
       /**
+       * Line offset of an object's stroke
+       * @type Number
+       * @default
+       */
+      strokeDashOffset: 0,
+
+      /**
        * Line endings style of an object's stroke (one of "butt", "round", "square")
        * @type String
        * @default
@@ -24155,6 +24669,12 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
 
       /**
        * Transform matrix (similar to SVG's transform matrix)
+       * This property has been depreacted. Since caching and and qrDecompose this
+       * property can be handled with the standard top,left,scaleX,scaleY,angle and skewX.
+       * A documentation example on how to parse and merge a transformMatrix will be provided before
+       * completely removing it in fabric 4.0
+       * If you are starting a project now, DO NOT use it.
+       * @deprecated since 3.2.0
        * @type Array
        */
       transformMatrix:          null,
@@ -24305,7 +24825,7 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
 
       /**
        * When `true`, object is not exported in OBJECT/JSON
-       * since 1.6.3
+       * @since 1.6.3
        * @type Boolean
        * @default
        */
@@ -24313,8 +24833,9 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
 
       /**
        * When `true`, object is cached on an additional canvas.
+       * When `false`, object is not cached unless necessary ( clipPath )
        * default to true
-       * since 1.7.0
+       * @since 1.7.0
        * @type Boolean
        * @default true
        */
@@ -24344,6 +24865,18 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
       noScaleCache:              true,
 
       /**
+       * When `false`, the stoke width will scale with the object.
+       * When `true`, the stroke will always match the exact pixel size entered for stroke width.
+       * default to false
+       * @since 2.6.0
+       * @type Boolean
+       * @default false
+       * @type Boolean
+       * @default false
+       */
+      strokeUniform:              false,
+
+      /**
        * When set to `true`, object's cache will be rerendered next render call.
        * since 1.7.0
        * @type Boolean
@@ -24352,7 +24885,7 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
       dirty:                true,
 
       /**
-       * keeps the value of the last hovered coner during mouse move.
+       * keeps the value of the last hovered corner during mouse move.
        * 0 is no corner, or 'mt', 'ml', 'mtr' etc..
        * It should be private, but there is no harm in using it as
        * a read-only property.
@@ -24362,7 +24895,7 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
       __corner: 0,
 
       /**
-       * Determins if the fill or the stroke is drawn first (one of "fill" or "stroke")
+       * Determines if the fill or the stroke is drawn first (one of "fill" or "stroke")
        * @type String
        * @default
        */
@@ -24376,9 +24909,9 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
        */
       stateProperties: (
         'top left width height scaleX scaleY flipX flipY originX originY transformMatrix ' +
-        'stroke strokeWidth strokeDashArray strokeLineCap strokeLineJoin strokeMiterLimit ' +
+        'stroke strokeWidth strokeDashArray strokeLineCap strokeDashOffset strokeLineJoin strokeMiterLimit ' +
         'angle opacity fill globalCompositeOperation shadow clipTo visible backgroundColor ' +
-        'skewX skewY fillRule paintFirst'
+        'skewX skewY fillRule paintFirst clipPath strokeUniform'
       ).split(' '),
 
       /**
@@ -24389,9 +24922,39 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
        * @type Array
        */
       cacheProperties: (
-        'fill stroke strokeWidth strokeDashArray width height paintFirst' +
-        ' strokeLineCap strokeLineJoin strokeMiterLimit backgroundColor'
+        'fill stroke strokeWidth strokeDashArray width height paintFirst strokeUniform' +
+        ' strokeLineCap strokeDashOffset strokeLineJoin strokeMiterLimit backgroundColor clipPath'
       ).split(' '),
+
+      /**
+       * a fabricObject that, without stroke define a clipping area with their shape. filled in black
+       * the clipPath object gets used when the object has rendered, and the context is placed in the center
+       * of the object cacheCanvas.
+       * If you want 0,0 of a clipPath to align with an object center, use clipPath.originX/Y to 'center'
+       * @type fabric.Object
+       */
+      clipPath: undefined,
+
+      /**
+       * Meaningful ONLY when the object is used as clipPath.
+       * if true, the clipPath will make the object clip to the outside of the clipPath
+       * since 2.4.0
+       * @type boolean
+       * @default false
+       */
+      inverted: false,
+
+      /**
+       * Meaningful ONLY when the object is used as clipPath.
+       * if true, the clipPath will have its top and left relative to canvas, and will
+       * not be influenced by the object transform. This will make the clipPath relative
+       * to the canvas, but clipping just a particular object.
+       * WARNING this is beta, this feature may change or be renamed.
+       * since 2.4.0
+       * @type boolean
+       * @default false
+       */
+      absolutePositioned: false,
 
       /**
        * Constructor
@@ -24465,8 +25028,8 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
        * Return the dimension and the zoom level needed to create a cache canvas
        * big enough to host the object to be cached.
        * @private
-       * @param {Object} dim.x width of object to be cached
-       * @param {Object} dim.y height of object to be cached
+       * @return {Object}.x width of object to be cached
+       * @return {Object}.y height of object to be cached
        * @return {Object}.width width of canvas
        * @return {Object}.height height of canvas
        * @return {Object}.zoomX zoomX zoom value to unscale the canvas before drawing cache
@@ -24474,20 +25037,20 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
        */
       _getCacheCanvasDimensions: function() {
         var objectScale = this.getTotalObjectScaling(),
-            dim = this._getNonTransformedDimensions(),
-            zoomX = objectScale.scaleX,
-            zoomY = objectScale.scaleY,
-            width = dim.x * zoomX,
-            height = dim.y * zoomY;
+            // caculate dimensions without skewing
+            dim = this._getTransformedDimensions(0, 0),
+            neededX = dim.x * objectScale.scaleX / this.scaleX,
+            neededY = dim.y * objectScale.scaleY / this.scaleY;
         return {
-          // for sure this ALIASING_LIMIT is slightly crating problem
-          // in situation in wich the cache canvas gets an upper limit
-          width: width + ALIASING_LIMIT,
-          height: height + ALIASING_LIMIT,
-          zoomX: zoomX,
-          zoomY: zoomY,
-          x: dim.x,
-          y: dim.y
+          // for sure this ALIASING_LIMIT is slightly creating problem
+          // in situation in which the cache canvas gets an upper limit
+          // also objectScale contains already scaleX and scaleY
+          width: neededX + ALIASING_LIMIT,
+          height: neededY + ALIASING_LIMIT,
+          zoomX: objectScale.scaleX,
+          zoomY: objectScale.scaleY,
+          x: neededX,
+          y: neededY
         };
       },
 
@@ -24498,9 +25061,10 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
        * @return {Boolean} true if the canvas has been resized
        */
       _updateCacheCanvas: function() {
-        if (this.noScaleCache && this.canvas && this.canvas._currentTransform) {
-          var target = this.canvas._currentTransform.target,
-              action = this.canvas._currentTransform.action;
+        var targetCanvas = this.canvas;
+        if (this.noScaleCache && targetCanvas && targetCanvas._currentTransform) {
+          var target = targetCanvas._currentTransform.target,
+              action = targetCanvas._currentTransform.action;
           if (this === target && action.slice && action.slice(0, 5) === 'scale') {
             return false;
           }
@@ -24535,8 +25099,8 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
             this._cacheContext.setTransform(1, 0, 0, 1, 0, 0);
             this._cacheContext.clearRect(0, 0, canvas.width, canvas.height);
           }
-          drawingWidth = dims.x * zoomX / 2;
-          drawingHeight = dims.y * zoomY / 2;
+          drawingWidth = dims.x / 2;
+          drawingHeight = dims.y / 2;
           this.cacheTranslationX = Math.round(canvas.width / 2 - drawingWidth) + drawingWidth;
           this.cacheTranslationY = Math.round(canvas.height / 2 - drawingHeight) + drawingHeight;
           this.cacheWidth = width;
@@ -24600,6 +25164,7 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
               strokeWidth:              toFixed(this.strokeWidth, NUM_FRACTION_DIGITS),
               strokeDashArray:          this.strokeDashArray ? this.strokeDashArray.concat() : this.strokeDashArray,
               strokeLineCap:            this.strokeLineCap,
+              strokeDashOffset:         this.strokeDashOffset,
               strokeLineJoin:           this.strokeLineJoin,
               strokeMiterLimit:         toFixed(this.strokeMiterLimit, NUM_FRACTION_DIGITS),
               scaleX:                   toFixed(this.scaleX, NUM_FRACTION_DIGITS),
@@ -24617,8 +25182,14 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
               globalCompositeOperation: this.globalCompositeOperation,
               transformMatrix:          this.transformMatrix ? this.transformMatrix.concat() : null,
               skewX:                    toFixed(this.skewX, NUM_FRACTION_DIGITS),
-              skewY:                    toFixed(this.skewY, NUM_FRACTION_DIGITS)
+              skewY:                    toFixed(this.skewY, NUM_FRACTION_DIGITS),
             };
+
+        if (this.clipPath) {
+          object.clipPath = this.clipPath.toObject(propertiesToInclude);
+          object.clipPath.inverted = this.clipPath.inverted;
+          object.clipPath.absolutePositioned = this.clipPath.absolutePositioned;
+        }
 
         fabric.util.populateWithProperties(this, object, propertiesToInclude);
         if (!this.includeDefaultValues) {
@@ -24646,6 +25217,9 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
         var prototype = fabric.util.getKlass(object.type).prototype,
             stateProperties = prototype.stateProperties;
         stateProperties.forEach(function(prop) {
+          if (prop === 'left' || prop === 'top') {
+            return;
+          }
           if (object[prop] === prototype[prop]) {
             delete object[prop];
           }
@@ -24768,7 +25342,7 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
        * Retrieves viewportTransform from Object's canvas if possible
        * @method getViewportTransform
        * @memberOf fabric.Object.prototype
-       * @return {Boolean}
+       * @return {Array}
        */
       getViewportTransform: function() {
         if (this.canvas && this.canvas.viewportTransform) {
@@ -24784,7 +25358,9 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
        * @return {Boolean}
        */
       isNotVisible: function() {
-        return this.opacity === 0 || (this.width === 0 && this.height === 0) || !this.visible;
+        return this.opacity === 0 ||
+          (this.width === 0 && this.height === 0 && this.strokeWidth === 0) ||
+          !this.visible;
       },
 
       /**
@@ -24810,15 +25386,7 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
         }
         this.clipTo && fabric.util.clipContext(this, ctx);
         if (this.shouldCache()) {
-          if (!this._cacheCanvas) {
-            this._createCacheCanvas();
-
-          }
-          if (this.isCacheDirty()) {
-            this.statefullCache && this.saveState({ propertySet: 'cacheProperties' });
-            this.drawObject(this._cacheContext);
-            this.dirty = false;
-          }
+          this.renderCache();
           this.drawCacheOnCanvas(ctx);
         }
         else {
@@ -24833,6 +25401,18 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
         ctx.restore();
       },
 
+      renderCache: function(options) {
+        options = options || {};
+        if (!this._cacheCanvas) {
+          this._createCacheCanvas();
+        }
+        if (this.isCacheDirty()) {
+          this.statefullCache && this.saveState({ propertySet: 'cacheProperties' });
+          this.drawObject(this._cacheContext, options.forClipping);
+          this.dirty = false;
+        }
+      },
+
       /**
        * Remove cacheCanvas and its dimensions from the objects
        */
@@ -24843,15 +25423,47 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
       },
 
       /**
+       * return true if the object will draw a stroke
+       * Does not consider text styles. This is just a shortcut used at rendering time
+       * We want it to be an aproximation and be fast.
+       * wrote to avoid extra caching, it has to return true when stroke happens,
+       * can guess when it will not happen at 100% chance, does not matter if it misses
+       * some use case where the stroke is invisible.
+       * @since 3.0.0
+       * @returns Boolean
+       */
+      hasStroke: function() {
+        return this.stroke && this.stroke !== 'transparent' && this.strokeWidth !== 0;
+      },
+
+      /**
+       * return true if the object will draw a fill
+       * Does not consider text styles. This is just a shortcut used at rendering time
+       * We want it to be an aproximation and be fast.
+       * wrote to avoid extra caching, it has to return true when fill happens,
+       * can guess when it will not happen at 100% chance, does not matter if it misses
+       * some use case where the fill is invisible.
+       * @since 3.0.0
+       * @returns Boolean
+       */
+      hasFill: function() {
+        return this.fill && this.fill !== 'transparent';
+      },
+
+      /**
        * When set to `true`, force the object to have its own cache, even if it is inside a group
        * it may be needed when your object behave in a particular way on the cache and always needs
        * its own isolated canvas to render correctly.
        * Created to be overridden
        * since 1.7.12
-       * @returns false
+       * @returns Boolean
        */
       needsItsOwnCache: function() {
-        if (this.paintFirst === 'stroke' && typeof this.shadow === 'object') {
+        if (this.paintFirst === 'stroke' &&
+          this.hasFill() && this.hasStroke() && typeof this.shadow === 'object') {
+          return true;
+        }
+        if (this.clipPath) {
           return true;
         }
         return false;
@@ -24863,11 +25475,14 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
        * needsItsOwnCache should be used when the object drawing method requires
        * a cache step. None of the fabric classes requires it.
        * Generally you do not cache objects in groups because the group outside is cached.
+       * Read as: cache if is needed, or if the feature is enabled but we are not already caching.
        * @return {Boolean}
        */
       shouldCache: function() {
-        this.ownCaching = this.objectCaching &&
-        (!this.group || this.needsItsOwnCache() || !this.group.isOnACache());
+        this.ownCaching = this.needsItsOwnCache() || (
+          this.objectCaching &&
+          (!this.group || !this.group.isOnACache())
+        );
         return this.ownCaching;
       },
 
@@ -24881,14 +25496,64 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
       },
 
       /**
+       * Execute the drawing operation for an object clipPath
+       * @param {CanvasRenderingContext2D} ctx Context to render on
+       */
+      drawClipPathOnCache: function(ctx) {
+        var path = this.clipPath;
+        ctx.save();
+        // DEBUG: uncomment this line, comment the following
+        // ctx.globalAlpha = 0.4
+        if (path.inverted) {
+          ctx.globalCompositeOperation = 'destination-out';
+        }
+        else {
+          ctx.globalCompositeOperation = 'destination-in';
+        }
+        //ctx.scale(1 / 2, 1 / 2);
+        if (path.absolutePositioned) {
+          var m = fabric.util.invertTransform(this.calcTransformMatrix());
+          ctx.transform(m[0], m[1], m[2], m[3], m[4], m[5]);
+        }
+        path.transform(ctx);
+        ctx.scale(1 / path.zoomX, 1 / path.zoomY);
+        ctx.drawImage(path._cacheCanvas, -path.cacheTranslationX, -path.cacheTranslationY);
+        ctx.restore();
+      },
+
+      /**
        * Execute the drawing operation for an object on a specified context
        * @param {CanvasRenderingContext2D} ctx Context to render on
        */
-      drawObject: function(ctx) {
-        this._renderBackground(ctx);
-        this._setStrokeStyles(ctx, this);
-        this._setFillStyles(ctx, this);
+      drawObject: function(ctx, forClipping) {
+        var originalFill = this.fill, originalStroke = this.stroke;
+        if (forClipping) {
+          this.fill = 'black';
+          this.stroke = '';
+          this._setClippingProperties(ctx);
+        }
+        else {
+          this._renderBackground(ctx);
+          this._setStrokeStyles(ctx, this);
+          this._setFillStyles(ctx, this);
+        }
         this._render(ctx);
+        this._drawClipPath(ctx);
+        this.fill = originalFill;
+        this.stroke = originalStroke;
+      },
+
+      _drawClipPath: function(ctx) {
+        var path = this.clipPath;
+        if (!path) { return; }
+        // needed to setup a couple of variables
+        // path canvas gets overridden with this one.
+        // TODO find a better solution?
+        path.canvas = this.canvas;
+        path.shouldCache();
+        path._transformDone = true;
+        path.renderCache({ forClipping: true });
+        this.drawClipPathOnCache(ctx);
       },
 
       /**
@@ -24914,7 +25579,10 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
           return true;
         }
         else {
-          if (this.dirty || (this.statefullCache && this.hasStateChanged('cacheProperties'))) {
+          if (this.dirty ||
+            (this.clipPath && this.clipPath.absolutePositioned) ||
+            (this.statefullCache && this.hasStateChanged('cacheProperties'))
+          ) {
             if (this._cacheCanvas && !skipCanvas) {
               var width = this.cacheWidth / this.zoomX;
               var height = this.cacheHeight / this.zoomY;
@@ -24927,7 +25595,7 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
       },
 
       /**
-       * Draws a background for the object big as its untrasformed dimensions
+       * Draws a background for the object big as its untransformed dimensions
        * @private
        * @param {CanvasRenderingContext2D} ctx Context to render on
        */
@@ -24966,6 +25634,7 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
         if (decl.stroke) {
           ctx.lineWidth = decl.strokeWidth;
           ctx.lineCap = decl.strokeLineCap;
+          ctx.lineDashOffset = decl.strokeDashOffset;
           ctx.lineJoin = decl.strokeLineJoin;
           ctx.miterLimit = decl.strokeMiterLimit;
           ctx.strokeStyle = decl.stroke.toLive
@@ -24982,15 +25651,21 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
         }
       },
 
+      _setClippingProperties: function(ctx) {
+        ctx.globalAlpha = 1;
+        ctx.strokeStyle = 'transparent';
+        ctx.fillStyle = '#000000';
+      },
+
       /**
        * @private
        * Sets line dash
        * @param {CanvasRenderingContext2D} ctx Context to set the dash line on
        * @param {Array} dashArray array representing dashes
-       * @param {Function} alternative function to call if browaser does not support lineDash
+       * @param {Function} alternative function to call if browser does not support lineDash
        */
       _setLineDash: function(ctx, dashArray, alternative) {
-        if (!dashArray) {
+        if (!dashArray || dashArray.length === 0) {
           return;
         }
         // Spec requires the concatenation of two copies the dash list when the number of elements is odd
@@ -25046,18 +25721,24 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
           return;
         }
 
-        var multX = (this.canvas && this.canvas.viewportTransform[0]) || 1,
-            multY = (this.canvas && this.canvas.viewportTransform[3]) || 1,
-            scaling = this.getObjectScaling();
-        if (this.canvas && this.canvas._isRetinaScaling()) {
+        var shadow = this.shadow, canvas = this.canvas, scaling,
+            multX = (canvas && canvas.viewportTransform[0]) || 1,
+            multY = (canvas && canvas.viewportTransform[3]) || 1;
+        if (shadow.nonScaling) {
+          scaling = { scaleX: 1, scaleY: 1 };
+        }
+        else {
+          scaling = this.getObjectScaling();
+        }
+        if (canvas && canvas._isRetinaScaling()) {
           multX *= fabric.devicePixelRatio;
           multY *= fabric.devicePixelRatio;
         }
-        ctx.shadowColor = this.shadow.color;
-        ctx.shadowBlur = this.shadow.blur * fabric.browserShadowBlurConstant *
+        ctx.shadowColor = shadow.color;
+        ctx.shadowBlur = shadow.blur * fabric.browserShadowBlurConstant *
           (multX + multY) * (scaling.scaleX + scaling.scaleY) / 4;
-        ctx.shadowOffsetX = this.shadow.offsetX * multX * scaling.scaleX;
-        ctx.shadowOffsetY = this.shadow.offsetY * multY * scaling.scaleY;
+        ctx.shadowOffsetX = shadow.offsetX * multX * scaling.scaleX;
+        ctx.shadowOffsetY = shadow.offsetY * multY * scaling.scaleY;
       },
 
       /**
@@ -25077,6 +25758,8 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
        * @private
        * @param {CanvasRenderingContext2D} ctx Context to render on
        * @param {Object} filler fabric.Pattern or fabric.Gradient
+       * @return {Object} offset.offsetX offset for text rendering
+       * @return {Object} offset.offsetY offset for text rendering
        */
       _applyPatternGradientTransform: function(ctx, filler) {
         if (!filler || !filler.toLive) {
@@ -25085,7 +25768,13 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
         var t = filler.gradientTransform || filler.patternTransform;
         var offsetX = -this.width / 2 + filler.offsetX || 0,
             offsetY = -this.height / 2 + filler.offsetY || 0;
-        ctx.translate(offsetX, offsetY);
+
+        if (filler.gradientUnits === 'percentage') {
+          ctx.transform(this.width, 0, 0, this.height, offsetX, offsetY);
+        }
+        else {
+          ctx.transform(1, 0, 0, 1, offsetX, offsetY);
+        }
         if (t) {
           ctx.transform(t[0], t[1], t[2], t[3], t[4], t[5]);
         }
@@ -25109,6 +25798,17 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
 
       /**
        * @private
+       * function that actually render something on the context.
+       * empty here to allow Obects to work on tests to benchmark fabric functionalites
+       * not related to rendering
+       * @param {CanvasRenderingContext2D} ctx Context to render on
+       */
+      _render: function(/* ctx */) {
+
+      },
+
+      /**
+       * @private
        * @param {CanvasRenderingContext2D} ctx Context to render on
        */
       _renderFill: function(ctx) {
@@ -25127,6 +25827,10 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
         ctx.restore();
       },
 
+      /**
+       * @private
+       * @param {CanvasRenderingContext2D} ctx Context to render on
+       */
       _renderStroke: function(ctx) {
         if (!this.stroke || this.strokeWidth === 0) {
           return;
@@ -25137,10 +25841,58 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
         }
 
         ctx.save();
+        if (this.strokeUniform) {
+          ctx.scale(1 / this.scaleX, 1 / this.scaleY);
+        }
         this._setLineDash(ctx, this.strokeDashArray, this._renderDashedStroke);
-        this._applyPatternGradientTransform(ctx, this.stroke);
+        if (this.stroke.toLive && this.stroke.gradientUnits === 'percentage') {
+          // need to transform gradient in a pattern.
+          // this is a slow process. If you are hitting this codepath, and the object
+          // is not using caching, you should consider switching it on.
+          // we need a canvas as big as the current object caching canvas.
+          this._applyPatternForTransformedGradient(ctx, this.stroke);
+        }
+        else {
+          this._applyPatternGradientTransform(ctx, this.stroke);
+        }
         ctx.stroke();
         ctx.restore();
+      },
+
+      /**
+       * This function try to patch the missing gradientTransform on canvas gradients.
+       * transforming a context to transform the gradient, is going to transform the stroke too.
+       * we want to transform the gradient but not the stroke operation, so we create
+       * a transformed gradient on a pattern and then we use the pattern instead of the gradient.
+       * this method has drwabacks: is slow, is in low resolution, needs a patch for when the size
+       * is limited.
+       * @private
+       * @param {CanvasRenderingContext2D} ctx Context to render on
+       * @param {fabric.Gradient} filler a fabric gradient instance
+       */
+      _applyPatternForTransformedGradient: function(ctx, filler) {
+        var dims = this._limitCacheSize(this._getCacheCanvasDimensions()),
+            pCanvas = fabric.util.createCanvasElement(), pCtx, retinaScaling = this.canvas.getRetinaScaling(),
+            width = dims.x / this.scaleX / retinaScaling, height = dims.y / this.scaleY / retinaScaling;
+        pCanvas.width = width;
+        pCanvas.height = height;
+        pCtx = pCanvas.getContext('2d');
+        pCtx.beginPath(); pCtx.moveTo(0, 0); pCtx.lineTo(width, 0); pCtx.lineTo(width, height);
+        pCtx.lineTo(0, height); pCtx.closePath();
+        pCtx.translate(width / 2, height / 2);
+        pCtx.scale(
+          dims.zoomX / this.scaleX / retinaScaling,
+          dims.zoomY / this.scaleY / retinaScaling
+        );
+        this._applyPatternGradientTransform(pCtx, filler);
+        pCtx.fillStyle = filler.toLive(ctx);
+        pCtx.fill();
+        ctx.translate(-this.width / 2 - this.strokeWidth / 2, -this.height / 2 - this.strokeWidth / 2);
+        ctx.scale(
+          retinaScaling * this.scaleX / dims.zoomX,
+          retinaScaling * this.scaleY / dims.zoomY
+        );
+        ctx.strokeStyle = pCtx.createPattern(pCanvas, 'no-repeat');
       },
 
       /**
@@ -25154,7 +25906,7 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
       },
 
       /**
-       * This function is an helper for svg import. it decoompose the transformMatrix
+       * This function is an helper for svg import. it decompose the transformMatrix
        * and assign properties to object.
        * untransformed coordinates
        * @private
@@ -25217,19 +25969,109 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
 
       /**
        * Creates an instance of fabric.Image out of an object
+       * could make use of both toDataUrl or toCanvasElement.
        * @param {Function} callback callback, invoked with an instance as a first argument
        * @param {Object} [options] for clone as image, passed to toDataURL
-       * @param {Boolean} [options.enableRetinaScaling] enable retina scaling for the cloned image
+       * @param {String} [options.format=png] The format of the output image. Either "jpeg" or "png"
+       * @param {Number} [options.quality=1] Quality level (0..1). Only used for jpeg.
+       * @param {Number} [options.multiplier=1] Multiplier to scale by
+       * @param {Number} [options.left] Cropping left offset. Introduced in v1.2.14
+       * @param {Number} [options.top] Cropping top offset. Introduced in v1.2.14
+       * @param {Number} [options.width] Cropping width. Introduced in v1.2.14
+       * @param {Number} [options.height] Cropping height. Introduced in v1.2.14
+       * @param {Boolean} [options.enableRetinaScaling] Enable retina scaling for clone image. Introduce in 1.6.4
+       * @param {Boolean} [options.withoutTransform] Remove current object transform ( no scale , no angle, no flip, no skew ). Introduced in 2.3.4
+       * @param {Boolean} [options.withoutShadow] Remove current object shadow. Introduced in 2.4.2
        * @return {fabric.Object} thisArg
        */
       cloneAsImage: function(callback, options) {
-        var dataUrl = this.toDataURL(options);
-        fabric.util.loadImage(dataUrl, function(img) {
-          if (callback) {
-            callback(new fabric.Image(img));
-          }
-        });
+        var canvasEl = this.toCanvasElement(options);
+        if (callback) {
+          callback(new fabric.Image(canvasEl));
+        }
         return this;
+      },
+
+      /**
+       * Converts an object into a HTMLCanvas element
+       * @param {Object} options Options object
+       * @param {Number} [options.multiplier=1] Multiplier to scale by
+       * @param {Number} [options.left] Cropping left offset. Introduced in v1.2.14
+       * @param {Number} [options.top] Cropping top offset. Introduced in v1.2.14
+       * @param {Number} [options.width] Cropping width. Introduced in v1.2.14
+       * @param {Number} [options.height] Cropping height. Introduced in v1.2.14
+       * @param {Boolean} [options.enableRetinaScaling] Enable retina scaling for clone image. Introduce in 1.6.4
+       * @param {Boolean} [options.withoutTransform] Remove current object transform ( no scale , no angle, no flip, no skew ). Introduced in 2.3.4
+       * @param {Boolean} [options.withoutShadow] Remove current object shadow. Introduced in 2.4.2
+       * @return {String} Returns a data: URL containing a representation of the object in the format specified by options.format
+       */
+      toCanvasElement: function(options) {
+        options || (options = { });
+
+        var utils = fabric.util, origParams = utils.saveObjectTransform(this),
+            originalGroup = this.group,
+            originalShadow = this.shadow, abs = Math.abs,
+            multiplier = (options.multiplier || 1) * (options.enableRetinaScaling ? fabric.devicePixelRatio : 1);
+        delete this.group;
+        if (options.withoutTransform) {
+          utils.resetObjectTransform(this);
+        }
+        if (options.withoutShadow) {
+          this.shadow = null;
+        }
+
+        var el = fabric.util.createCanvasElement(),
+            // skip canvas zoom and calculate with setCoords now.
+            boundingRect = this.getBoundingRect(true, true),
+            shadow = this.shadow, scaling,
+            shadowOffset = { x: 0, y: 0 }, shadowBlur,
+            width, height;
+
+        if (shadow) {
+          shadowBlur = shadow.blur;
+          if (shadow.nonScaling) {
+            scaling = { scaleX: 1, scaleY: 1 };
+          }
+          else {
+            scaling = this.getObjectScaling();
+          }
+          // consider non scaling shadow.
+          shadowOffset.x = 2 * Math.round(abs(shadow.offsetX) + shadowBlur) * (abs(scaling.scaleX));
+          shadowOffset.y = 2 * Math.round(abs(shadow.offsetY) + shadowBlur) * (abs(scaling.scaleY));
+        }
+        width = boundingRect.width + shadowOffset.x;
+        height = boundingRect.height + shadowOffset.y;
+        // if the current width/height is not an integer
+        // we need to make it so.
+        el.width = Math.ceil(width);
+        el.height = Math.ceil(height);
+        var canvas = new fabric.StaticCanvas(el, {
+          enableRetinaScaling: false,
+          renderOnAddRemove: false,
+          skipOffscreen: false,
+        });
+        if (options.format === 'jpeg') {
+          canvas.backgroundColor = '#fff';
+        }
+        this.setPositionByOrigin(new fabric.Point(canvas.width / 2, canvas.height / 2), 'center', 'center');
+
+        var originalCanvas = this.canvas;
+        canvas.add(this);
+        var canvasEl = canvas.toCanvasElement(multiplier || 1, options);
+        this.shadow = originalShadow;
+        this.canvas = originalCanvas;
+        if (originalGroup) {
+          this.group = originalGroup;
+        }
+        this.set(origParams).setCoords();
+        // canvas.dispose will call image.dispose that will nullify the elements
+        // since this canvas is a simple element for the process, we remove references
+        // to objects in this way in order to avoid object trashing.
+        canvas._objects = [];
+        canvas.dispose();
+        canvas = null;
+
+        return canvasEl;
       },
 
       /**
@@ -25244,52 +26086,12 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
        * @param {Number} [options.height] Cropping height. Introduced in v1.2.14
        * @param {Boolean} [options.enableRetinaScaling] Enable retina scaling for clone image. Introduce in 1.6.4
        * @param {Boolean} [options.withoutTransform] Remove current object transform ( no scale , no angle, no flip, no skew ). Introduced in 2.3.4
+       * @param {Boolean} [options.withoutShadow] Remove current object shadow. Introduced in 2.4.2
        * @return {String} Returns a data: URL containing a representation of the object in the format specified by options.format
        */
       toDataURL: function(options) {
         options || (options = { });
-
-        var origParams = fabric.util.saveObjectTransform(this);
-
-        if (options.withoutTransform) {
-          fabric.util.resetObjectTransform(this);
-        }
-
-        var el = fabric.util.createCanvasElement(),
-            // skip canvas zoom and calculate with setCoords now.
-            boundingRect = this.getBoundingRect(true, true);
-
-        el.width = boundingRect.width;
-        el.height = boundingRect.height;
-        var canvas = new fabric.StaticCanvas(el, {
-          enableRetinaScaling: options.enableRetinaScaling,
-          renderOnAddRemove: false,
-          skipOffscreen: false,
-        });
-        // to avoid common confusion https://github.com/kangax/fabric.js/issues/806
-        if (options.format === 'jpg') {
-          options.format = 'jpeg';
-        }
-
-        if (options.format === 'jpeg') {
-          canvas.backgroundColor = '#fff';
-        }
-
-        this.setPositionByOrigin(new fabric.Point(canvas.width / 2, canvas.height / 2), 'center', 'center');
-
-        var originalCanvas = this.canvas;
-        canvas.add(this);
-        var data = canvas.toDataURL(options);
-        this.set(origParams).setCoords();
-        this.canvas = originalCanvas;
-        // canvas.dispose will call image.dispose that will nullify the elements
-        // since this canvas is a simple element for the process, we remove references
-        // to objects in this way in order to avoid object trashing.
-        canvas._objects = [];
-        canvas.dispose();
-        canvas = null;
-
-        return data;
+        return fabric.util.toDataURL(this.toCanvasElement(options), options.format || 'png', options.quality || 1);
       },
 
       /**
@@ -25321,6 +26123,7 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
 
       /**
        * Sets gradient (fill or stroke) of an object
+       * percentages for x1,x2,y1,y2,r1,r2 together with gradientUnits 'pixels', are not supported.
        * <b>Backwards incompatibility note:</b> This method was named "setGradientFill" until v1.1.0
        * @param {String} property Property name 'stroke' or 'fill'
        * @param {Object} [options] Options object
@@ -25332,9 +26135,10 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
        * @param {Number} [options.r1=0] Radius of start point (only for radial gradients)
        * @param {Number} [options.r2=0] Radius of end point (only for radial gradients)
        * @param {Object} [options.colorStops] Color stops object eg. {0: 'ff0000', 1: '000000'}
-       * @param {Object} [options.gradientTransform] transforMatrix for gradient
+       * @param {Object} [options.gradientTransform] transformMatrix for gradient
        * @return {fabric.Object} thisArg
        * @chainable
+       * @deprecated since 3.4.0
        * @see {@link http://jsfiddle.net/fabricjs/58y8b/|jsFiddle demo}
        * @example <caption>Set linear gradient</caption>
        * object.setGradient('fill', {
@@ -25379,7 +26183,7 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
           x2: options.x2,
           y2: options.y2
         };
-
+        gradient.gradientUnits = options.gradientUnits || 'pixels';
         if (options.r1 || options.r2) {
           gradient.coords.r1 = options.r1;
           gradient.coords.r2 = options.r2;
@@ -25401,6 +26205,7 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
        * @param {Function} [callback] Callback to invoke when image set as a pattern
        * @return {fabric.Object} thisArg
        * @chainable
+       * @deprecated since 3.5.0
        * @see {@link http://jsfiddle.net/fabricjs/QT3pa/|jsFiddle demo}
        * @example <caption>Set pattern</caption>
        * object.setPatternFill({
@@ -25421,6 +26226,7 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
        * @param {Number} [options.offsetY=0] Shadow vertical offset
        * @return {fabric.Object} thisArg
        * @chainable
+       * @deprecated since 3.5.0
        * @see {@link http://jsfiddle.net/fabricjs/7gvJG/|jsFiddle demo}
        * @example <caption>Set shadow with string notation</caption>
        * object.setShadow('2px 2px 10px rgba(0,0,0,0.2)');
@@ -25442,6 +26248,7 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
        * Sets "color" of an instance (alias of `set('fill', &hellip;)`)
        * @param {String} color Color value
        * @return {fabric.Object} thisArg
+       * @deprecated since 3.5.0
        * @chainable
        */
       setColor: function(color) {
@@ -25559,7 +26366,7 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
 
       /**
        * Sets canvas globalCompositeOperation for specific object
-       * custom composition operation for the particular object can be specifed using globalCompositeOperation property
+       * custom composition operation for the particular object can be specified using globalCompositeOperation property
        * @param {CanvasRenderingContext2D} ctx Rendering canvas context
        */
       _setupCompositeOperation: function (ctx) {
@@ -25593,8 +26400,11 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
         if (typeof patterns[1] !== 'undefined') {
           object.stroke = patterns[1];
         }
-        var instance = extraParam ? new klass(object[extraParam], object) : new klass(object);
-        callback && callback(instance);
+        fabric.util.enlivenObjects([object.clipPath], function(enlivedProps) {
+          object.clipPath = enlivedProps[0];
+          var instance = extraParam ? new klass(object[extraParam], object) : new klass(object);
+          callback && callback(instance);
+        });
       });
     };
 
@@ -25605,7 +26415,6 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
      * @type Number
      */
     fabric.Object.__uid = 0;
-
   })(typeof exports !== 'undefined' ? exports : this);
 
 
@@ -25903,7 +26712,7 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
        * each property is an object with x, y, instance of Fabric.Point.
        * The coordinates depends from this properties: width, height, scaleX, scaleY
        * skewX, skewY, angle, strokeWidth, top, left.
-       * Those coordinates are usefull to understand where an object is. They get updated
+       * Those coordinates are useful to understand where an object is. They get updated
        * with oCoords but they do not need to be updated when zoom or panning change.
        * The coordinates get updated with @method setCoords.
        * You can calculate them without updating with @method calcCoords(true);
@@ -26028,7 +26837,7 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
       /**
        * Checks if object is contained within the canvas with current viewportTransform
        * the check is done stopping at first point that appears on screen
-       * @param {Boolean} [calculate] use coordinates of current position instead of .oCoords
+       * @param {Boolean} [calculate] use coordinates of current position instead of .aCoords
        * @return {Boolean} true if object is fully or partially contained within canvas
        */
       isOnScreen: function(calculate) {
@@ -26057,7 +26866,7 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
        * @param {Fabric.Point} pointTL Top Left point
        * @param {Fabric.Point} pointBR Top Right point
        * @param {Boolean} calculate use coordinates of current position instead of .oCoords
-       * @return {Boolean} true if the objects containe the point
+       * @return {Boolean} true if the object contains the point
        */
       _containsCenterOfCanvas: function(pointTL, pointBR, calculate) {
         // worst case scenario the object is so big that contains the screen
@@ -26162,7 +26971,7 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
 
       /**
        * Returns coordinates of object's bounding rectangle (left, top, width, height)
-       * the box is intented as aligned to axis of canvas.
+       * the box is intended as aligned to axis of canvas.
        * @param {Boolean} [absolute] use coordinates without viewportTransform
        * @param {Boolean} [calculate] use coordinates of current position instead of .oCoords / .aCoords
        * @return {Object} Object with left, top, width, height properties
@@ -26173,7 +26982,7 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
       },
 
       /**
-       * Returns width of an object bounding box counting transformations
+       * Returns width of an object's bounding box counting transformations
        * before 2.0 it was named getWidth();
        * @return {Number} width value
        */
@@ -26250,7 +27059,7 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
       },
 
       /**
-       * Calculate and returns the .coords of an object.
+       * Calculates and returns the .coords of an object.
        * @return {Object} Object with tl, tr, br, bl ....
        * @chainable
        */
@@ -26325,7 +27134,7 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
        * Sets corner position coordinates based on current angle, width and height.
        * See {@link https://github.com/kangax/fabric.js/wiki/When-to-call-setCoords|When-to-call-setCoords}
        * @param {Boolean} [ignoreZoom] set oCoords with or without the viewport transform.
-       * @param {Boolean} [skipAbsolute] skip calculation of aCoords, usefull in setViewportTransform
+       * @param {Boolean} [skipAbsolute] skip calculation of aCoords, useful in setViewportTransform
        * @return {fabric.Object} thisArg
        * @chainable
        */
@@ -26346,11 +27155,7 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
        * @return {Array} rotation matrix for the object
        */
       _calcRotateMatrix: function() {
-        if (this.angle) {
-          var theta = degreesToRadians(this.angle), cos = fabric.util.cos(theta), sin = fabric.util.sin(theta);
-          return [cos, sin, -sin, cos, 0, 0];
-        }
-        return fabric.iMatrix.concat();
+        return fabric.util.calcRotateMatrix(this);
       },
 
       /**
@@ -26373,10 +27178,10 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
       },
 
       /**
-       * calculate trasform Matrix that represent current transformation from
-       * object properties.
-       * @param {Boolean} [skipGroup] return transformMatrix for object and not go upward with parents
-       * @return {Array} matrix Transform Matrix for the object
+       * calculate transform matrix that represents the current transformations from the
+       * object's properties.
+       * @param {Boolean} [skipGroup] return transform matrix for object not counting parent transformations
+       * @return {Array} transform matrix for the object
        */
       calcTransformMatrix: function(skipGroup) {
         if (skipGroup) {
@@ -26395,40 +27200,40 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
         return matrix;
       },
 
+      /**
+       * calculate transform matrix that represents the current transformations from the
+       * object's properties, this matrix does not include the group transformation
+       * @return {Array} transform matrix for the object
+       */
       calcOwnMatrix: function() {
         var key = this.transformMatrixKey(true), cache = this.ownMatrixCache || (this.ownMatrixCache = {});
         if (cache.key === key) {
           return cache.value;
         }
-        var matrix = this._calcTranslateMatrix(),
-            rotateMatrix,
-            dimensionMatrix = this._calcDimensionsTransformMatrix(this.skewX, this.skewY, true);
-        if (this.angle) {
-          rotateMatrix = this._calcRotateMatrix();
-          matrix = multiplyMatrices(matrix, rotateMatrix);
-        }
-        matrix = multiplyMatrices(matrix, dimensionMatrix);
+        var tMatrix = this._calcTranslateMatrix();
+        this.translateX = tMatrix[4];
+        this.translateY = tMatrix[5];
         cache.key = key;
-        cache.value = matrix;
-        return matrix;
+        cache.value = fabric.util.composeMatrix(this);
+        return cache.value;
       },
 
+      /*
+       * Calculate object dimensions from its properties
+       * @private
+       * @deprecated since 3.4.0, please use fabric.util._calcDimensionsTransformMatrix
+       * not including or including flipX, flipY to emulate the flipping boolean
+       * @return {Object} .x width dimension
+       * @return {Object} .y height dimension
+       */
       _calcDimensionsTransformMatrix: function(skewX, skewY, flipping) {
-        var skewMatrix,
-            scaleX = this.scaleX * (flipping && this.flipX ? -1 : 1),
-            scaleY = this.scaleY * (flipping && this.flipY ? -1 : 1),
-            scaleMatrix = [scaleX, 0, 0, scaleY, 0, 0];
-        if (skewX) {
-          skewMatrix = [1, 0, Math.tan(degreesToRadians(skewX)), 1];
-          scaleMatrix = multiplyMatrices(scaleMatrix, skewMatrix, true);
-        }
-        if (skewY) {
-          skewMatrix = [1, Math.tan(degreesToRadians(skewY)), 0, 1];
-          scaleMatrix = multiplyMatrices(scaleMatrix, skewMatrix, true);
-        }
-        return scaleMatrix;
+        return fabric.util.calcDimensionsMatrix({
+          skewX: skewX,
+          skewY: skewY,
+          scaleX: this.scaleX * (flipping && this.flipX ? -1 : 1),
+          scaleY: this.scaleY * (flipping && this.flipY ? -1 : 1)
+        });
       },
-
 
       /*
        * Calculate object dimensions from its properties
@@ -26444,7 +27249,11 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
       },
 
       /*
-       * Calculate object bounding boxdimensions from its properties scale, skew.
+       * Calculate object bounding box dimensions from its properties scale, skew.
+       * The skewX and skewY parameters are used in the skewing logic path and
+       * do not provide something useful to common use cases.
+       * @param {Number} [skewX], a value to override current skewX
+       * @param {Number} [skewY], a value to override current skewY
        * @private
        * @return {Object} .x width dimension
        * @return {Object} .y height dimension
@@ -26456,12 +27265,25 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
         if (typeof skewY === 'undefined') {
           skewY = this.skewY;
         }
-        var dimensions = this._getNonTransformedDimensions();
-        if (skewX === 0 && skewY === 0) {
-          return { x: dimensions.x * this.scaleX, y: dimensions.y * this.scaleY };
+        var dimensions = this._getNonTransformedDimensions(), dimX, dimY,
+            noSkew = skewX === 0 && skewY === 0;
+
+        if (this.strokeUniform) {
+          dimX = this.width;
+          dimY = this.height;
         }
-        var dimX = dimensions.x / 2, dimY = dimensions.y / 2,
-            points = [
+        else {
+          dimX = dimensions.x;
+          dimY = dimensions.y;
+        }
+        if (noSkew) {
+          return this._finalizeDimensions(dimX * this.scaleX, dimY * this.scaleY);
+        }
+        else {
+          dimX /= 2;
+          dimY /= 2;
+        }
+        var points = [
               {
                 x: -dimX,
                 y: -dimY
@@ -26478,17 +27300,32 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
                 x: dimX,
                 y: dimY
               }],
-            i, transformMatrix = this._calcDimensionsTransformMatrix(skewX, skewY, false),
-            bbox;
-        for (i = 0; i < points.length; i++) {
-          points[i] = fabric.util.transformPoint(points[i], transformMatrix);
-        }
-        bbox = fabric.util.makeBoundingBoxFromPoints(points);
-        return { x: bbox.width, y: bbox.height };
+            transformMatrix = fabric.util.calcDimensionsMatrix({
+              scaleX: this.scaleX,
+              scaleY: this.scaleY,
+              skewX: skewX,
+              skewY: skewY,
+            }),
+            bbox = fabric.util.makeBoundingBoxFromPoints(points, transformMatrix);
+        return this._finalizeDimensions(bbox.width, bbox.height);
       },
 
       /*
-       * Calculate object dimensions for controls. include padding and canvas zoom
+       * Calculate object bounding box dimensions from its properties scale, skew.
+       * @param Number width width of the bbox
+       * @param Number height height of the bbox
+       * @private
+       * @return {Object} .x finalized width dimension
+       * @return {Object} .y finalized height dimension
+       */
+      _finalizeDimensions: function(width, height) {
+        return this.strokeUniform ?
+          { x: width + this.strokeWidth, y: height + this.strokeWidth }
+          :
+          { x: width, y: height };
+      },
+      /*
+       * Calculate object dimensions for controls, including padding and canvas zoom.
        * private
        */
       _calculateCurrentDimensions: function()  {
@@ -26615,9 +27452,10 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
        */
       getSvgStyles: function(skipShadow) {
 
-        var fillRule = this.fillRule,
+        var fillRule = this.fillRule ? this.fillRule : 'nonzero',
             strokeWidth = this.strokeWidth ? this.strokeWidth : '0',
             strokeDashArray = this.strokeDashArray ? this.strokeDashArray.join(' ') : 'none',
+            strokeDashOffset = this.strokeDashOffset ? this.strokeDashOffset : '0',
             strokeLineCap = this.strokeLineCap ? this.strokeLineCap : 'butt',
             strokeLineJoin = this.strokeLineJoin ? this.strokeLineJoin : 'miter',
             strokeMiterLimit = this.strokeMiterLimit ? this.strokeMiterLimit : '4',
@@ -26632,6 +27470,7 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
           'stroke-width: ', strokeWidth, '; ',
           'stroke-dasharray: ', strokeDashArray, '; ',
           'stroke-linecap: ', strokeLineCap, '; ',
+          'stroke-dashoffset: ', strokeDashOffset, '; ',
           'stroke-linejoin: ', strokeLineJoin, '; ',
           'stroke-miterlimit: ', strokeMiterLimit, '; ',
           fill,
@@ -26705,51 +27544,23 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
        * Returns id attribute for svg output
        * @return {String}
        */
-      getSvgId: function() {
-        return this.id ? 'id="' + this.id + '" ' : '';
+      getSvgCommons: function() {
+        return [
+          this.id ? 'id="' + this.id + '" ' : '',
+          this.clipPath ? 'clip-path="url(#' + this.clipPath.clipPathId + ')" ' : '',
+        ].join('');
       },
 
       /**
        * Returns transform-string for svg-export
+       * @param {Boolean} use the full transform or the single object one.
        * @return {String}
        */
-      getSvgTransform: function() {
-        var angle = this.angle,
-            skewX = (this.skewX % 360),
-            skewY = (this.skewY % 360),
-            center = this.getCenterPoint(),
-
-            NUM_FRACTION_DIGITS = fabric.Object.NUM_FRACTION_DIGITS,
-
-            translatePart = 'translate(' +
-                              toFixed(center.x, NUM_FRACTION_DIGITS) +
-                              ' ' +
-                              toFixed(center.y, NUM_FRACTION_DIGITS) +
-                            ')',
-
-            anglePart = angle !== 0
-              ? (' rotate(' + toFixed(angle, NUM_FRACTION_DIGITS) + ')')
-              : '',
-
-            scalePart = (this.scaleX === 1 && this.scaleY === 1)
-              ? '' :
-              (' scale(' +
-                toFixed(this.scaleX, NUM_FRACTION_DIGITS) +
-                ' ' +
-                toFixed(this.scaleY, NUM_FRACTION_DIGITS) +
-              ')'),
-
-            skewXPart = skewX !== 0 ? ' skewX(' + toFixed(skewX, NUM_FRACTION_DIGITS) + ')' : '',
-
-            skewYPart = skewY !== 0 ? ' skewY(' + toFixed(skewY, NUM_FRACTION_DIGITS) + ')' : '',
-
-            flipXPart = this.flipX ? ' matrix(-1 0 0 1 0 0) ' : '',
-
-            flipYPart = this.flipY ? ' matrix(1 0 0 -1 0 0)' : '';
-
-        return [
-          translatePart, anglePart, scalePart, flipXPart, flipYPart, skewXPart, skewYPart
-        ].join('');
+      getSvgTransform: function(full, additionalTransform) {
+        var transform = full ? this.calcTransformMatrix() : this.calcOwnMatrix(),
+            svgTransform = 'transform="' + fabric.util.matrixToSVG(transform);
+        return svgTransform +
+          (additionalTransform || '') + this.getSvgTransformMatrix() + '" ';
       },
 
       /**
@@ -26757,7 +27568,7 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
        * @return {String}
        */
       getSvgTransformMatrix: function() {
-        return this.transformMatrix ? ' matrix(' + this.transformMatrix.join(' ') + ') ' : '';
+        return this.transformMatrix ? ' ' + fabric.util.matrixToSVG(this.transformMatrix) : '';
       },
 
       _setSVGBg: function(textBgRects) {
@@ -26779,21 +27590,97 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
       },
 
       /**
+       * Returns svg representation of an instance
+       * @param {Function} [reviver] Method for further parsing of svg representation.
+       * @return {String} svg representation of an instance
+       */
+      toSVG: function(reviver) {
+        return this._createBaseSVGMarkup(this._toSVG(reviver), { reviver: reviver });
+      },
+
+      /**
+       * Returns svg clipPath representation of an instance
+       * @param {Function} [reviver] Method for further parsing of svg representation.
+       * @return {String} svg representation of an instance
+       */
+      toClipPathSVG: function(reviver) {
+        return '\t' + this._createBaseClipPathSVGMarkup(this._toSVG(reviver), { reviver: reviver });
+      },
+
+      /**
        * @private
        */
-      _createBaseSVGMarkup: function() {
-        var markup = [];
+      _createBaseClipPathSVGMarkup: function(objectMarkup, options) {
+        options = options || {};
+        var reviver = options.reviver,
+            additionalTransform = options.additionalTransform || '',
+            commonPieces = [
+              this.getSvgTransform(true, additionalTransform),
+              this.getSvgCommons(),
+            ].join(''),
+            // insert commons in the markup, style and svgCommons
+            index = objectMarkup.indexOf('COMMON_PARTS');
+        objectMarkup[index] = commonPieces;
+        return reviver ? reviver(objectMarkup.join('')) : objectMarkup.join('');
+      },
 
-        if (this.fill && this.fill.toLive) {
-          markup.push(this.fill.toSVG(this, false));
+      /**
+       * @private
+       */
+      _createBaseSVGMarkup: function(objectMarkup, options) {
+        options = options || {};
+        var noStyle = options.noStyle,
+            reviver = options.reviver,
+            styleInfo = noStyle ? '' : 'style="' + this.getSvgStyles() + '" ',
+            shadowInfo = options.withShadow ? 'style="' + this.getSvgFilter() + '" ' : '',
+            clipPath = this.clipPath,
+            vectorEffect = this.strokeUniform ? 'vector-effect="non-scaling-stroke" ' : '',
+            absoluteClipPath = clipPath && clipPath.absolutePositioned,
+            stroke = this.stroke, fill = this.fill, shadow = this.shadow,
+            commonPieces, markup = [], clipPathMarkup,
+            // insert commons in the markup, style and svgCommons
+            index = objectMarkup.indexOf('COMMON_PARTS'),
+            additionalTransform = options.additionalTransform;
+        if (clipPath) {
+          clipPath.clipPathId = 'CLIPPATH_' + fabric.Object.__uid++;
+          clipPathMarkup = '<clipPath id="' + clipPath.clipPathId + '" >\n' +
+            clipPath.toClipPathSVG(reviver) +
+            '</clipPath>\n';
         }
-        if (this.stroke && this.stroke.toLive) {
-          markup.push(this.stroke.toSVG(this, false));
+        if (absoluteClipPath) {
+          markup.push(
+            '<g ', shadowInfo, this.getSvgCommons(), ' >\n'
+          );
         }
-        if (this.shadow) {
-          markup.push(this.shadow.toSVG(this));
+        markup.push(
+          '<g ',
+          this.getSvgTransform(false),
+          !absoluteClipPath ? shadowInfo + this.getSvgCommons() : '',
+          ' >\n'
+        );
+        commonPieces = [
+          styleInfo,
+          vectorEffect,
+          noStyle ? '' : this.addPaintOrder(), ' ',
+          additionalTransform ? 'transform="' + additionalTransform + '" ' : '',
+        ].join('');
+        objectMarkup[index] = commonPieces;
+        if (fill && fill.toLive) {
+          markup.push(fill.toSVG(this));
         }
-        return markup;
+        if (stroke && stroke.toLive) {
+          markup.push(stroke.toSVG(this));
+        }
+        if (shadow) {
+          markup.push(shadow.toSVG(this));
+        }
+        if (clipPath) {
+          markup.push(clipPathMarkup);
+        }
+        markup.push(objectMarkup.join(''));
+        markup.push('</g>\n');
+        absoluteClipPath && markup.push('</g>\n');
+        return reviver ? reviver(markup.join('')) : markup.join('');
       },
 
       addPaintOrder: function() {
@@ -26846,6 +27733,11 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
         }
         for (var i = 0, len = keys.length; i < len; i++) {
           key = keys[i];
+          // since clipPath is in the statefull cache list and the clipPath objects
+          // would be iterated as an object, this would lead to possible infinite recursion
+          if (key === 'canvas') {
+            continue;
+          }
           if (!_isEqual(origValue[key], currentValue[key])) {
             return false;
           }
@@ -27103,7 +27995,11 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
       drawBordersInGroup: function(ctx, options, styleOverride) {
         styleOverride = styleOverride || {};
         var p = this._getNonTransformedDimensions(),
-            matrix = fabric.util.customTransformMatrix(options.scaleX, options.scaleY, options.skewX),
+            matrix = fabric.util.composeMatrix({
+              scaleX: options.scaleX,
+              scaleY: options.scaleY,
+              skewX: options.skewX
+            }),
             wh = fabric.util.transformPoint(p, matrix),
             strokeWidth = 1 / this.borderScaleFactor,
             width = wh.x + strokeWidth,
@@ -27556,7 +28452,7 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
 
     'use strict';
 
-    var //fabric = global.fabric || (global.fabric = { }),
+    var fabric = global.fabric || (global.fabric = { }),
         extend = fabric.util.object.extend,
         clone = fabric.util.object.clone,
         coordProps = { x1: 1, x2: 1, y1: 1, y2: 1 },
@@ -27801,26 +28697,20 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
 
       /* _TO_SVG_START_ */
       /**
-       * Returns SVG representation of an instance
-       * @param {Function} [reviver] Method for further parsing of svg representation.
-       * @return {String} svg representation of an instance
+       * Returns svg representation of an instance
+       * @return {Array} an array of strings with the specific svg representation
+       * of the instance
        */
-      toSVG: function(reviver) {
-        var markup = this._createBaseSVGMarkup(),
-            p = this.calcLinePoints();
-        markup.push(
-          '<line ', this.getSvgId(),
+      _toSVG: function() {
+        var p = this.calcLinePoints();
+        return [
+          '<line ', 'COMMON_PARTS',
           'x1="', p.x1,
           '" y1="', p.y1,
           '" x2="', p.x2,
           '" y2="', p.y2,
-          '" style="', this.getSvgStyles(),
-          '" transform="', this.getSvgTransform(),
-          this.getSvgTransformMatrix(),
-          '"/>\n'
-        );
-
-        return reviver ? reviver(markup.join('')) : markup.join('');
+          '" />\n'
+        ];
       },
       /* _TO_SVG_END_ */
     });
@@ -27904,7 +28794,7 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
 
     'use strict';
 
-    var //fabric = global.fabric || (global.fabric = { }),
+    var fabric = global.fabric || (global.fabric = { }),
         pi = Math.PI;
 
     if (fabric.Circle) {
@@ -27980,26 +28870,23 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
       },
 
       /* _TO_SVG_START_ */
+
       /**
        * Returns svg representation of an instance
-       * @param {Function} [reviver] Method for further parsing of svg representation.
-       * @return {String} svg representation of an instance
+       * @return {Array} an array of strings with the specific svg representation
+       * of the instance
        */
-      toSVG: function(reviver) {
-        var markup = this._createBaseSVGMarkup(), x = 0, y = 0,
+      _toSVG: function() {
+        var svgString, x = 0, y = 0,
             angle = (this.endAngle - this.startAngle) % ( 2 * pi);
 
         if (angle === 0) {
-          markup.push(
-            '<circle ', this.getSvgId(),
+          svgString = [
+            '<circle ', 'COMMON_PARTS',
             'cx="' + x + '" cy="' + y + '" ',
             'r="', this.radius,
-            '" style="', this.getSvgStyles(),
-            '" transform="', this.getSvgTransform(),
-            ' ', this.getSvgTransformMatrix(), '"',
-            this.addPaintOrder(),
-            '/>\n'
-          );
+            '" />\n'
+          ];
         }
         else {
           var startX = fabric.util.cos(this.startAngle) * this.radius,
@@ -28007,20 +28894,14 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
               endX = fabric.util.cos(this.endAngle) * this.radius,
               endY = fabric.util.sin(this.endAngle) * this.radius,
               largeFlag = angle > pi ? '1' : '0';
-
-          markup.push(
+          svgString = [
             '<path d="M ' + startX + ' ' + startY,
             ' A ' + this.radius + ' ' + this.radius,
             ' 0 ', +largeFlag + ' 1', ' ' + endX + ' ' + endY,
-            '" style="', this.getSvgStyles(),
-            '" transform="', this.getSvgTransform(),
-            ' ', this.getSvgTransformMatrix(), '"',
-            this.addPaintOrder(),
-            '/>\n'
-          );
+            '" ', 'COMMON_PARTS', ' />\n'
+          ];
         }
-
-        return reviver ? reviver(markup.join('')) : markup.join('');
+        return svgString;
       },
       /* _TO_SVG_END_ */
 
@@ -28122,7 +29003,7 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
 
     'use strict';
 
-    //var fabric = global.fabric || (global.fabric = { });
+    var fabric = global.fabric || (global.fabric = { });
 
     if (fabric.Triangle) {
       fabric.warn('fabric.Triangle is already defined');
@@ -28193,31 +29074,23 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
 
       /* _TO_SVG_START_ */
       /**
-       * Returns SVG representation of an instance
-       * @param {Function} [reviver] Method for further parsing of svg representation.
-       * @return {String} svg representation of an instance
+       * Returns svg representation of an instance
+       * @return {Array} an array of strings with the specific svg representation
+       * of the instance
        */
-      toSVG: function(reviver) {
-        var markup = this._createBaseSVGMarkup(),
-            widthBy2 = this.width / 2,
+      _toSVG: function() {
+        var widthBy2 = this.width / 2,
             heightBy2 = this.height / 2,
             points = [
               -widthBy2 + ' ' + heightBy2,
               '0 ' + -heightBy2,
               widthBy2 + ' ' + heightBy2
-            ]
-              .join(',');
-
-        markup.push(
-          '<polygon ', this.getSvgId(),
+            ].join(',');
+        return [
+          '<polygon ', 'COMMON_PARTS',
           'points="', points,
-          '" style="', this.getSvgStyles(),
-          '" transform="', this.getSvgTransform(), '"',
-          this.addPaintOrder(),
-          '/>'
-        );
-
-        return reviver ? reviver(markup.join('')) : markup.join('');
+          '" />'
+        ];
       },
       /* _TO_SVG_END_ */
     });
@@ -28240,7 +29113,7 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
 
     'use strict';
 
-    var //fabric = global.fabric || (global.fabric = { }),
+    var fabric = global.fabric || (global.fabric = { }),
         piBy2   = Math.PI * 2;
 
     if (fabric.Ellipse) {
@@ -28343,24 +29216,17 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
       /* _TO_SVG_START_ */
       /**
        * Returns svg representation of an instance
-       * @param {Function} [reviver] Method for further parsing of svg representation.
-       * @return {String} svg representation of an instance
+       * @return {Array} an array of strings with the specific svg representation
+       * of the instance
        */
-      toSVG: function(reviver) {
-        var markup = this._createBaseSVGMarkup();
-        markup.push(
-          '<ellipse ', this.getSvgId(),
+      _toSVG: function() {
+        return [
+          '<ellipse ', 'COMMON_PARTS',
           'cx="0" cy="0" ',
           'rx="', this.rx,
           '" ry="', this.ry,
-          '" style="', this.getSvgStyles(),
-          '" transform="', this.getSvgTransform(),
-          this.getSvgTransformMatrix(), '"',
-          this.addPaintOrder(),
-          '/>\n'
-        );
-
-        return reviver ? reviver(markup.join('')) : markup.join('');
+          '" />\n'
+        ];
       },
       /* _TO_SVG_END_ */
 
@@ -28430,7 +29296,7 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
 
     'use strict';
 
-    var //fabric = global.fabric || (global.fabric = { }),
+    var fabric = global.fabric || (global.fabric = { }),
         extend = fabric.util.object.extend;
 
     if (fabric.Rect) {
@@ -28506,11 +29372,8 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
        */
       _render: function(ctx) {
 
-        // optimize 1x1 case (used in spray brush)
-        if (this.width === 1 && this.height === 1) {
-          ctx.fillRect(-0.5, -0.5, 1, 1);
-          return;
-        }
+        // 1x1 case (used in spray brush) optimization was removed because
+        // with caching and higher zoom level this makes more damage than help
 
         var rx = this.rx ? Math.min(this.rx, this.width / 2) : 0,
             ry = this.ry ? Math.min(this.ry, this.height / 2) : 0,
@@ -28572,23 +29435,18 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
       /* _TO_SVG_START_ */
       /**
        * Returns svg representation of an instance
-       * @param {Function} [reviver] Method for further parsing of svg representation.
-       * @return {String} svg representation of an instance
+       * @return {Array} an array of strings with the specific svg representation
+       * of the instance
        */
-      toSVG: function(reviver) {
-        var markup = this._createBaseSVGMarkup(), x = -this.width / 2, y = -this.height / 2;
-        markup.push(
-          '<rect ', this.getSvgId(),
+      _toSVG: function() {
+        var x = -this.width / 2, y = -this.height / 2;
+        return [
+          '<rect ', 'COMMON_PARTS',
           'x="', x, '" y="', y,
-          '" rx="', this.get('rx'), '" ry="', this.get('ry'),
+          '" rx="', this.rx, '" ry="', this.ry,
           '" width="', this.width, '" height="', this.height,
-          '" style="', this.getSvgStyles(),
-          '" transform="', this.getSvgTransform(),
-          this.getSvgTransformMatrix(), '"',
-          this.addPaintOrder(),
-          '/>\n');
-
-        return reviver ? reviver(markup.join('')) : markup.join('');
+          '" />\n'
+        ];
       },
       /* _TO_SVG_END_ */
     });
@@ -28620,6 +29478,8 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
 
       parsedAttributes.left = parsedAttributes.left || 0;
       parsedAttributes.top  = parsedAttributes.top  || 0;
+      parsedAttributes.height  = parsedAttributes.height || 0;
+      parsedAttributes.width  = parsedAttributes.width || 0;
       var rect = new fabric.Rect(extend((options ? fabric.util.object.clone(options) : { }), parsedAttributes));
       rect.visible = rect.visible && rect.width > 0 && rect.height > 0;
       callback(rect);
@@ -28644,7 +29504,7 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
 
     'use strict';
 
-    var //fabric = global.fabric || (global.fabric = { }),
+    var fabric = global.fabric || (global.fabric = { }),
         extend = fabric.util.object.extend,
         min = fabric.util.array.min,
         max = fabric.util.array.max,
@@ -28702,15 +29562,28 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
         options = options || {};
         this.points = points || [];
         this.callSuper('initialize', options);
-        var calcDim = this._calcDimensions();
-        if (typeof options.left === 'undefined') {
-          this.left = calcDim.left;
-        }
-        if (typeof options.top === 'undefined') {
-          this.top = calcDim.top;
-        }
+        this._setPositionDimensions(options);
+      },
+
+      _setPositionDimensions: function(options) {
+        var calcDim = this._calcDimensions(options), correctLeftTop;
         this.width = calcDim.width;
         this.height = calcDim.height;
+        if (!options.fromSVG) {
+          correctLeftTop = this.translateToGivenOrigin(
+            { x: calcDim.left - this.strokeWidth / 2, y: calcDim.top - this.strokeWidth / 2 },
+            'left',
+            'top',
+            this.originX,
+            this.originY
+          );
+        }
+        if (typeof options.left === 'undefined') {
+          this.left = options.fromSVG ? calcDim.left : correctLeftTop.x;
+        }
+        if (typeof options.top === 'undefined') {
+          this.top = options.fromSVG ? calcDim.top : correctLeftTop.y;
+        }
         this.pathOffset = {
           x: calcDim.left + this.width / 2,
           y: calcDim.top + this.height / 2
@@ -28759,12 +29632,11 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
       /* _TO_SVG_START_ */
       /**
        * Returns svg representation of an instance
-       * @param {Function} [reviver] Method for further parsing of svg representation.
-       * @return {String} svg representation of an instance
+       * @return {Array} an array of strings with the specific svg representation
+       * of the instance
        */
-      toSVG: function(reviver) {
+      _toSVG: function() {
         var points = [], diffX = this.pathOffset.x, diffY = this.pathOffset.y,
-            markup = this._createBaseSVGMarkup(),
             NUM_FRACTION_DIGITS = fabric.Object.NUM_FRACTION_DIGITS;
 
         for (var i = 0, len = this.points.length; i < len; i++) {
@@ -28773,17 +29645,11 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
             toFixed(this.points[i].y - diffY, NUM_FRACTION_DIGITS), ' '
           );
         }
-        markup.push(
-          '<', this.type, ' ', this.getSvgId(),
+        return [
+          '<' + this.type + ' ', 'COMMON_PARTS',
           'points="', points.join(''),
-          '" style="', this.getSvgStyles(),
-          '" transform="', this.getSvgTransform(),
-          ' ', this.getSvgTransformMatrix(), '"',
-          this.addPaintOrder(),
-          '/>\n'
-        );
-
-        return reviver ? reviver(markup.join('')) : markup.join('');
+          '" />\n'
+        ];
       },
       /* _TO_SVG_END_ */
 
@@ -28863,17 +29729,22 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
      * @param {Function} callback callback function invoked after parsing
      * @param {Object} [options] Options object
      */
-    fabric.Polyline.fromElement = function(element, callback, options) {
-      if (!element) {
-        return callback(null);
-      }
-      options || (options = { });
+    fabric.Polyline.fromElementGenerator = function(_class) {
+      return function(element, callback, options) {
+        if (!element) {
+          return callback(null);
+        }
+        options || (options = { });
 
-      var points = fabric.parsePointsAttribute(element.getAttribute('points')),
-          parsedAttributes = fabric.parseAttributes(element, fabric.Polyline.ATTRIBUTE_NAMES);
-
-      callback(new fabric.Polyline(points, fabric.util.object.extend(parsedAttributes, options)));
+        var points = fabric.parsePointsAttribute(element.getAttribute('points')),
+            parsedAttributes = fabric.parseAttributes(element, fabric[_class].ATTRIBUTE_NAMES);
+        parsedAttributes.fromSVG = true;
+        callback(new fabric[_class](points, extend(parsedAttributes, options)));
+      };
     };
+
+    fabric.Polyline.fromElement = fabric.Polyline.fromElementGenerator('Polyline');
+
     /* _FROM_SVG_END_ */
 
     /**
@@ -28894,8 +29765,7 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
 
     'use strict';
 
-    var //fabric = global.fabric || (global.fabric = { }),
-        extend = fabric.util.object.extend;
+    var fabric = global.fabric || (global.fabric = { });
 
     if (fabric.Polygon) {
       fabric.warn('fabric.Polygon is already defined');
@@ -28956,18 +29826,7 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
      * @param {Function} callback callback function invoked after parsing
      * @param {Object} [options] Options object
      */
-    fabric.Polygon.fromElement = function(element, callback, options) {
-      if (!element) {
-        return callback(null);
-      }
-
-      options || (options = { });
-
-      var points = fabric.parsePointsAttribute(element.getAttribute('points')),
-          parsedAttributes = fabric.parseAttributes(element, fabric.Polygon.ATTRIBUTE_NAMES);
-
-      callback(new fabric.Polygon(points, extend(parsedAttributes, options)));
-    };
+    fabric.Polygon.fromElement = fabric.Polyline.fromElementGenerator('Polygon');
     /* _FROM_SVG_END_ */
 
     /**
@@ -28988,12 +29847,13 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
 
     'use strict';
 
-    var //fabric = global.fabric || (global.fabric = { }),
+    var fabric = global.fabric || (global.fabric = { }),
         min = fabric.util.array.min,
         max = fabric.util.array.max,
         extend = fabric.util.object.extend,
         _toString = Object.prototype.toString,
         drawArc = fabric.util.drawArc,
+        toFixed = fabric.util.toFixed,
         commandLengths = {
           m: 2,
           l: 2,
@@ -29071,31 +29931,7 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
           this.path = this._parsePath();
         }
 
-        this._setPositionDimensions(options);
-      },
-
-      /**
-       * @private
-       * @param {Object} options Options object
-       */
-      _setPositionDimensions: function(options) {
-        var calcDim = this._parseDimensions();
-
-        this.width = calcDim.width;
-        this.height = calcDim.height;
-
-        if (typeof options.left === 'undefined') {
-          this.left = calcDim.left;
-        }
-
-        if (typeof options.top === 'undefined') {
-          this.top = calcDim.top;
-        }
-
-        this.pathOffset = this.pathOffset || {
-          x: calcDim.left + this.width / 2,
-          y: calcDim.top + this.height / 2
-        };
+        fabric.Polyline.prototype._setPositionDimensions.call(this, options);
       },
 
       /**
@@ -29428,12 +30264,9 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
        * @return {Object} object representation of an instance
        */
       toObject: function(propertiesToInclude) {
-        var o = extend(this.callSuper('toObject', propertiesToInclude), {
+        return extend(this.callSuper('toObject', propertiesToInclude), {
           path: this.path.map(function(item) { return item.slice(); }),
-          top: this.top,
-          left: this.left,
         });
-        return o;
       },
 
       /**
@@ -29452,29 +30285,47 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
       /* _TO_SVG_START_ */
       /**
        * Returns svg representation of an instance
+       * @return {Array} an array of strings with the specific svg representation
+       * of the instance
+       */
+      _toSVG: function() {
+        var path = this.path.map(function(path) {
+          return path.join(' ');
+        }).join(' ');
+        return [
+          '<path ', 'COMMON_PARTS',
+          'd="', path,
+          '" stroke-linecap="round" ',
+          '/>\n'
+        ];
+      },
+
+      _getOffsetTransform: function() {
+        var digits = fabric.Object.NUM_FRACTION_DIGITS;
+        return ' translate(' + toFixed(-this.pathOffset.x, digits) + ', ' +
+            toFixed(-this.pathOffset.y, digits) + ')';
+      },
+
+      /**
+       * Returns svg clipPath representation of an instance
+       * @param {Function} [reviver] Method for further parsing of svg representation.
+       * @return {String} svg representation of an instance
+       */
+      toClipPathSVG: function(reviver) {
+        var additionalTransform = this._getOffsetTransform();
+        return '\t' + this._createBaseClipPathSVGMarkup(
+          this._toSVG(), { reviver: reviver, additionalTransform: additionalTransform }
+        );
+      },
+
+      /**
+       * Returns svg representation of an instance
        * @param {Function} [reviver] Method for further parsing of svg representation.
        * @return {String} svg representation of an instance
        */
       toSVG: function(reviver) {
-        var chunks = [],
-            markup = this._createBaseSVGMarkup(), addTransform = '';
-
-        for (var i = 0, len = this.path.length; i < len; i++) {
-          chunks.push(this.path[i].join(' '));
-        }
-        var path = chunks.join(' ');
-        addTransform = ' translate(' + (-this.pathOffset.x) + ', ' + (-this.pathOffset.y) + ') ';
-        markup.push(
-          '<path ', this.getSvgId(),
-          'd="', path,
-          '" style="', this.getSvgStyles(),
-          '" transform="', this.getSvgTransform(), addTransform,
-          this.getSvgTransformMatrix(), '" stroke-linecap="round" ',
-          this.addPaintOrder(),
-          '/>\n'
-        );
-
-        return reviver ? reviver(markup.join('')) : markup.join('');
+        var additionalTransform = this._getOffsetTransform();
+        return this._createBaseSVGMarkup(this._toSVG(), { reviver: reviver, additionalTransform: additionalTransform  });
       },
       /* _TO_SVG_END_ */
 
@@ -29494,7 +30345,7 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
             coords = [],
             currentPath,
             parsed,
-            re = /([-+]?((\d+\.\d+)|((\d+)|(\.\d+)))(?:e[-+]?\d+)?)/ig,
+            re = fabric.rePathCommand,
             match,
             coordsStr;
 
@@ -29538,7 +30389,7 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
       /**
        * @private
        */
-      _parseDimensions: function() {
+      _calcDimensions: function() {
 
         var aX = [],
             aY = [],
@@ -29847,16 +30698,14 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
             maxX = max(aX) || 0,
             maxY = max(aY) || 0,
             deltaX = maxX - minX,
-            deltaY = maxY - minY,
+            deltaY = maxY - minY;
 
-            o = {
-              left: minX,
-              top: minY,
-              width: deltaX,
-              height: deltaY
-            };
-
-        return o;
+        return {
+          left: minX,
+          top: minY,
+          width: deltaX,
+          height: deltaY
+        };
       }
     });
 
@@ -29901,6 +30750,7 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
      */
     fabric.Path.fromElement = function(element, callback, options) {
       var parsedAttributes = fabric.parseAttributes(element, fabric.Path.ATTRIBUTE_NAMES);
+      parsedAttributes.fromSVG = true;
       callback(new fabric.Path(parsedAttributes.d, extend(parsedAttributes, options)));
     };
     /* _FROM_SVG_END_ */
@@ -29912,7 +30762,7 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
 
     'use strict';
 
-    var //fabric = global.fabric || (global.fabric = { }),
+    var fabric = global.fabric || (global.fabric = { }),
         min = fabric.util.array.min,
         max = fabric.util.array.max;
 
@@ -29945,7 +30795,7 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
       strokeWidth: 0,
 
       /**
-       * Indicates if click events should also check for subtargets
+       * Indicates if click, mouseover, mouseout events & hoverCursor should also check for subtargets
        * @type Boolean
        * @default
        */
@@ -30140,9 +30990,10 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
        * @return {Object} object representation of an instance
        */
       toObject: function(propertiesToInclude) {
+        var _includeDefaultValues = this.includeDefaultValues;
         var objsToObject = this._objects.map(function(obj) {
           var originalDefaults = obj.includeDefaultValues;
-          obj.includeDefaultValues = obj.group.includeDefaultValues;
+          obj.includeDefaultValues = _includeDefaultValues;
           var _obj = obj.toObject(propertiesToInclude);
           obj.includeDefaultValues = originalDefaults;
           return _obj;
@@ -30163,9 +31014,10 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
           objsToObject = sourcePath;
         }
         else {
+          var _includeDefaultValues = this.includeDefaultValues;
           objsToObject = this._objects.map(function(obj) {
             var originalDefaults = obj.includeDefaultValues;
-            obj.includeDefaultValues = obj.group.includeDefaultValues;
+            obj.includeDefaultValues = _includeDefaultValues;
             var _obj = obj.toDatalessObject(propertiesToInclude);
             obj.includeDefaultValues = originalDefaults;
             return _obj;
@@ -30188,15 +31040,13 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
 
       /**
        * Decide if the object should cache or not. Create its own cache level
-       * objectCaching is a global flag, wins over everything
        * needsItsOwnCache should be used when the object drawing method requires
        * a cache step. None of the fabric classes requires it.
-       * Generally you do not cache objects in groups because the group outside is cached.
+       * Generally you do not cache objects in groups because the group is already cached.
        * @return {Boolean}
        */
       shouldCache: function() {
-        var ownCache = this.objectCaching && (!this.group || this.needsItsOwnCache() || !this.group.isOnACache());
-        this.ownCaching = ownCache;
+        var ownCache = fabric.Object.prototype.shouldCache.call(this);
         if (ownCache) {
           for (var i = 0, len = this._objects.length; i < len; i++) {
             if (this._objects[i].willDrawShadow()) {
@@ -30240,13 +31090,14 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
         for (var i = 0, len = this._objects.length; i < len; i++) {
           this._objects[i].render(ctx);
         }
+        this._drawClipPath(ctx);
       },
 
       /**
        * Check if cache is dirty
        */
-      isCacheDirty: function() {
-        if (this.callSuper('isCacheDirty')) {
+      isCacheDirty: function(skipCanvas) {
+        if (this.callSuper('isCacheDirty', skipCanvas)) {
           return true;
         }
         if (!this.statefullCache) {
@@ -30427,25 +31278,44 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
        * @param {Function} [reviver] Method for further parsing of svg representation.
        * @return {String} svg representation of an instance
        */
-      toSVG: function(reviver) {
-        var markup = this._createBaseSVGMarkup();
-        markup.push(
-          '<g ', this.getSvgId(), 'transform="',
-          /* avoiding styles intentionally */
-          this.getSvgTransform(),
-          this.getSvgTransformMatrix(),
-          '" style="',
-          this.getSvgFilter(),
-          '">\n'
-        );
+      _toSVG: function(reviver) {
+        var svgString = ['<g ', 'COMMON_PARTS', ' >\n'];
 
         for (var i = 0, len = this._objects.length; i < len; i++) {
-          markup.push('\t', this._objects[i].toSVG(reviver));
+          svgString.push('\t\t', this._objects[i].toSVG(reviver));
+        }
+        svgString.push('</g>\n');
+        return svgString;
+      },
+
+      /**
+       * Returns styles-string for svg-export, specific version for group
+       * @return {String}
+       */
+      getSvgStyles: function() {
+        var opacity = typeof this.opacity !== 'undefined' && this.opacity !== 1 ?
+              'opacity: ' + this.opacity + ';' : '',
+            visibility = this.visible ? '' : ' visibility: hidden;';
+        return [
+          opacity,
+          this.getSvgFilter(),
+          visibility
+        ].join('');
+      },
+
+      /**
+       * Returns svg clipPath representation of an instance
+       * @param {Function} [reviver] Method for further parsing of svg representation.
+       * @return {String} svg representation of an instance
+       */
+      toClipPathSVG: function(reviver) {
+        var svgString = [];
+
+        for (var i = 0, len = this._objects.length; i < len; i++) {
+          svgString.push('\t', this._objects[i].toClipPathSVG(reviver));
         }
 
-        markup.push('</g>\n');
-
-        return reviver ? reviver(markup.join('')) : markup.join('');
+        return this._createBaseClipPathSVGMarkup(svgString, { reviver: reviver });
       },
       /* _TO_SVG_END_ */
     });
@@ -30458,10 +31328,25 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
      * @param {Function} [callback] Callback to invoke when an group instance is created
      */
     fabric.Group.fromObject = function(object, callback) {
-      fabric.util.enlivenObjects(object.objects, function(enlivenedObjects) {
-        var options = fabric.util.object.clone(object, true);
-        delete options.objects;
-        callback && callback(new fabric.Group(enlivenedObjects, options, true));
+      var objects = object.objects,
+          options = fabric.util.object.clone(object, true);
+      delete options.objects;
+      if (typeof objects === 'string') {
+        // it has to be an url or something went wrong.
+        fabric.loadSVGFromURL(objects, function (elements) {
+          var group = fabric.util.groupSVGElements(elements, object, objects);
+          group.set(options);
+          callback && callback(group);
+        });
+        return;
+      }
+      fabric.util.enlivenObjects(objects, function(enlivenedObjects) {
+        fabric.util.enlivenObjects([object.clipPath], function(enlivedClipPath) {
+          var options = fabric.util.object.clone(object, true);
+          options.clipPath = enlivedClipPath[0];
+          delete options.objects;
+          callback && callback(new fabric.Group(enlivenedObjects, options, true));
+        });
       });
     };
 
@@ -30472,7 +31357,7 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
 
     'use strict';
 
-    //var fabric = global.fabric || (global.fabric = { });
+    var fabric = global.fabric || (global.fabric = { });
 
     if (fabric.ActiveSelection) {
       return;
@@ -30634,12 +31519,11 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
 
     var extend = fabric.util.object.extend;
 
-    //if (!global.fabric) {
-    //  global.fabric = { };
-    //}
+    if (!global.fabric) {
+      global.fabric = { };
+    }
 
-    //if (global.fabric.Image) {
-    if (fabric.Image) {
+    if (global.fabric.Image) {
       fabric.warn('fabric.Image is already defined.');
       return;
     }
@@ -30675,6 +31559,15 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
        * @default
        */
       strokeWidth: 0,
+
+      /**
+       * When calling {@link fabric.Image.getSrc}, return value from element src with `element.getAttribute('src')`.
+       * This allows for relative urls as image src.
+       * @since 2.7.0
+       * @type Boolean
+       * @default
+       */
+      srcFromAttribute: false,
 
       /**
        * private
@@ -30723,17 +31616,8 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
       stateProperties: fabric.Object.prototype.stateProperties.concat('cropX', 'cropY'),
 
       /**
-       * When `true`, object is cached on an additional canvas.
-       * default to false for images
-       * since 1.7.0
-       * @type Boolean
-       * @default
-       */
-      objectCaching: false,
-
-      /**
        * key used to retrieve the texture representing this image
-       * since 2.0.0
+       * @since 2.0.0
        * @type String
        * @default
        */
@@ -30741,7 +31625,7 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
 
       /**
        * Image crop in pixels from original image size.
-       * since 2.0.0
+       * @since 2.0.0
        * @type Number
        * @default
        */
@@ -30749,7 +31633,7 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
 
       /**
        * Image crop in pixels from original image size.
-       * since 2.0.0
+       * @since 2.0.0
        * @type Number
        * @default
        */
@@ -30793,11 +31677,15 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
         this._element = element;
         this._originalElement = element;
         this._initConfig(options);
-        if (this.resizeFilter) {
-          this.applyResizeFilters();
-        }
         if (this.filters.length !== 0) {
           this.applyFilters();
+        }
+        // resizeFilters work on the already filtered copy.
+        // we need to apply resizeFilters AFTER normal filters.
+        // applyResizeFilters is run more often than normal fiters
+        // and is triggered by user interactions rather than dev code
+        if (this.resizeFilter) {
+          this.applyResizeFilters();
         }
         return this;
       },
@@ -30926,53 +31814,51 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
 
       /* _TO_SVG_START_ */
       /**
-       * Returns SVG representation of an instance
-       * @param {Function} [reviver] Method for further parsing of svg representation.
-       * @return {String} svg representation of an instance
+       * Returns svg representation of an instance
+       * @return {Array} an array of strings with the specific svg representation
+       * of the instance
        */
-      toSVG: function(reviver) {
-        var markup = this._createBaseSVGMarkup(), x = -this.width / 2, y = -this.height / 2, clipPath = '';
+      _toSVG: function() {
+        var svgString = [], imageMarkup = [], strokeSvg,
+            x = -this.width / 2, y = -this.height / 2, clipPath = '';
         if (this.hasCrop()) {
           var clipPathId = fabric.Object.__uid++;
-          markup.push(
+          svgString.push(
             '<clipPath id="imageCrop_' + clipPathId + '">\n',
             '\t<rect x="' + x + '" y="' + y + '" width="' + this.width + '" height="' + this.height + '" />\n',
             '</clipPath>\n'
           );
           clipPath = ' clip-path="url(#imageCrop_' + clipPathId + ')" ';
         }
-        markup.push('<g transform="', this.getSvgTransform(), this.getSvgTransformMatrix(), '">\n');
-        var imageMarkup = ['\t<image ', this.getSvgId(), 'xlink:href="', this.getSvgSrc(true),
+        imageMarkup.push('\t<image ', 'COMMON_PARTS', 'xlink:href="', this.getSvgSrc(true),
           '" x="', x - this.cropX, '" y="', y - this.cropY,
-          '" style="', this.getSvgStyles(),
           // we're essentially moving origin of transformation from top/left corner to the center of the shape
           // by wrapping it in container <g> element with actual transformation, then offsetting object to the top/left
           // so that object's center aligns with container's left/top
           '" width="', this._element.width || this._element.naturalWidth,
           '" height="', this._element.height || this._element.height,
           '"', clipPath,
-          '></image>\n'];
-        if (this.paintFirst === 'fill') {
-          Array.prototype.push.apply(markup, imageMarkup);
-        }
+          '></image>\n');
+
         if (this.stroke || this.strokeDashArray) {
           var origFill = this.fill;
           this.fill = null;
-          markup.push(
+          strokeSvg = [
             '\t<rect ',
             'x="', x, '" y="', y,
             '" width="', this.width, '" height="', this.height,
             '" style="', this.getSvgStyles(),
             '"/>\n'
-          );
+          ];
           this.fill = origFill;
         }
         if (this.paintFirst !== 'fill') {
-          Array.prototype.push.apply(markup, imageMarkup);
+          svgString = svgString.concat(strokeSvg, imageMarkup);
         }
-        markup.push('</g>\n');
-
-        return reviver ? reviver(markup.join('')) : markup.join('');
+        else {
+          svgString = svgString.concat(imageMarkup, strokeSvg);
+        }
+        return svgString;
       },
       /* _TO_SVG_END_ */
 
@@ -30987,7 +31873,13 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
           if (element.toDataURL) {
             return element.toDataURL();
           }
-          return element.src;
+
+          if (this.srcFromAttribute) {
+            return element.getAttribute('src');
+          }
+          else {
+            return element.src;
+          }
         }
         else {
           return this.src || '';
@@ -31006,7 +31898,7 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
         fabric.util.loadImage(src, function(img) {
           this.setElement(img, options);
           this._setWidthHeight();
-          callback(this);
+          callback && callback(this);
         }, this, options && options.crossOrigin);
         return this;
       },
@@ -31066,9 +31958,7 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
 
         filters = filters || this.filters || [];
         filters = filters.filter(function(filter) { return filter && !filter.isNeutralState(); });
-        if (this.group) {
-          this.set('dirty', true);
-        }
+        this.set('dirty', true);
 
         // needs to clear out or WEBGL will not resize correctly
         this.removeTexture(this.cacheKey + '_filtered');
@@ -31127,19 +32017,36 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
         this._renderPaintInOrder(ctx);
       },
 
+      /**
+       * Decide if the object should cache or not. Create its own cache level
+       * needsItsOwnCache should be used when the object drawing method requires
+       * a cache step. None of the fabric classes requires it.
+       * Generally you do not cache objects in groups because the group outside is cached.
+       * This is the special image version where we would like to avoid caching where possible.
+       * Essentially images do not benefit from caching. They may require caching, and in that
+       * case we do it. Also caching an image usually ends in a loss of details.
+       * A full performance audit should be done.
+       * @return {Boolean}
+       */
+      shouldCache: function() {
+        return this.needsItsOwnCache();
+      },
+
       _renderFill: function(ctx) {
-        var w = this.width, h = this.height, sW = w * this._filterScalingX, sH = h * this._filterScalingY,
-            x = -w / 2, y = -h / 2, elementToDraw = this._element;
-        elementToDraw && ctx.drawImage(elementToDraw,
-          this.cropX * this._filterScalingX,
-          this.cropY * this._filterScalingY,
-          sW,
-          sH,
-          x, y, w, h);
+        var elementToDraw = this._element,
+            w = this.width, h = this.height,
+            sW = Math.min(elementToDraw.naturalWidth || elementToDraw.width, w * this._filterScalingX),
+            sH = Math.min(elementToDraw.naturalHeight || elementToDraw.height, h * this._filterScalingY),
+            x = -w / 2, y = -h / 2,
+            sX = Math.max(0, this.cropX * this._filterScalingX),
+            sY = Math.max(0, this.cropY * this._filterScalingY);
+
+        elementToDraw && ctx.drawImage(elementToDraw, sX, sY, sW, sH, x, y, w, h);
       },
 
       /**
-       * @private, needed to check if image needs resize
+       * needed to check if image needs resize
+       * @private
        */
       _needsResize: function() {
         var scale = this.getTotalObjectScaling();
@@ -31304,8 +32211,11 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
           object.filters = filters || [];
           fabric.Image.prototype._initFilters.call(object, [object.resizeFilter], function(resizeFilters) {
             object.resizeFilter = resizeFilters[0];
-            var image = new fabric.Image(img, object);
-            callback(image);
+            fabric.util.enlivenObjects([object.clipPath], function(enlivedProps) {
+              object.clipPath = enlivedProps[0];
+              var image = new fabric.Image(img, object);
+              callback(image);
+            });
           });
         });
       }, null, object.crossOrigin);
@@ -31532,8 +32442,7 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
        * putImageData is faster than drawImage for that specific operation.
        */
       chooseFastestCopyGLTo2DMethod: function(width, height) {
-        var canMeasurePerf = typeof window.performance !== 'undefined';
-        var canUseImageData;
+        var canMeasurePerf = typeof window.performance !== 'undefined', canUseImageData;
         try {
           new ImageData(1, 1);
           canUseImageData = true;
@@ -31553,6 +32462,11 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
         var targetCanvas = fabric.util.createCanvasElement();
         // eslint-disable-next-line no-undef
         var imageBuffer = new ArrayBuffer(width * height * 4);
+        if (fabric.forceGLPutImageData) {
+          this.imageBuffer = imageBuffer;
+          this.copyGLTo2D = copyGLTo2DPutImageData;
+          return;
+        }
         var testContext = {
           imageBuffer: imageBuffer,
           destinationWidth: width,
@@ -31660,51 +32574,6 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
       },
 
       /**
-       * The same as the applyFilter method but with additional logging of WebGL
-       * errors.
-       */
-      applyFiltersDebug: function(filters, source, width, height, targetCanvas, cacheKey) {
-        // The following code is useful when debugging a specific issue but adds ~10x slowdown.
-        var gl = this.gl;
-        var ret = this.applyFilters(filters, source, width, height, targetCanvas, cacheKey);
-        var glError = gl.getError();
-        if (glError !== gl.NO_ERROR) {
-          var errorString = this.glErrorToString(gl, glError);
-          var error = new Error('WebGL Error ' + errorString);
-          error.glErrorCode = glError;
-          throw error;
-        }
-        return ret;
-      },
-
-      glErrorToString: function(context, errorCode) {
-        if (!context) {
-          return 'Context undefined for error code: ' + errorCode;
-        }
-        else if (typeof errorCode !== 'number') {
-          return 'Error code is not a number';
-        }
-        switch (errorCode) {
-          case context.NO_ERROR:
-            return 'NO_ERROR';
-          case context.INVALID_ENUM:
-            return 'INVALID_ENUM';
-          case context.INVALID_VALUE:
-            return 'INVALID_VALUE';
-          case context.INVALID_OPERATION:
-            return 'INVALID_OPERATION';
-          case context.INVALID_FRAMEBUFFER_OPERATION:
-            return 'INVALID_FRAMEBUFFER_OPERATION';
-          case context.OUT_OF_MEMORY:
-            return 'OUT_OF_MEMORY';
-          case context.CONTEXT_LOST_WEBGL:
-            return 'CONTEXT_LOST_WEBGL';
-          default:
-            return 'UNKNOWN_ERROR';
-        }
-      },
-
-      /**
        * Detach event listeners, remove references, and clean up caches.
        */
       dispose: function() {
@@ -31797,9 +32666,11 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
         if (this.gpuInfo) {
           return this.gpuInfo;
         }
-        var gl = this.gl;
+        var gl = this.gl, gpuInfo = { renderer: '', vendor: '' };
+        if (!gl) {
+          return gpuInfo;
+        }
         var ext = gl.getExtension('WEBGL_debug_renderer_info');
-        var gpuInfo = { renderer: '', vendor: '' };
         if (ext) {
           var renderer = gl.getParameter(ext.UNMASKED_RENDERER_WEBGL);
           var vendor = gl.getParameter(ext.UNMASKED_VENDOR_WEBGL);
@@ -31947,6 +32818,7 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
    * @tutorial {@link http://fabricjs.com/fabric-intro-part-2#image_filters}
    * @see {@link http://fabricjs.com/image-filters|ImageFilters demo}
    */
+  fabric.Image = fabric.Image || { };
   fabric.Image.filters = fabric.Image.filters || { };
 
   /**
@@ -32308,7 +33180,7 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
 
     'use strict';
 
-    var //fabric  = global.fabric || (global.fabric = { }),
+    var fabric  = global.fabric || (global.fabric = { }),
         filters = fabric.Image.filters,
         createClass = fabric.util.createClass;
 
@@ -32467,7 +33339,7 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
 
     'use strict';
 
-    var //fabric  = global.fabric || (global.fabric = { }),
+    var fabric  = global.fabric || (global.fabric = { }),
         filters = fabric.Image.filters,
         createClass = fabric.util.createClass;
 
@@ -32582,7 +33454,7 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
 
     'use strict';
 
-    var //fabric  = global.fabric || (global.fabric = { }),
+    var fabric  = global.fabric || (global.fabric = { }),
         extend = fabric.util.object.extend,
         filters = fabric.Image.filters,
         createClass = fabric.util.createClass;
@@ -32853,7 +33725,7 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
                 scx = x + cx - halfSide;
 
                 // eslint-disable-next-line max-depth
-                if (scy < 0 || scy > sh || scx < 0 || scx > sw) {
+                if (scy < 0 || scy >= sh || scx < 0 || scx >= sw) {
                   continue;
                 }
 
@@ -32936,7 +33808,7 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
 
     'use strict';
 
-    var //fabric  = global.fabric || (global.fabric = { }),
+    var fabric  = global.fabric || (global.fabric = { }),
         filters = fabric.Image.filters,
         createClass = fabric.util.createClass;
 
@@ -33092,7 +33964,7 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
 
     'use strict';
 
-    var //fabric  = global.fabric || (global.fabric = { }),
+    var fabric  = global.fabric || (global.fabric = { }),
         filters = fabric.Image.filters,
         createClass = fabric.util.createClass;
 
@@ -33205,7 +34077,7 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
 
     'use strict';
 
-    var //fabric  = global.fabric || (global.fabric = { }),
+    var fabric  = global.fabric || (global.fabric = { }),
         extend = fabric.util.object.extend,
         filters = fabric.Image.filters,
         createClass = fabric.util.createClass;
@@ -33341,7 +34213,7 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
 
     'use strict';
 
-    var //fabric  = global.fabric || (global.fabric = { }),
+    var fabric  = global.fabric || (global.fabric = { }),
         filters = fabric.Image.filters,
         createClass = fabric.util.createClass;
 
@@ -33480,7 +34352,7 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
 
     'use strict';
 
-    var //fabric  = global.fabric || (global.fabric = { }),
+    var fabric  = global.fabric || (global.fabric = { }),
         extend = fabric.util.object.extend,
         filters = fabric.Image.filters,
         createClass = fabric.util.createClass;
@@ -33655,7 +34527,7 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
 
     'use strict';
 
-    var //fabric  = global.fabric || (global.fabric = { }),
+    var fabric  = global.fabric || (global.fabric = { }),
         filters = fabric.Image.filters,
         createClass = fabric.util.createClass;
 
@@ -33741,7 +34613,7 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
   (function(global) {
     'use strict';
 
-    var //fabric = global.fabric,
+    var fabric = global.fabric,
         filters = fabric.Image.filters,
         createClass = fabric.util.createClass;
 
@@ -33988,7 +34860,7 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
   (function(global) {
     'use strict';
 
-    var //fabric = global.fabric,
+    var fabric = global.fabric,
         filters = fabric.Image.filters,
         createClass = fabric.util.createClass;
 
@@ -34237,8 +35109,7 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
 
     'use strict';
 
-    var //fabric  = global.fabric || (global.fabric = { }), 
-        pow = Math.pow, floor = Math.floor,
+    var fabric  = global.fabric || (global.fabric = { }), pow = Math.pow, floor = Math.floor,
         sqrt = Math.sqrt, abs = Math.abs, round = Math.round, sin = Math.sin,
         ceil = Math.ceil,
         filters = fabric.Image.filters,
@@ -34266,8 +35137,8 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
 
       /**
        * Resize type
-       * for webgl resizyType is just lanczos, for canvas2d can be:
-       * bilinear, hermite, sliceHacl, lanczos.
+       * for webgl resizeType is just lanczos, for canvas2d can be:
+       * bilinear, hermite, sliceHack, lanczos.
        * @param {String} resizeType
        * @default
        */
@@ -34730,7 +35601,7 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
 
     'use strict';
 
-    var //fabric  = global.fabric || (global.fabric = { }),
+    var fabric  = global.fabric || (global.fabric = { }),
         filters = fabric.Image.filters,
         createClass = fabric.util.createClass;
 
@@ -34840,7 +35711,7 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
 
     'use strict';
 
-    var //fabric  = global.fabric || (global.fabric = { }),
+    var fabric  = global.fabric || (global.fabric = { }),
         filters = fabric.Image.filters,
         createClass = fabric.util.createClass;
 
@@ -34953,7 +35824,7 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
 
     'use strict';
 
-    var //fabric  = global.fabric || (global.fabric = { }),
+    var fabric  = global.fabric || (global.fabric = { }),
         filters = fabric.Image.filters,
         createClass = fabric.util.createClass;
 
@@ -35170,7 +36041,7 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
 
     'use strict';
 
-    var //fabric  = global.fabric || (global.fabric = { }),
+    var fabric  = global.fabric || (global.fabric = { }),
         filters = fabric.Image.filters,
         createClass = fabric.util.createClass;
 
@@ -35308,7 +36179,7 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
 
     'use strict';
 
-    var //fabric  = global.fabric || (global.fabric = { }),
+    var fabric  = global.fabric || (global.fabric = { }),
         filters = fabric.Image.filters,
         createClass = fabric.util.createClass;
 
@@ -35382,7 +36253,7 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
 
     'use strict';
 
-    var //fabric  = global.fabric || (global.fabric = { }),
+    var fabric  = global.fabric || (global.fabric = { }),
         filters = fabric.Image.filters,
         createClass = fabric.util.createClass;
 
@@ -35491,7 +36362,7 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
 
     'use strict';
 
-    var //fabric = global.fabric || (global.fabric = { }),
+    var fabric = global.fabric || (global.fabric = { }),
         clone = fabric.util.object.clone;
 
     if (fabric.Text) {
@@ -35906,6 +36777,16 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
       },
 
       /**
+       * Detect if a line has a linebreak and so we need to account for it when moving
+       * and counting style.
+       * It return always for text and Itext.
+       * @return Number
+       */
+      missingNewlineOffset: function() {
+        return 1;
+      },
+
+      /**
        * Returns string representation of an instance
        * @return {String} String representation of text object
        */
@@ -36112,7 +36993,7 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
        * possibly overridden to accommodate different measure logic or
        * to hook some external lib for character measurement
        * @private
-       * @param {String} char to be measured
+       * @param {String} _char, char to be measured
        * @param {Object} charStyle style of char to be measured
        * @param {String} [previousChar] previous char
        * @param {Object} [prevCharStyle] style of previous char
@@ -36158,12 +37039,12 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
 
       /**
        * Computes height of character at given position
-       * @param {Number} line the line number
-       * @param {Number} char the character number
+       * @param {Number} line the line index number
+       * @param {Number} _char the character index number
        * @return {Number} fontSize of the character
        */
-      getHeightOfChar: function(line, char) {
-        return this.getValueOfPropertyAt(line, char, 'fontSize');
+      getHeightOfChar: function(line, _char) {
+        return this.getValueOfPropertyAt(line, _char, 'fontSize');
       },
 
       /**
@@ -36294,6 +37175,24 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
        */
       _getTopOffset: function() {
         return -this.height / 2;
+      },
+
+      /**
+       * @private
+       * @param {CanvasRenderingContext2D} ctx Context to render on
+       * @param {Object} filler fabric.Pattern or fabric.Gradient
+       * @return {Object} offset.offsetX offset for text rendering
+       * @return {Object} offset.offsetY offset for text rendering
+       */
+      _applyPatternGradientTransform: function(ctx, filler) {
+        if (!filler || !filler.toLive) {
+          return { offsetX: 0, offsetY: 0 };
+        }
+        var offsetX = -this.width / 2 + filler.offsetX || 0,
+            offsetY = -this.height / 2 + filler.offsetY || 0;
+
+        ctx.transform(1, 0, 0, 1, offsetX, offsetY);
+        return { offsetX: offsetX, offsetY: offsetY };
       },
 
       /**
@@ -36695,11 +37594,12 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
         var style = styleObject || this, family = this.fontFamily,
             fontIsGeneric = fabric.Text.genericFonts.indexOf(family.toLowerCase()) > -1;
         var fontFamily = family === undefined ||
-        family.indexOf('\'') > -1 ||
+        family.indexOf('\'') > -1 || family.indexOf(',') > -1 ||
         family.indexOf('"') > -1 || fontIsGeneric
           ? style.fontFamily : '"' + style.fontFamily + '"';
         return [
           // node-canvas needs "weight style", while browsers need "style weight"
+          // verify if this can be fixed in JSDOM
           (fabric.isLikelyNode ? style.fontWeight : style.fontStyle),
           (fabric.isLikelyNode ? style.fontStyle : style.fontWeight),
           forMeasuring ? this.CACHE_FONT_SIZE + 'px' : style.fontSize + 'px',
@@ -36953,7 +37853,9 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
 
       /**
        * Returns true if object has a style property or has it ina specified line
-       * @param {Number} lineIndex
+       * This function is used to detect if a text will use a particular property or not.
+       * @param {String} property to check for
+       * @param {Number} lineIndex to check the style on
        * @return {Boolean}
        */
       styleHas: function(property, lineIndex) {
@@ -36963,7 +37865,7 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
         if (typeof lineIndex !== 'undefined' && !this.styles[lineIndex]) {
           return false;
         }
-        var obj = typeof lineIndex === 'undefined' ? this.styles : { line: this.styles[lineIndex] };
+        var obj = typeof lineIndex === 'undefined' ? this.styles : { 0: this.styles[lineIndex] };
         // eslint-disable-next-line
         for (var p1 in obj) {
           // eslint-disable-next-line
@@ -37074,7 +37976,7 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
         var loc = this.get2DCursorLocation(index);
 
         if (!this._getLineStyle(loc.lineIndex)) {
-          this._setLineStyle(loc.lineIndex, {});
+          this._setLineStyle(loc.lineIndex);
         }
 
         if (!this._getStyleDeclaration(loc.lineIndex, loc.charIndex)) {
@@ -37093,8 +37995,8 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
         if (typeof selectionStart === 'undefined') {
           selectionStart = this.selectionStart;
         }
-        var lines = skipWrapping ? this._unwrappedTextLines : this._textLines;
-        var len = lines.length;
+        var lines = skipWrapping ? this._unwrappedTextLines : this._textLines,
+            len = lines.length;
         for (var i = 0; i < len; i++) {
           if (selectionStart <= lines[i].length) {
             return {
@@ -37102,7 +38004,7 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
               charIndex: selectionStart
             };
           }
-          selectionStart -= lines[i].length + 1;
+          selectionStart -= lines[i].length + this.missingNewlineOffset(i);
         }
         return {
           lineIndex: i - 1,
@@ -37222,19 +38124,20 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
 
       /**
        * @param {Number} lineIndex
+       * @return {Boolean} if the line exists or not
        * @private
        */
       _getLineStyle: function(lineIndex) {
-        return this.styles[lineIndex];
+        return !!this.styles[lineIndex];
       },
 
       /**
+       * Set the line style to an empty object so that is initialized
        * @param {Number} lineIndex
-       * @param {Object} style
        * @private
        */
-      _setLineStyle: function(lineIndex, style) {
-        this.styles[lineIndex] = style;
+      _setLineStyle: function(lineIndex) {
+        this.styles[lineIndex] = {};
       },
 
       /**
@@ -37511,36 +38414,29 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
        * Prepare and clean the contextTop
        */
       clearContextTop: function(skipRestore) {
-        if (!this.isEditing) {
+        if (!this.isEditing || !this.canvas || !this.canvas.contextTop) {
           return;
         }
-        if (this.canvas && this.canvas.contextTop) {
-          var ctx = this.canvas.contextTop, v = this.canvas.viewportTransform;
-          ctx.save();
-          ctx.transform(v[0], v[1], v[2], v[3], v[4], v[5]);
-          this.transform(ctx);
-          this.transformMatrix && ctx.transform.apply(ctx, this.transformMatrix);
-          this._clearTextArea(ctx);
-          skipRestore || ctx.restore();
-        }
+        var ctx = this.canvas.contextTop, v = this.canvas.viewportTransform;
+        ctx.save();
+        ctx.transform(v[0], v[1], v[2], v[3], v[4], v[5]);
+        this.transform(ctx);
+        this.transformMatrix && ctx.transform.apply(ctx, this.transformMatrix);
+        this._clearTextArea(ctx);
+        skipRestore || ctx.restore();
       },
 
       /**
        * Renders cursor or selection (depending on what exists)
+       * it does on the contextTop. If contextTop is not available, do nothing.
        */
       renderCursorOrSelection: function() {
-        if (!this.isEditing || !this.canvas) {
+        if (!this.isEditing || !this.canvas || !this.canvas.contextTop) {
           return;
         }
-        var boundaries = this._getCursorBoundaries(), ctx;
-        if (this.canvas && this.canvas.contextTop) {
-          ctx = this.canvas.contextTop;
-          this.clearContextTop(true);
-        }
-        else {
-          ctx = this.canvas.contextContainer;
-          ctx.save();
-        }
+        var boundaries = this._getCursorBoundaries(),
+            ctx = this.canvas.contextTop;
+        this.clearContextTop(true);
         if (this.selectionStart === this.selectionEnd) {
           this.renderCursor(boundaries, ctx);
         }
@@ -37957,7 +38853,7 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
 
       /**
        * Find new selection index representing start of current word according to current selection index
-       * @param {Number} startFrom Surrent selection index
+       * @param {Number} startFrom Current selection index
        * @return {Number} New selection index
        */
       findWordBoundaryLeft: function(startFrom) {
@@ -37993,7 +38889,7 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
             index++;
           }
         }
-        while (/\S/.test(this._text[index]) && index < this.text.length) {
+        while (/\S/.test(this._text[index]) && index < this._text.length) {
           offset++;
           index++;
         }
@@ -38025,7 +38921,7 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
       findLineBoundaryRight: function(startFrom) {
         var offset = 0, index = startFrom;
 
-        while (!/\n/.test(this._text[index]) && index < this.text.length) {
+        while (!/\n/.test(this._text[index]) && index < this._text.length) {
           offset++;
           index++;
         }
@@ -38040,15 +38936,17 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
        * @return {Number} Index of the beginning or end of a word
        */
       searchWordBoundary: function(selectionStart, direction) {
-        var index     = this._reSpace.test(this.text.charAt(selectionStart)) ? selectionStart - 1 : selectionStart,
-            _char     = this.text.charAt(index),
-            reNonWord = /[ \n\.,;!\?\-]/;
+        var text = this._text,
+            index     = this._reSpace.test(text[selectionStart]) ? selectionStart - 1 : selectionStart,
+            _char     = text[index],
+            // wrong
+            reNonWord = fabric.reNonWord;
 
-        while (!reNonWord.test(_char) && index > 0 && index < this.text.length) {
+        while (!reNonWord.test(_char) && index > 0 && index < text.length) {
           index += direction;
-          _char = this.text.charAt(index);
+          _char = text[index];
         }
-        if (reNonWord.test(_char) && _char !== '\n') {
+        if (reNonWord.test(_char)) {
           index += direction === 1 ? 0 : 1;
         }
         return index;
@@ -38188,7 +39086,6 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
         }
 
         this.borderColor = this.editingBorderColor;
-
         this.hasControls = this.selectable = false;
         this.lockMovementX = this.lockMovementY = true;
       },
@@ -38278,9 +39175,9 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
         if (!this.canvas) {
           return { x: 1, y: 1 };
         }
-        var desiredPostion = this.inCompositionMode ? this.compositionStart : this.selectionStart,
-            boundaries = this._getCursorBoundaries(desiredPostion),
-            cursorLocation = this.get2DCursorLocation(desiredPostion),
+        var desiredPosition = this.inCompositionMode ? this.compositionStart : this.selectionStart,
+            boundaries = this._getCursorBoundaries(desiredPosition),
+            cursorLocation = this.get2DCursorLocation(desiredPosition),
             lineIndex = cursorLocation.lineIndex,
             charIndex = cursorLocation.charIndex,
             charHeight = this.getValueOfPropertyAt(lineIndex, charIndex, 'fontSize') * this.lineHeight,
@@ -38290,9 +39187,10 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
               x: boundaries.left + leftOffset,
               y: boundaries.top + boundaries.topOffset + charHeight
             },
+            retinaScaling = this.canvas.getRetinaScaling(),
             upperCanvas = this.canvas.upperCanvasEl,
-            upperCanvasWidth = upperCanvas.width,
-            upperCanvasHeight = upperCanvas.height,
+            upperCanvasWidth = upperCanvas.width / retinaScaling,
+            upperCanvasHeight = upperCanvas.height / retinaScaling,
             maxWidth = upperCanvasWidth - charHeight,
             maxHeight = upperCanvasHeight - charHeight,
             scaleX = upperCanvas.clientWidth / upperCanvasWidth,
@@ -38332,6 +39230,7 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
           lockMovementX: this.lockMovementX,
           lockMovementY: this.lockMovementY,
           hoverCursor: this.hoverCursor,
+          selectable: this.selectable,
           defaultCursor: this.canvas && this.canvas.defaultCursor,
           moveCursor: this.canvas && this.canvas.moveCursor
         };
@@ -38348,6 +39247,7 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
         this.hoverCursor = this._savedProps.hoverCursor;
         this.hasControls = this._savedProps.hasControls;
         this.borderColor = this._savedProps.borderColor;
+        this.selectable = this._savedProps.selectable;
         this.lockMovementX = this._savedProps.lockMovementX;
         this.lockMovementY = this._savedProps.lockMovementY;
 
@@ -38366,7 +39266,6 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
         var isTextChanged = (this._textBeforeEdit !== this.text);
         this.selected = false;
         this.isEditing = false;
-        this.selectable = true;
 
         this.selectionEnd = this.selectionStart;
 
@@ -38545,7 +39444,7 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
        * @param {Number} lineIndex Index of a line
        * @param {Number} charIndex Index of a char
        * @param {Number} quantity number Style object to insert, if given
-       * @param {Array} copiedStyle array of style objecs
+       * @param {Array} copiedStyle array of style objects
        */
       insertCharStyleObject: function(lineIndex, charIndex, quantity, copiedStyle) {
         if (!this.styles) {
@@ -38597,23 +39496,23 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
        */
       insertNewStyleBlock: function(insertedText, start, copiedStyle) {
         var cursorLoc = this.get2DCursorLocation(start, true),
-            addedLines = [0], linesLenght = 0;
+            addedLines = [0], linesLength = 0;
         for (var i = 0; i < insertedText.length; i++) {
           if (insertedText[i] === '\n') {
-            linesLenght++;
-            addedLines[linesLenght] = 0;
+            linesLength++;
+            addedLines[linesLength] = 0;
           }
           else {
-            addedLines[linesLenght]++;
+            addedLines[linesLength]++;
           }
         }
         if (addedLines[0] > 0) {
           this.insertCharStyleObject(cursorLoc.lineIndex, cursorLoc.charIndex, addedLines[0], copiedStyle);
           copiedStyle = copiedStyle && copiedStyle.slice(addedLines[0] + 1);
         }
-        linesLenght && this.insertNewlineStyleObject(
-          cursorLoc.lineIndex, cursorLoc.charIndex + addedLines[0], linesLenght);
-        for (var i = 1; i < linesLenght; i++) {
+        linesLength && this.insertNewlineStyleObject(
+          cursorLoc.lineIndex, cursorLoc.charIndex + addedLines[0], linesLength);
+        for (var i = 1; i < linesLength; i++) {
           if (addedLines[i] > 0) {
             this.insertCharStyleObject(cursorLoc.lineIndex + i, 0, addedLines[i], copiedStyle);
           }
@@ -38629,7 +39528,7 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
       },
 
       /**
-       * Set the selectionStart and selectionEnd according to the ne postion of cursor
+       * Set the selectionStart and selectionEnd according to the new position of cursor
        * mimic the key - mouse navigation when shift is pressed.
        */
       setSelectionStartEndWithShift: function(start, end, newSelection) {
@@ -38746,15 +39645,31 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
     },
 
     /**
+     * Default handler for double click, select a word
+     */
+    doubleClickHandler: function(options) {
+      if (!this.isEditing) {
+        return;
+      }
+      this.selectWord(this.getSelectionStartFromPointer(options.e));
+    },
+
+    /**
+     * Default handler for triple click, select a line
+     */
+    tripleClickHandler: function(options) {
+      if (!this.isEditing) {
+        return;
+      }
+      this.selectLine(this.getSelectionStartFromPointer(options.e));
+    },
+
+    /**
      * Initializes double and triple click event handlers
      */
     initClicks: function() {
-      this.on('mousedblclick', function(options) {
-        this.selectWord(this.getSelectionStartFromPointer(options.e));
-      });
-      this.on('tripleclick', function(options) {
-        this.selectLine(this.getSelectionStartFromPointer(options.e));
-      });
+      this.on('mousedblclick', this.doubleClickHandler);
+      this.on('tripleclick', this.tripleClickHandler);
     },
 
     /**
@@ -38792,9 +39707,9 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
       if (!this.canvas || !this.editable || (options.e.button && options.e.button !== 1)) {
         return;
       }
-      if (this === this.canvas._activeObject) {
-        this.selected = true;
-      }
+      // we want to avoid that an object that was selected and then becomes unselectable,
+      // may trigger editing mode in some way.
+      this.selected = this === this.canvas._activeObject;
     },
 
     /**
@@ -38822,6 +39737,16 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
         (options.transform && options.transform.actionPerformed) ||
         (options.e.button && options.e.button !== 1)) {
         return;
+      }
+
+      if (this.canvas) {
+        var currentActive = this.canvas._activeObject;
+        if (currentActive && currentActive !== this) {
+          // avoid running this logic when there is an active object
+          // this because is possible with shift click and fast clicks,
+          // to rapidly deselect and reselect this object and trigger an enterEdit
+          return;
+        }
       }
 
       if (this.__lastSelected && !this.__corner) {
@@ -38880,7 +39805,7 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
           height += this.getHeightOfLine(i) * this.scaleY;
           lineIndex = i;
           if (i > 0) {
-            charIndex += this._textLines[i - 1].length + 1;
+            charIndex += this._textLines[i - 1].length + this.missingNewlineOffset(i - 1);
           }
         }
         else {
@@ -39121,7 +40046,7 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
         }
       }
       if (insertedText.length) {
-        if (fromPaste && insertedText.join('') === fabric.copiedText) {
+        if (fromPaste && insertedText.join('') === fabric.copiedText && !fabric.disableStyleCopyPaste) {
           this.insertNewStyleBlock(insertedText, this.selectionStart, fabric.copiedTextStyle);
         }
         else {
@@ -39169,7 +40094,12 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
       }
 
       fabric.copiedText = this.getSelectedText();
-      fabric.copiedTextStyle = this.getSelectionStyles(this.selectionStart, this.selectionEnd, true);
+      if (!fabric.disableStyleCopyPaste) {
+        fabric.copiedTextStyle = this.getSelectionStyles(this.selectionStart, this.selectionEnd, true);
+      }
+      else {
+        fabric.copiedTextStyle = null;
+      }
       this._copyDone = true;
     },
 
@@ -39226,7 +40156,7 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
           widthBeforeCursor = this._getWidthBeforeCursor(lineIndex, charIndex),
           indexOnOtherLine = this._getIndexOnLine(lineIndex + 1, widthBeforeCursor),
           textAfterCursor = this._textLines[lineIndex].slice(charIndex);
-      return textAfterCursor.length + indexOnOtherLine + 2;
+      return textAfterCursor.length + indexOnOtherLine + 1 + this.missingNewlineOffset(lineIndex);
     },
 
     /**
@@ -39261,9 +40191,11 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
       var charIndex = cursorLocation.charIndex,
           widthBeforeCursor = this._getWidthBeforeCursor(lineIndex, charIndex),
           indexOnOtherLine = this._getIndexOnLine(lineIndex - 1, widthBeforeCursor),
-          textBeforeCursor = this._textLines[lineIndex].slice(0, charIndex);
+          textBeforeCursor = this._textLines[lineIndex].slice(0, charIndex),
+          missingNewlineOffset = this.missingNewlineOffset(lineIndex - 1);
       // return a negative offset
-      return -this._textLines[lineIndex - 1].length + indexOnOtherLine - textBeforeCursor.length;
+      return -this._textLines[lineIndex - 1].length
+       + indexOnOtherLine - textBeforeCursor.length + (1 - missingNewlineOffset);
     },
 
     /**
@@ -39590,13 +40522,22 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
        * @param {Function} [reviver] Method for further parsing of svg representation.
        * @return {String} svg representation of an instance
        */
-      toSVG: function(reviver) {
-        var markup = this._createBaseSVGMarkup(),
-            offsets = this._getSVGLeftTopOffsets(),
+      _toSVG: function() {
+        var offsets = this._getSVGLeftTopOffsets(),
             textAndBg = this._getSVGTextAndBg(offsets.textTop, offsets.textLeft);
-        this._wrapSVGTextAndBg(markup, textAndBg);
+        return this._wrapSVGTextAndBg(textAndBg);
+      },
 
-        return reviver ? reviver(markup.join('')) : markup.join('');
+      /**
+       * Returns svg representation of an instance
+       * @param {Function} [reviver] Method for further parsing of svg representation.
+       * @return {String} svg representation of an instance
+       */
+      toSVG: function(reviver) {
+        return this._createBaseSVGMarkup(
+          this._toSVG(),
+          { reviver: reviver, noStyle: true, withShadow: true }
+        );
       },
 
       /**
@@ -39613,13 +40554,10 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
       /**
        * @private
        */
-      _wrapSVGTextAndBg: function(markup, textAndBg) {
-        var noShadow = true, filter = this.getSvgFilter(),
-            style = filter === '' ? '' : ' style="' + filter + '"',
+      _wrapSVGTextAndBg: function(textAndBg) {
+        var noShadow = true,
             textDecoration = this.getSvgTextDecoration(this);
-        markup.push(
-          '\t<g ', this.getSvgId(), 'transform="', this.getSvgTransform(), this.getSvgTransformMatrix(), '"',
-          style, '>\n',
+        return [
           textAndBg.textBgRects.join(''),
           '\t\t<text xml:space="preserve" ',
           (this.fontFamily ? 'font-family="' + this.fontFamily.replace(/"/g, '\'') + '" ' : ''),
@@ -39629,9 +40567,8 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
           (textDecoration ? 'text-decoration="' + textDecoration + '" ' : ''),
           'style="', this.getSvgStyles(noShadow), '"', this.addPaintOrder(), ' >',
           textAndBg.textSpans.join(''),
-          '</text>\n',
-          '\t</g>\n'
-        );
+          '</text>\n'
+        ];
       },
 
       /**
@@ -39816,12 +40753,9 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
   /* _TO_SVG_END_ */
 
 
-  (function(global) {
+  (function() {
 
     'use strict';
-
-    //var fabric = global.fabric || (global.fabric = {});
-
     /**
      * Textbox class, based on IText, allows the user to resize the text rectangle
      * and wraps lines automatically. Textboxes have their Y scaling locked, the
@@ -39883,6 +40817,20 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
       _dimensionAffectingProps: fabric.Text.prototype._dimensionAffectingProps.concat('width'),
 
       /**
+       * Use this regular expression to split strings in breakable lines
+       * @private
+       */
+      _wordJoiners: /[ \t\r]/,
+
+      /**
+       * Use this boolean property in order to split strings that have no white space concept.
+       * this is a cheap way to help with chinese/japaense
+       * @type Boolean
+       * @since 2.6.0
+       */
+      splitByGrapheme: false,
+
+      /**
        * Unlike superclass's version of this function, Textbox does not update
        * its width.
        * @private
@@ -39931,7 +40879,7 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
             charCount++;
             realLineCount++;
           }
-          else if (this._reSpaceAndTab.test(textInfo.graphemeText[charCount]) && i > 0) {
+          else if (!this.splitByGrapheme && this._reSpaceAndTab.test(textInfo.graphemeText[charCount]) && i > 0) {
             // this case deals with space's that are removed from end of lines when wrapping
             realLineCharCount++;
             charCount++;
@@ -39947,7 +40895,7 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
       },
 
       /**
-       * Returns true if object has a style property or has it ina specified line
+       * Returns true if object has a style property or has it on a specified line
        * @param {Number} lineIndex
        * @return {Boolean}
        */
@@ -39967,9 +40915,11 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
        * @return {Boolean}
        */
       isEmptyStyles: function(lineIndex) {
-        var offset = 0, nextLineIndex = lineIndex + 1, nextOffset, obj, shouldLimit = false;
-        var map = this._styleMap[lineIndex];
-        var mapNextLine = this._styleMap[lineIndex + 1];
+        if (!this.styles) {
+          return true;
+        }
+        var offset = 0, nextLineIndex = lineIndex + 1, nextOffset, obj, shouldLimit = false,
+            map = this._styleMap[lineIndex], mapNextLine = this._styleMap[lineIndex + 1];
         if (map) {
           lineIndex = map.line;
           offset = map.offset;
@@ -40033,39 +40983,31 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
         var map = this._styleMap[lineIndex];
         lineIndex = map.line;
         charIndex = map.offset + charIndex;
-
         delete this.styles[lineIndex][charIndex];
       },
 
       /**
-      * probably broken need a fix
+       * probably broken need a fix
+       * Returns the real style line that correspond to the wrapped lineIndex line
+       * Used just to verify if the line does exist or not.
        * @param {Number} lineIndex
+       * @returns {Boolean} if the line exists or not
        * @private
        */
       _getLineStyle: function(lineIndex) {
         var map = this._styleMap[lineIndex];
-        return this.styles[map.line];
+        return !!this.styles[map.line];
       },
 
       /**
-       * probably broken need a fix
+       * Set the line style to an empty object so that is initialized
        * @param {Number} lineIndex
        * @param {Object} style
        * @private
        */
-      _setLineStyle: function(lineIndex, style) {
+      _setLineStyle: function(lineIndex) {
         var map = this._styleMap[lineIndex];
-        this.styles[map.line] = style;
-      },
-
-      /**
-       * probably broken need a fix
-       * @param {Number} lineIndex
-       * @private
-       */
-      _deleteLineStyle: function(lineIndex) {
-        var map = this._styleMap[lineIndex];
-        delete this.styles[map.line];
+        this.styles[map.line] = {};
       },
 
       /**
@@ -40118,25 +41060,29 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
        * to.
        */
       _wrapLine: function(_line, lineIndex, desiredWidth, reservedSpace) {
-        var lineWidth        = 0,
-            graphemeLines    = [],
-            line             = [],
+        var lineWidth = 0,
+            splitByGrapheme = this.splitByGrapheme,
+            graphemeLines = [],
+            line = [],
             // spaces in different languges?
-            words            = _line.split(this._reSpaceAndTab),
-            word             = '',
-            offset           = 0,
-            infix            = ' ',
-            wordWidth        = 0,
-            infixWidth       = 0,
+            words = splitByGrapheme ? fabric.util.string.graphemeSplit(_line) : _line.split(this._wordJoiners),
+            word = '',
+            offset = 0,
+            infix = splitByGrapheme ? '' : ' ',
+            wordWidth = 0,
+            infixWidth = 0,
             largestWordWidth = 0,
             lineJustStarted = true,
-            additionalSpace = this._getWidthOfCharSpacing(),
+            additionalSpace = splitByGrapheme ? 0 : this._getWidthOfCharSpacing(),
             reservedSpace = reservedSpace || 0;
-
+        // fix a difference between split and graphemeSplit
+        if (words.length === 0) {
+          words.push([]);
+        }
         desiredWidth -= reservedSpace;
         for (var i = 0; i < words.length; i++) {
-          // i would avoid resplitting the graphemes
-          word = fabric.util.string.graphemeSplit(words[i]);
+          // if using splitByGrapheme words are already in graphemes.
+          word = splitByGrapheme ? words[i] : fabric.util.string.graphemeSplit(words[i]);
           wordWidth = this._measureWord(word, lineIndex, offset);
           offset += word.length;
 
@@ -40152,7 +41098,7 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
             lineWidth += additionalSpace;
           }
 
-          if (!lineJustStarted) {
+          if (!lineJustStarted && !splitByGrapheme) {
             line.push(infix);
           }
           line = line.concat(word);
@@ -40194,6 +41140,18 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
       },
 
       /**
+       * Detect if a line has a linebreak and so we need to account for it when moving
+       * and counting style.
+       * @return Number
+       */
+      missingNewlineOffset: function(lineIndex) {
+        if (this.splitByGrapheme) {
+          return this.isEndOfWrapping(lineIndex) ? 1 : 0;
+        }
+        return 1;
+      },
+
+      /**
       * Gets lines of text to render in the Textbox. This function calculates
       * text wrapping on the fly every time it is called.
       * @param {String} text text to split
@@ -40204,7 +41162,6 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
         var newText = fabric.Text.prototype._splitTextIntoLines.call(this, text),
             graphemeLines = this._wrapText(newText.lines, this.width),
             lines = new Array(graphemeLines.length);
-
         for (var i = 0; i < graphemeLines.length; i++) {
           lines[i] = graphemeLines[i].join('');
         }
@@ -40217,6 +41174,20 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
         return Math.max(this.minWidth, this.dynamicMinWidth);
       },
 
+      _removeExtraneousStyles: function() {
+        var linesToKeep = {};
+        for (var prop in this._styleMap) {
+          if (this._textLines[prop]) {
+            linesToKeep[this._styleMap[prop].line] = 1;
+          }
+        }
+        for (var prop in this.styles) {
+          if (!linesToKeep[prop]) {
+            delete this.styles[prop];
+          }
+        }
+      },
+
       /**
        * Returns object representation of an instance
        * @method toObject
@@ -40224,7 +41195,7 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
        * @return {Object} object representation of an instance
        */
       toObject: function(propertiesToInclude) {
-        return this.callSuper('toObject', ['minWidth'].concat(propertiesToInclude));
+        return this.callSuper('toObject', ['minWidth', 'splitByGrapheme'].concat(propertiesToInclude));
       }
     });
 
@@ -40238,98 +41209,52 @@ define('skylark-graphics-canvas2d/primitives/fabric',[], function() {
     fabric.Textbox.fromObject = function(object, callback) {
       return fabric.Object._fromObject('Textbox', object, callback, 'text');
     };
-  })(typeof exports !== 'undefined' ? exports : this);
-
-
-  (function() {
-
-    /**
-     * Override _setObjectScale and add Textbox specific resizing behavior. Resizing
-     * a Textbox doesn't scale text, it only changes width and makes text wrap automatically.
-     */
-    var setObjectScaleOverridden = fabric.Canvas.prototype._setObjectScale;
-
-    fabric.Canvas.prototype._setObjectScale = function(localMouse, transform,
-      lockScalingX, lockScalingY, by, lockScalingFlip, _dim) {
-
-      var t = transform.target;
-      if (by === 'x' && t instanceof fabric.Textbox) {
-        var tw = t._getTransformedDimensions().x;
-        var w = t.width * (localMouse.x / tw);
-        if (w >= t.getMinWidth()) {
-          t.set('width', w);
-          return true;
-        }
-      }
-      else {
-        return setObjectScaleOverridden.call(fabric.Canvas.prototype, localMouse, transform,
-          lockScalingX, lockScalingY, by, lockScalingFlip, _dim);
-      }
-    };
-
-    fabric.util.object.extend(fabric.Textbox.prototype, /** @lends fabric.IText.prototype */ {
-      /**
-       * @private
-       */
-      _removeExtraneousStyles: function() {
-        for (var prop in this._styleMap) {
-          if (!this._textLines[prop]) {
-            delete this.styles[this._styleMap[prop].line];
-          }
-        }
-      },
-
-    });
-
   })();
-
   return fabric;
 });
-
-
-define('skylark-graphics-canvas2d/Canvas',[
+define('skylark-fabric/Canvas',[
     "./canvas2d",
     "./primitives/fabric"
 ], function(canvas2d,fabric) {
     return canvas2d.Canvas = fabric.Canvas;
 });
-define('skylark-graphics-canvas2d/Circle',[
+define('skylark-fabric/Circle',[
     "./canvas2d",
     "./primitives/fabric"
 ], function(canvas2d,fabric) {
     return canvas2d.Circle = fabric.Circle;
 });
-define('skylark-graphics-canvas2d/Color',[
+define('skylark-fabric/Color',[
     "./canvas2d",
     "./primitives/fabric"
 ], function(canvas2d,fabric) {
     return canvas2d.Color = fabric.Color;
 });
-define('skylark-graphics-canvas2d/Ellipse',[
+define('skylark-fabric/Ellipse',[
     "./canvas2d",
     "./primitives/fabric"
 ], function(canvas2d,fabric) {
     return canvas2d.Ellipse = fabric.Ellipse;
 });
-define('skylark-graphics-canvas2d/Group',[
+define('skylark-fabric/Group',[
     "./canvas2d",
     "./primitives/fabric"
 ], function(canvas2d,fabric) {
     return canvas2d.Group = fabric.Group;
 });
-define('skylark-graphics-canvas2d/Image',[
+define('skylark-fabric/Image',[
     "./canvas2d",
     "./primitives/fabric"
 ], function(canvas2d,fabric) {
     return canvas2d.Image = fabric.Image;
 });
-define('skylark-graphics-canvas2d/Line',[
+define('skylark-fabric/Line',[
     "./canvas2d",
     "./primitives/fabric"
 ], function(canvas2d,fabric) {
     return canvas2d.Line = fabric.Line;
 });
-define('skylark-graphics-canvas2d/Object',[
+define('skylark-fabric/Object',[
     "./canvas2d",
     "./primitives/fabric"
 ], function(canvas2d,fabric) {
@@ -40339,55 +41264,55 @@ define('skylark-graphics-canvas2d/Object',[
     
     return canvas2d.Object = fabric.Object;
 });
-define('skylark-graphics-canvas2d/Path',[
+define('skylark-fabric/Path',[
     "./canvas2d",
     "./primitives/fabric"
 ], function(canvas2d,fabric) {
     return canvas2d.Path = fabric.Path;
 });
-define('skylark-graphics-canvas2d/Point',[
+define('skylark-fabric/Point',[
     "./canvas2d",
     "./primitives/fabric"
 ], function(canvas2d,fabric) {
     return canvas2d.Point = fabric.Point;
 });
-define('skylark-graphics-canvas2d/Polygon',[
+define('skylark-fabric/Polygon',[
     "./canvas2d",
     "./primitives/fabric"
 ], function(canvas2d,fabric) {
     return canvas2d.Polygon = fabric.Polygon;
 });
-define('skylark-graphics-canvas2d/Polyline',[
+define('skylark-fabric/Polyline',[
     "./canvas2d",
     "./primitives/fabric"
 ], function(canvas2d,fabric) {
     return canvas2d.Polyline = fabric.Polyline;
 });
-define('skylark-graphics-canvas2d/Rect',[
+define('skylark-fabric/Rect',[
     "./canvas2d",
     "./primitives/fabric"
 ], function(canvas2d,fabric) {
     return canvas2d.Rect = fabric.Rect;
 });
-define('skylark-graphics-canvas2d/Text',[
+define('skylark-fabric/Text',[
     "./canvas2d",
     "./primitives/fabric"
 ], function(canvas2d,fabric) {
     return canvas2d.Text = fabric.Text;
 });
-define('skylark-graphics-canvas2d/Triangle',[
+define('skylark-fabric/Triangle',[
     "./canvas2d",
     "./primitives/fabric"
 ], function(canvas2d,fabric) {
     return canvas2d.Triangle = fabric.Triangle;
 });
-define('skylark-graphics-canvas2d/util',[
+define('skylark-fabric/util',[
     "./canvas2d",
     "./primitives/fabric"
 ], function(canvas2d,fabric) {
     return canvas2d.util = fabric.util;
 });
-define('skylark-graphics-canvas2d/main',[
+define('skylark-fabric/main',[
     "./canvas2d",
     "./Canvas",
     "./Circle",
@@ -40409,16 +41334,16 @@ define('skylark-graphics-canvas2d/main',[
     return canvas2d;
 });
 
-define('skylark-graphics-canvas2d', ['skylark-graphics-canvas2d/main'], function (main) { return main; });
+define('skylark-fabric', ['skylark-fabric/main'], function (main) { return main; });
 
-define('skylark-darkroomjs/Imager',[
+define('skylark-darkroomjs/Darkroom',[
     "skylark-langx/skylark",
     "skylark-langx/langx",
-    "skylark-utils-dom/noder",
-    "skylark-utils-dom/finder",
-    "skylark-ui-swt/Widget",
-    "skylark-graphics-canvas2d"
-], function(skylark, langx, noder,finder,Widget,canvas2d) {
+    "skylark-domx-noder",
+    "skylark-domx-finder",
+    "skylark-widgets-base/Widget",
+    "skylark-fabric"
+], function(skylark, langx, noder,finder,Widget,fabric) {
   'use strict';
 
   var Plugins = {};
@@ -40429,8 +41354,8 @@ define('skylark-darkroomjs/Imager',[
     //  width : image.width
     //};
     return {
-      height: Math.abs(image.getWidth() * (Math.sin(image.getAngle() * Math.PI/180))) + Math.abs(image.getHeight() * (Math.cos(image.getAngle() * Math.PI/180))),
-      width: Math.abs(image.getHeight() * (Math.sin(image.getAngle() * Math.PI/180))) + Math.abs(image.getWidth() * (Math.cos(image.getAngle() * Math.PI/180))),
+      height: Math.abs(image.getScaledWidth() * (Math.sin(image.angle * Math.PI/180))) + Math.abs(image.getScaledHeight() * (Math.cos(image.angle * Math.PI/180))),
+      width: Math.abs(image.getScaledHeight() * (Math.sin(image.angle * Math.PI/180))) + Math.abs(image.getScaledWidth() * (Math.cos(image.angle * Math.PI/180))),
     }
   }
 
@@ -40515,8 +41440,8 @@ define('skylark-darkroomjs/Imager',[
     }
   };
 
-  var Imager = Widget.inherit({
-    klassName : "Imager",
+  var Darkroom = Widget.inherit({
+    klassName : "Darkroom",
 
     /*
      * @param {Element} el The container element. 
@@ -40535,7 +41460,7 @@ define('skylark-darkroomjs/Imager',[
 
 //      var image = new Image();
 //      image.onload = function() {
-        // Initialize the DOM/canvas2d elements
+        // Initialize the DOM/fabric elements
         this._initializeImage();
 
         // Then initialize the plugins
@@ -40556,16 +41481,16 @@ define('skylark-darkroomjs/Imager',[
     // Reference to the main container element
     containerElement: null,
 
-    // Reference to the canvas2d canvas object
+    // Reference to the fabric canvas object
     canvas: null,
 
-    // Reference to the canvas2d image object
+    // Reference to the fabric image object
     image: null,
 
-    // Reference to the canvas2d source canvas object
+    // Reference to the fabric source canvas object
     sourceCanvas: null,
 
-    // Reference to the canvas2d source image object
+    // Reference to the fabric source image object
     sourceImage: null,
 
     // Track of the original image element
@@ -40629,7 +41554,7 @@ define('skylark-darkroomjs/Imager',[
     refresh: function(next) {
       var clone = new Image();
       clone.onload = function() {
-        this._replaceCurrentImage(new canvas2d.Image(clone));
+        this._replaceCurrentImage(new fabric.Image(clone));
 
         if (next) next();
       }.bind(this);
@@ -40638,7 +41563,7 @@ define('skylark-darkroomjs/Imager',[
 
     _replaceCurrentImage: function(newImage) {
       if (this.image) {
-        this.image.remove();
+        this.image.canvas.remove(this.image);
       }
 
       this.image = newImage;
@@ -40690,8 +41615,8 @@ define('skylark-darkroomjs/Imager',[
       canvasHeight *= scale;
 
       // Finally place the image in the center of the canvas
-      this.image.setScaleX(1 * scale);
-      this.image.setScaleY(1 * scale);
+      this.image.scaleX = (1 * scale);
+      this.image.scaleY = (1 * scale);
       this.canvas.add(this.image);
       this.canvas.setWidth(canvasWidth);
       this.canvas.setHeight(canvasHeight);
@@ -40724,7 +41649,7 @@ define('skylark-darkroomjs/Imager',[
     // Initialize image from original element plus re-apply every
     // transformations.
     reinitializeImage: function() {
-      this.sourceImage.remove();
+      this.canvas.remove(this.sourceImage);
       this._initializeImage();
       this._popTransformation(this.transformations.slice())
     },
@@ -40750,7 +41675,7 @@ define('skylark-darkroomjs/Imager',[
       );
     },
 
-    // Create the DOM elements and instanciate the canvas2d canvas.
+    // Create the DOM elements and instanciate the fabric canvas.
     // The image element is replaced by a new `div` element.
     // However the original image is re-injected in order to keep a trace of it.
     _initializeDOM: function(imageElement) {
@@ -40791,21 +41716,21 @@ define('skylark-darkroomjs/Imager',[
 
     },
 
-    // Instanciate the canvas2d image object.
+    // Instanciate the fabric image object.
     // The image is created as a static element with no control,
-    // then it is add in the canvas2d canvas object.
+    // then it is add in the fabric canvas object.
     _initializeImage: function() {
-      this.canvas = new canvas2d.Canvas(this.canvasElement, {
+      this.canvas = new fabric.Canvas(this.canvasElement, {
         selection: false,
         backgroundColor: this.options.backgroundColor
       });
 
-      this.sourceCanvas = new canvas2d.Canvas(this.sourceCanvasElement, {
+      this.sourceCanvas = new fabric.Canvas(this.sourceCanvasElement, {
         selection: false,
         backgroundColor: this.options.backgroundColor
       });
  
-      this.sourceImage = new canvas2d.Image(this.originalImageElement, {
+      this.sourceImage = new fabric.Image(this.originalImageElement, {
         // Some options to make the image static
         selectable: false,
         evented: false,
@@ -40855,20 +41780,20 @@ define('skylark-darkroomjs/Imager',[
   });
 
 
-  Imager.Plugin = langx.Evented.inherit({
+  Darkroom.Plugin = langx.Evented.inherit({
     klassName : "Plugin",
 
     defaults: {},
 
-    init : function(imager,options) {
-      this.imager = imager;
+    init : function(Darkroom,options) {
+      this.Darkroom = Darkroom;
       this.options = langx.mixin({},this.defaults,options);
 
     }
   });
 
 
-  Imager.Transformation = langx.Evented.inherit({
+  Darkroom.Transformation = langx.Evented.inherit({
     klassName : "Transformation",
 
     init : function(options) {
@@ -40877,46 +41802,46 @@ define('skylark-darkroomjs/Imager',[
   });
 
 
-  Imager.installPlugin = function(setting) {
+  Darkroom.installPlugin = function(setting) {
 
     //Plugins.push(setting);
     Plugins[setting.name] = setting;
   };
 
-  return skylark.attach("itg.darkroomjs.Imager",Imager);
+  return skylark.attach("intg.Darkroom",Darkroom);
 
 });
 
 
 define('skylark-darkroomjs/plugins/history',[
   "skylark-langx/langx",
-  "skylark-utils-dom/noder",
-  "skylark-utils-dom/query",
-  "skylark-graphics-canvas2d",
-  '../Imager',
-],function(langx,noder, $, canvas2d,Imager) {
+  "skylark-domx-noder",
+  "skylark-domx-query",
+  "skylark-fabric",
+  '../Darkroom',
+],function(langx,noder, $, fabric,Darkroom) {
   'use strict';
 
-  var HistoryPlugin= Imager.Plugin.inherit({
+  var HistoryPlugin= Darkroom.Plugin.inherit({
      undoTransformations: null,
 
-     init : function(imager,options) {
-      this.overrided(imager,options);
+     init : function(Darkroom,options) {
+      this.overrided(Darkroom,options);
       this.undoTransformations = [];
       this._initButtons();
 
-      this.imager.addEventListener('core:transformation', this._onTranformationApplied.bind(this));
+      this.Darkroom.addEventListener('core:transformation', this._onTranformationApplied.bind(this));
     },
 
     undo: function() {
-      if (this.imager.transformations.length === 0) {
+      if (this.Darkroom.transformations.length === 0) {
         return;
       }
 
-      var lastTransformation = this.imager.transformations.pop();
+      var lastTransformation = this.Darkroom.transformations.pop();
       this.undoTransformations.unshift(lastTransformation);
 
-      this.imager.reinitializeImage();
+      this.Darkroom.reinitializeImage();
       this._updateButtons();
     },
 
@@ -40926,14 +41851,14 @@ define('skylark-darkroomjs/plugins/history',[
       }
 
       var cancelTransformation = this.undoTransformations.shift();
-      this.imager.transformations.push(cancelTransformation);
+      this.Darkroom.transformations.push(cancelTransformation);
 
-      this.imager.reinitializeImage();
+      this.Darkroom.reinitializeImage();
       this._updateButtons();
     },
 
     _initButtons: function() {
-      var buttonGroup = this.imager.toolbar.createButtonGroup();
+      var buttonGroup = this.Darkroom.toolbar.createButtonGroup();
 
       this.backButton = buttonGroup.createButton({
         image: 'undo',
@@ -40952,7 +41877,7 @@ define('skylark-darkroomjs/plugins/history',[
     },
 
     _updateButtons: function() {
-      this.backButton.disable((this.imager.transformations.length === 0))
+      this.backButton.disable((this.Darkroom.transformations.length === 0))
       this.forwardButton.disable((this.undoTransformations.length === 0))
     },
 
@@ -40967,20 +41892,20 @@ define('skylark-darkroomjs/plugins/history',[
     ctor : HistoryPlugin
   };
 
-  Imager.installPlugin(pluginInfo);
+  Darkroom.installPlugin(pluginInfo);
 
   return pluginInfo;
 
   
 });
 
-define('skylark-utils-dom/transforms',[
-    "./dom",
-    "./langx",
-    "./browser",
-    "./datax",
-    "./styler"
-], function(dom,langx,browser,datax,styler) {
+define('skylark-domx-transforms/transforms',[
+    "skylark-langx/skylark",
+    "skylark-langx/langx",
+    "skylark-domx-browser",
+    "skylark-domx-data",
+    "skylark-domx-styler"
+], function(skylark,langx,browser,datax,styler) {
   var css3Transform = browser.normalizeCssProperty("transform");
 
   function getMatrix(radian, x, y) {
@@ -41102,21 +42027,28 @@ define('skylark-utils-dom/transforms',[
   });
 
 
-  return dom.transforms = transforms;
+  return skylark.attach("domx.transforms", transforms);
 });
 
-define('skylark-utils-dom/images',[
-    "./dom",
-    "./langx",
-    "./eventer",
-    "./noder",
-    "./finder",
-    "./geom",
-    "./styler",
-    "./datax",
-    "./transforms",
-    "./query"
-], function(dom,langx,eventer,noder,finder,geom,styler,datax,transforms,$) {
+define('skylark-domx-transforms/main',[
+	"./transforms"
+],function(transforms){
+	return transforms;
+});
+define('skylark-domx-transforms', ['skylark-domx-transforms/main'], function (main) { return main; });
+
+define('skylark-domx-images/images',[
+    "skylark-langx/skylark",
+    "skylark-langx/langx",
+    "skylark-domx-eventer",
+    "skylark-domx-noder",
+    "skylark-domx-finder",
+    "skylark-domx-geom",
+    "skylark-domx-styler",
+    "skylark-domx-data",
+    "skylark-domx-transforms",
+    "skylark-domx-query"
+], function(skylark,langx,eventer,noder,finder,geom,styler,datax,transforms,$) {
 
   function watch(imgs) {
     if (!langx.isArray(imgs)) {
@@ -41377,17 +42309,24 @@ define('skylark-utils-dom/images',[
     viewer : viewer
   });
 
-  return dom.images = images;
+  return skylark.attach("domx.images" , images);
 });
+
+define('skylark-domx-images/main',[
+	"./images"
+],function(images){
+	return images;
+});
+define('skylark-domx-images', ['skylark-domx-images/main'], function (main) { return main; });
 
 define('skylark-darkroomjs/plugins/crop',[
   "skylark-langx/langx",
-  "skylark-utils-dom/noder",
-  "skylark-utils-dom/images",
-  "skylark-utils-dom/query",
-  "skylark-graphics-canvas2d",
-  '../Imager',
-],function(langx,noder, images,$, canvas2d,Imager) {
+  "skylark-domx-noder",
+  "skylark-domx-images",
+  "skylark-domx-query",
+  "skylark-fabric",
+  '../Darkroom',
+],function(langx,noder, images,$, fabric,Darkroom) {
   'use strict';
 
   function computeImageViewPort(image) {
@@ -41396,13 +42335,13 @@ define('skylark-darkroomjs/plugins/crop',[
     //  width : image.width
     //};
     return {
-      height: Math.abs(image.getWidth() * (Math.sin(image.getAngle() * Math.PI/180))) + Math.abs(image.getHeight() * (Math.cos(image.getAngle() * Math.PI/180))),
-      width: Math.abs(image.getHeight() * (Math.sin(image.getAngle() * Math.PI/180))) + Math.abs(image.getWidth() * (Math.cos(image.getAngle() * Math.PI/180))),
+      height: Math.abs(image.getScaledWidth() * (Math.sin(image.get("angle") * Math.PI/180))) + Math.abs(image.getScaledHeight() * (Math.cos(image.get("angle") * Math.PI/180))),
+      width: Math.abs(image.getScaledHeight() * (Math.sin(image.get("angle") * Math.PI/180))) + Math.abs(image.getScaledWidth() * (Math.cos(image.get("angle") * Math.PI/180))),
     }
   }
   
 
-  var Crop = Imager.Transformation.inherit({
+  var Crop = Darkroom.Transformation.inherit({
     applyTransformation: function(canvas, image, next) {
       // Snapshot the image delimited by the crop zone
       var snapshot = new Image();
@@ -41428,7 +42367,7 @@ define('skylark-darkroomjs/plugins/crop',[
         if (height < 1 || width < 1)
           return;
 
-        var imgInstance = new canvas2d.Image(snapshot, {
+        var imgInstance = new fabric.Image(snapshot, {
           // options to make the image static
           selectable: false,
           evented: false,
@@ -41450,7 +42389,7 @@ define('skylark-darkroomjs/plugins/crop',[
         canvas.setHeight(height);
 
         // Add image
-        image.remove();
+        canvas.remove(image);
         canvas.add(imgInstance);
 
         next(imgInstance);
@@ -41458,7 +42397,7 @@ define('skylark-darkroomjs/plugins/crop',[
     }
   });
 
-  var CropZone = canvas2d.util.createClass(canvas2d.Rect, {
+  var CropZone = fabric.util.createClass(fabric.Rect, {
     _render: function(ctx) {
       this.callSuper('_render', ctx);
 
@@ -41474,7 +42413,7 @@ define('skylark-darkroomjs/plugins/crop',[
       ctx.scale(scaleX, scaleY);
 
       // Overlay rendering
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+      //ctx.fillStyle = 'rgba(0, 0, 0, 0.5)'; //modifeied by lwf
       this._renderOverlay(ctx);
 
       // Set dashed borders
@@ -41516,15 +42455,15 @@ define('skylark-darkroomjs/plugins/crop',[
       // y3 +------------------------+
       //
 
-      var x0 = Math.ceil(-this.getWidth() / 2 - this.getLeft());
-      var x1 = Math.ceil(-this.getWidth() / 2);
-      var x2 = Math.ceil(this.getWidth() / 2);
-      var x3 = Math.ceil(this.getWidth() / 2 + (canvas.width - this.getWidth() - this.getLeft()));
+      var x0 = Math.ceil(-this.getScaledWidth() / 2 - this.left);
+      var x1 = Math.ceil(-this.getScaledWidth() / 2);
+      var x2 = Math.ceil(this.getScaledWidth() / 2);
+      var x3 = Math.ceil(this.getScaledWidth() / 2 + (canvas.width - this.getScaledWidth() - this.left));
 
-      var y0 = Math.ceil(-this.getHeight() / 2 - this.getTop());
-      var y1 = Math.ceil(-this.getHeight() / 2);
-      var y2 = Math.ceil(this.getHeight() / 2);
-      var y3 = Math.ceil(this.getHeight() / 2 + (canvas.height - this.getHeight() - this.getTop()));
+      var y0 = Math.ceil(-this.getScaledHeight() / 2 - this.top);
+      var y1 = Math.ceil(-this.getScaledHeight() / 2);
+      var y2 = Math.ceil(this.getScaledHeight() / 2);
+      var y3 = Math.ceil(this.getScaledHeight() / 2 + (canvas.height - this.getScaledHeight() - this.top));
 
       ctx.beginPath();
       
@@ -41550,38 +42489,38 @@ define('skylark-darkroomjs/plugins/crop',[
 
     _renderBorders: function(ctx) {
       ctx.beginPath();
-      ctx.moveTo(-this.getWidth()/2, -this.getHeight()/2); // upper left
-      ctx.lineTo(this.getWidth()/2, -this.getHeight()/2); // upper right
-      ctx.lineTo(this.getWidth()/2, this.getHeight()/2); // down right
-      ctx.lineTo(-this.getWidth()/2, this.getHeight()/2); // down left
-      ctx.lineTo(-this.getWidth()/2, -this.getHeight()/2); // upper left
+      ctx.moveTo(-this.getScaledWidth()/2, -this.getScaledHeight()/2); // upper left
+      ctx.lineTo(this.getScaledWidth()/2, -this.getScaledHeight()/2); // upper right
+      ctx.lineTo(this.getScaledWidth()/2, this.getScaledHeight()/2); // down right
+      ctx.lineTo(-this.getScaledWidth()/2, this.getScaledHeight()/2); // down left
+      ctx.lineTo(-this.getScaledWidth()/2, -this.getScaledHeight()/2); // upper left
       ctx.stroke();
     },
 
     _renderGrid: function(ctx) {
-      return;
+      
       // Vertical lines
       ctx.beginPath();
-      ctx.moveTo(-this.getWidth()/2 + 1/3 * this.getWidth(), -this.getHeight()/2);
-      ctx.lineTo(-this.getWidth()/2 + 1/3 * this.getWidth(), this.getHeight()/2);
+      ctx.moveTo(-this.getScaledWidth()/2 + 1/3 * this.getScaledWidth(), -this.getScaledHeight()/2);
+      ctx.lineTo(-this.getScaledWidth()/2 + 1/3 * this.getScaledWidth(), this.getScaledHeight()/2);
       ctx.stroke();
       ctx.beginPath();
-      ctx.moveTo(-this.getWidth()/2 + 2/3 * this.getWidth(), -this.getHeight()/2);
-      ctx.lineTo(-this.getWidth()/2 + 2/3 * this.getWidth(), this.getHeight()/2);
+      ctx.moveTo(-this.getScaledWidth()/2 + 2/3 * this.getScaledWidth(), -this.getScaledHeight()/2);
+      ctx.lineTo(-this.getScaledWidth()/2 + 2/3 * this.getScaledWidth(), this.getScaledHeight()/2);
       ctx.stroke();
       // Horizontal lines
       ctx.beginPath();
-      ctx.moveTo(-this.getWidth()/2, -this.getHeight()/2 + 1/3 * this.getHeight());
-      ctx.lineTo(this.getWidth()/2, -this.getHeight()/2 + 1/3 * this.getHeight());
+      ctx.moveTo(-this.getScaledWidth()/2, -this.getScaledHeight()/2 + 1/3 * this.getScaledHeight());
+      ctx.lineTo(this.getScaledWidth()/2, -this.getScaledHeight()/2 + 1/3 * this.getScaledHeight());
       ctx.stroke();
       ctx.beginPath();
-      ctx.moveTo(-this.getWidth()/2, -this.getHeight()/2 + 2/3 * this.getHeight());
-      ctx.lineTo(this.getWidth()/2, -this.getHeight()/2 + 2/3 * this.getHeight());
+      ctx.moveTo(-this.getScaledWidth()/2, -this.getScaledHeight()/2 + 2/3 * this.getScaledHeight());
+      ctx.lineTo(this.getScaledWidth()/2, -this.getScaledHeight()/2 + 2/3 * this.getScaledHeight());
       ctx.stroke();
     }
   });
 
-  var CropPlugin = Imager.Plugin.inherit({
+  var CropPlugin = Darkroom.Plugin.inherit({
     // Init point
     startX: null,
     startY: null,
@@ -41601,9 +42540,9 @@ define('skylark-darkroomjs/plugins/crop',[
       quickCropKey: false
     },
 
-     init : function(imager,options) {
-      this.overrided(imager,options);
-      var buttonGroup = this.imager.toolbar.createButtonGroup();
+     init : function(Darkroom,options) {
+      this.overrided(Darkroom,options);
+      var buttonGroup = this.Darkroom.toolbar.createButtonGroup();
 
       this.cropButton = buttonGroup.createButton({
         image: 'crop'
@@ -41625,16 +42564,16 @@ define('skylark-darkroomjs/plugins/crop',[
       this.cancelButton.addEventListener('click', this.releaseFocus.bind(this));
 
       // Canvas events
-      this.imager.canvas.on('mouse:down', this.onMouseDown.bind(this));
-      this.imager.canvas.on('mouse:move', this.onMouseMove.bind(this));
-      this.imager.canvas.on('mouse:up', this.onMouseUp.bind(this));
-      this.imager.canvas.on('object:moving', this.onObjectMoving.bind(this));
-      this.imager.canvas.on('object:scaling', this.onObjectScaling.bind(this));
+      this.Darkroom.canvas.on('mouse:down', this.onMouseDown.bind(this));
+      this.Darkroom.canvas.on('mouse:move', this.onMouseMove.bind(this));
+      this.Darkroom.canvas.on('mouse:up', this.onMouseUp.bind(this));
+      this.Darkroom.canvas.on('object:moving', this.onObjectMoving.bind(this));
+      this.Darkroom.canvas.on('object:scaling', this.onObjectScaling.bind(this));
 
-      canvas2d.util.addListener(document, 'keydown', this.onKeyDown.bind(this));
-      canvas2d.util.addListener(document, 'keyup', this.onKeyUp.bind(this));
+      fabric.util.addListener(document, 'keydown', this.onKeyDown.bind(this));
+      fabric.util.addListener(document, 'keyup', this.onKeyUp.bind(this));
 
-      this.imager.addEventListener('core:transformation', this.releaseFocus.bind(this));
+      this.Darkroom.addEventListener('core:transformation', this.releaseFocus.bind(this));
     },
 
     // Avoid crop zone to go beyond the canvas edges
@@ -41647,9 +42586,9 @@ define('skylark-darkroomjs/plugins/crop',[
       if (currentObject !== this.cropZone)
         return;
 
-      var canvas = this.imager.canvas;
-      var x = currentObject.getLeft(), y = currentObject.getTop();
-      var w = currentObject.getWidth(), h = currentObject.getHeight();
+      var canvas = this.Darkroom.canvas;
+      var x = currentObject.left, y = currentObject.top;
+      var w = currentObject.getScaledWidth(), h = currentObject.getScaledHeight();
       var maxX = canvas.getWidth() - w;
       var maxY = canvas.getHeight() - h;
 
@@ -41662,7 +42601,7 @@ define('skylark-darkroomjs/plugins/crop',[
       if (y > maxY)
         currentObject.set('top', maxY);
 
-      this.imager.dispatchEvent('crop:update');
+      this.Darkroom.dispatchEvent('crop:update');
     },
 
     // Prevent crop zone from going beyond the canvas edges (like mouseMove)
@@ -41676,15 +42615,15 @@ define('skylark-darkroomjs/plugins/crop',[
       if (currentObject !== this.cropZone)
         return;
 
-      var canvas = this.imager.canvas;
+      var canvas = this.Darkroom.canvas;
       var pointer = canvas.getPointer(event.e);
       var x = pointer.x;
       var y = pointer.y;
 
-      var minX = currentObject.getLeft();
-      var minY = currentObject.getTop();
-      var maxX = currentObject.getLeft() + currentObject.getWidth();
-      var maxY = currentObject.getTop() + currentObject.getHeight();
+      var minX = currentObject.left;
+      var minY = currentObject.top;
+      var maxX = currentObject.left + currentObject.getScaledWidth();
+      var maxY = currentObject.top + currentObject.getScaledHeight();
 
       if (null !== this.options.ratio) {
         if (minX < 0 || maxX > canvas.getWidth() || minY < 0 || maxY > canvas.getHeight()) {
@@ -41708,17 +42647,17 @@ define('skylark-darkroomjs/plugins/crop',[
         currentObject.setTop(0);
       }
 
-      if (currentObject.getWidth() < this.options.minWidth) {
+      if (currentObject.get("width") < this.options.minWidth) {
         currentObject.scaleToWidth(this.options.minWidth);
       }
-      if (currentObject.getHeight() < this.options.minHeight) {
+      if (currentObject.get("height") < this.options.minHeight) {
         currentObject.scaleToHeight(this.options.minHeight);
       }
 
-      this.lastScaleX = currentObject.getScaleX();
-      this.lastScaleY = currentObject.getScaleY();
+      this.lastScaleX = currentObject.get("scaleX");
+      this.lastScaleY = currentObject.get("scaleY");
 
-      this.imager.dispatchEvent('crop:update');
+      this.Darkroom.dispatchEvent('crop:update');
     },
 
     // Init crop zone
@@ -41727,14 +42666,14 @@ define('skylark-darkroomjs/plugins/crop',[
         return;
       }
 
-      var canvas = this.imager.canvas;
+      var canvas = this.Darkroom.canvas;
 
       // recalculate offset, in case canvas was manipulated since last `calcOffset`
       canvas.calcOffset();
       var pointer = canvas.getPointer(event.e);
       var x = pointer.x;
       var y = pointer.y;
-      var point = new canvas2d.Point(x, y);
+      var point = new fabric.Point(x, y);
 
       // Check if user want to scale or drag the crop zone.
       var activeObject = canvas.getActiveObject();
@@ -41743,10 +42682,10 @@ define('skylark-darkroomjs/plugins/crop',[
       }
 
       canvas.discardActiveObject();
-      this.cropZone.setWidth(0);
-      this.cropZone.setHeight(0);
-      this.cropZone.setScaleX(1);
-      this.cropZone.setScaleY(1);
+      this.cropZone.set("width",0);
+      this.cropZone.set("height",0);
+      this.cropZone.set("scaleX",1);
+      this.cropZone.set("scaleY",1);
 
       this.startX = x;
       this.startY = y;
@@ -41762,7 +42701,7 @@ define('skylark-darkroomjs/plugins/crop',[
         return;
       }
 
-      var canvas = this.imager.canvas;
+      var canvas = this.Darkroom.canvas;
       var pointer = canvas.getPointer(event.e);
       var x = pointer.x;
       var y = pointer.y;
@@ -41771,7 +42710,7 @@ define('skylark-darkroomjs/plugins/crop',[
     },
 
     onMouseMoveKeyCrop: function(event) {
-      var canvas = this.imager.canvas;
+      var canvas = this.Darkroom.canvas;
       var zone = this.cropZone;
 
       var pointer = canvas.getPointer(event.e);
@@ -41779,8 +42718,8 @@ define('skylark-darkroomjs/plugins/crop',[
       var y = pointer.y;
 
       if (!zone.left || !zone.top) {
-        zone.setTop(y);
-        zone.setLeft(x);
+        zone.set("top",y);
+        zone.set("left",x);
       }
 
       this.isKeyLeft =  x < zone.left + zone.width / 2 ;
@@ -41800,7 +42739,7 @@ define('skylark-darkroomjs/plugins/crop',[
         return;
       }
 
-      var canvas = this.imager.canvas;
+      var canvas = this.Darkroom.canvas;
       this.cropZone.setCoords();
       canvas.setActiveObject(this.cropZone);
       canvas.calcOffset();
@@ -41815,13 +42754,13 @@ define('skylark-darkroomjs/plugins/crop',[
 
       // Active quick crop flow
       this.isKeyCroping = true ;
-      this.imager.canvas.discardActiveObject();
-      this.cropZone.setWidth(0);
-      this.cropZone.setHeight(0);
-      this.cropZone.setScaleX(1);
-      this.cropZone.setScaleY(1);
-      this.cropZone.setTop(0);
-      this.cropZone.setLeft(0);
+      this.Darkroom.canvas.discardActiveObject();
+      this.cropZone.set("width",0);
+      this.cropZone.set("height",0);
+      this.cropZone.set("scaleX",1);
+      this.cropZone.set("scaleY",1);
+      this.cropZone.set("top",0);
+      this.cropZone.set("left",0);
     },
 
     onKeyUp: function(event) {
@@ -41850,13 +42789,13 @@ define('skylark-darkroomjs/plugins/crop',[
         });
       }
 
-      var canvas = this.imager.canvas;
+      var canvas = this.Darkroom.canvas;
       canvas.bringToFront(this.cropZone);
       this.cropZone.setCoords();
       canvas.setActiveObject(this.cropZone);
       canvas.calcOffset();
 
-      this.imager.dispatchEvent('crop:update');
+      this.Darkroom.dispatchEvent('crop:update');
     },
 
     toggleCrop: function() {
@@ -41874,13 +42813,13 @@ define('skylark-darkroomjs/plugins/crop',[
       if (this.cropZone.width < 1 && this.cropZone.height < 1)
         return;
 
-      var image = this.imager.image;
+      var image = this.Darkroom.image;
 
       // Compute crop zone dimensions
-      var top = this.cropZone.getTop() - image.getTop();
-      var left = this.cropZone.getLeft() - image.getLeft();
-      var width = this.cropZone.getWidth();
-      var height = this.cropZone.getHeight();
+      var top = this.cropZone.get("top") - image.get("top");
+      var left = this.cropZone.get("left") - image.get("left");
+      var width = this.cropZone.get("width");
+      var height = this.cropZone.get("height");
 
       // Adjust dimensions to image only
       if (top < 0) {
@@ -41896,11 +42835,11 @@ define('skylark-darkroomjs/plugins/crop',[
       // Apply crop transformation.
       // Make sure to use relative dimension since the crop will be applied
       // on the source image.
-      this.imager.applyTransformation(new Crop({
-        top: top / image.getHeight(),
-        left: left / image.getWidth(),
-        width: width / image.getWidth(),
-        height: height / image.getHeight(),
+      this.Darkroom.applyTransformation(new Crop({
+        top: top / image.getScaledHeight(),
+        left: left / image.getScaledWidth(),
+        width: width / image.getScaledWidth(),
+        height: height / image.getScaledHeight(),
       }));
     },
 
@@ -41930,8 +42869,8 @@ define('skylark-darkroomjs/plugins/crop',[
         this.cropZone.set('lockUniScaling', true);
       }
 
-      this.imager.canvas.add(this.cropZone);
-      this.imager.canvas.defaultCursor = 'crosshair';
+      this.Darkroom.canvas.add(this.cropZone);
+      this.Darkroom.canvas.defaultCursor = 'crosshair';
 
       this.cropButton.active(true);
       this.okButton.hide(false);
@@ -41943,20 +42882,20 @@ define('skylark-darkroomjs/plugins/crop',[
       if (undefined === this.cropZone)
         return;
 
-      this.cropZone.remove();
+      this.cropZone.canvas.remove(this.cropZone);
       this.cropZone = undefined;
 
       this.cropButton.active(false);
       this.okButton.hide(true);
       this.cancelButton.hide(true);
 
-      this.imager.canvas.defaultCursor = 'default';
+      this.Darkroom.canvas.defaultCursor = 'default';
 
-      this.imager.dispatchEvent('crop:update');
+      this.Darkroom.dispatchEvent('crop:update');
     },
 
     _renderCropZone: function(fromX, fromY, toX, toY) {
-      var canvas = this.imager.canvas;
+      var canvas = this.Darkroom.canvas;
 
       var isRight = (toX > fromX);
       var isLeft = !isRight;
@@ -42072,9 +43011,9 @@ define('skylark-darkroomjs/plugins/crop',[
       this.cropZone.width = width;
       this.cropZone.height = height;
 
-      this.imager.canvas.bringToFront(this.cropZone);
+      this.Darkroom.canvas.bringToFront(this.cropZone);
 
-      this.imager.dispatchEvent('crop:update');
+      this.Darkroom.dispatchEvent('crop:update');
     }
   });
 
@@ -42083,7 +43022,7 @@ define('skylark-darkroomjs/plugins/crop',[
     ctor : CropPlugin
   };
 
-  Imager.installPlugin(pluginInfo);
+  Darkroom.installPlugin(pluginInfo);
 
   return pluginInfo;
 
@@ -42091,22 +43030,22 @@ define('skylark-darkroomjs/plugins/crop',[
 
 define('skylark-darkroomjs/plugins/rotate',[
   "skylark-langx/langx",
-  "skylark-utils-dom/noder",
-  "skylark-utils-dom/query",
-  "skylark-graphics-canvas2d",
-  '../Imager',
-],function(langx,noder, $, canvas2d,Imager) {
+  "skylark-domx-noder",
+  "skylark-domx-query",
+  "skylark-fabric",
+  '../Darkroom',
+],function(langx,noder, $, fabric,Darkroom) {
   'use strict';
 
-var Rotation = Imager.Transformation.inherit({
+var Rotation = Darkroom.Transformation.inherit({
 
   applyTransformation: function(canvas, image, next) {
-    var angle = (image.getAngle() + this.options.angle) % 360;
+    var angle = (image.angle + this.options.angle) % 360;
     image.rotate(angle);
 
     var width, height;
-    height = Math.abs(image.getWidth()*(Math.sin(angle*Math.PI/180)))+Math.abs(image.getHeight()*(Math.cos(angle*Math.PI/180)));
-    width = Math.abs(image.getHeight()*(Math.sin(angle*Math.PI/180)))+Math.abs(image.getWidth()*(Math.cos(angle*Math.PI/180)));
+    height = Math.abs(image.getScaledWidth()*(Math.sin(angle*Math.PI/180)))+Math.abs(image.getScaledHeight()*(Math.cos(angle*Math.PI/180)));
+    width = Math.abs(image.getScaledHeight()*(Math.sin(angle*Math.PI/180)))+Math.abs(image.getScaledWidth()*(Math.cos(angle*Math.PI/180)));
 
     canvas.setWidth(width);
     canvas.setHeight(height);
@@ -42120,10 +43059,10 @@ var Rotation = Imager.Transformation.inherit({
 });
 
 
-  var RotatePlugin = Imager.Plugin.inherit({
-    init: function(imager,options) {
-      this.overrided(imager,options);
-      var buttonGroup = this.imager.toolbar.createButtonGroup();
+  var RotatePlugin = Darkroom.Plugin.inherit({
+    init: function(Darkroom,options) {
+      this.overrided(Darkroom,options);
+      var buttonGroup = this.Darkroom.toolbar.createButtonGroup();
 
       var leftButton = buttonGroup.createButton({
         image: 'rotate-left'
@@ -42146,7 +43085,7 @@ var Rotation = Imager.Transformation.inherit({
     },
 
     rotate: function rotate(angle) {
-      this.imager.applyTransformation(
+      this.Darkroom.applyTransformation(
         new Rotation({angle: angle})
       );
     }
@@ -42157,7 +43096,7 @@ var Rotation = Imager.Transformation.inherit({
     ctor : RotatePlugin
   };
 
-  Imager.installPlugin(pluginInfo);
+  Darkroom.installPlugin(pluginInfo);
 
   return pluginInfo;
 
@@ -42165,25 +43104,25 @@ var Rotation = Imager.Transformation.inherit({
 
 define('skylark-darkroomjs/plugins/save',[
   "skylark-langx/langx",
-  "skylark-utils-dom/noder",
-  "skylark-utils-dom/query",
-  "skylark-graphics-canvas2d",
-  '../Imager',
-],function(langx,noder, $, canvas2d,Imager) {
+  "skylark-domx-noder",
+  "skylark-domx-query",
+  "skylark-fabric",
+  '../Darkroom',
+],function(langx,noder, $, fabric,Darkroom) {
   'use strict';
 
-  var SavePlugin= Imager.Plugin.inherit({
+  var SavePlugin= Darkroom.Plugin.inherit({
 
     defaults: {
       callback: function() {
-        this.imager.selfDestroy();
+        this.Darkroom.selfDestroy();
       }
     },
 
-    init: function(imager,options) {
-      this.overrided(imager,options);
+    init: function(Darkroom,options) {
+      this.overrided(Darkroom,options);
 
-      var buttonGroup = this.imager.toolbar.createButtonGroup();
+      var buttonGroup = this.Darkroom.toolbar.createButtonGroup();
 
       this.destroyButton = buttonGroup.createButton({
         image: 'save'
@@ -42198,20 +43137,20 @@ define('skylark-darkroomjs/plugins/save',[
     ctor : SavePlugin
   };
 
-  Imager.installPlugin(pluginInfo);
+  Darkroom.installPlugin(pluginInfo);
 
   return pluginInfo;  
 
 });
 
 define('skylark-darkroomjs/main',[
-    "./Imager",
+    "./Darkroom",
     "./plugins/history",
     "./plugins/crop",
     "./plugins/rotate",
     "./plugins/save"
-], function(Imager) {
-    return Imager;
+], function(Darkroom) {
+    return Darkroom;
 })
 ;
 define('skylark-darkroomjs', ['skylark-darkroomjs/main'], function (main) { return main; });
