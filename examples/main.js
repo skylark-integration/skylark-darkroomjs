@@ -1,5 +1,5 @@
 requirejs.config({
-  baseUrl : "../",
+  baseUrl : "./",
     paths: {
     },
       packages: [
@@ -19,6 +19,16 @@ requirejs.config({
             main: 'main'
          },
          {
+           name : "skylark-langx-binary",
+           location : "../node_modules/skylark-langx-binary/dist/uncompressed/skylark-langx-binary",
+            main: 'main'
+         },
+         {
+           name : "skylark-langx-constructs",
+           location : "../node_modules/skylark-langx-constructs/dist/uncompressed/skylark-langx-constructs",
+            main: 'main'
+         },
+         {
            name : "skylark-langx-datetimes",
            location : "../node_modules/skylark-langx-datetimes/dist/uncompressed/skylark-langx-datetimes",
             main: 'main'
@@ -29,8 +39,18 @@ requirejs.config({
             main: 'main'
          },
          {
+           name : "skylark-langx-events",
+           location : "../node_modules/skylark-langx-events/dist/uncompressed/skylark-langx-events",
+            main: 'main'
+         },
+         {
            name : "skylark-langx-funcs",
            location : "../node_modules/skylark-langx-funcs/dist/uncompressed/skylark-langx-funcs",
+            main: 'main'
+         },
+         {
+           name : "skylark-langx-globals",
+           location : "../node_modules/skylark-langx-globals/dist/uncompressed/skylark-langx-globals",
             main: 'main'
          },
          {
@@ -44,13 +64,18 @@ requirejs.config({
             main: 'main'
          },
          {
+           name : "skylark-langx-maths",
+           location : "../node_modules/skylark-langx-maths/dist/uncompressed/skylark-langx-maths",
+            main: 'main'
+         },
+         {
            name : "skylark-langx-ns",
            location : "../node_modules/skylark-langx-ns/dist/uncompressed/skylark-langx-ns",
             main: 'main'
          },
          {
-           name : "skylark-langx-numbers",
-           location : "../node_modules/skylark-langx-numbers/dist/uncompressed/skylark-langx-numbers",
+           name : "skylark-langx-numerics",
+           location : "../node_modules/skylark-langx-numerics/dist/uncompressed/skylark-langx-numerics",
             main: 'main'
          },
          {
@@ -81,6 +106,13 @@ requirejs.config({
          {
            name : "skylark-langx",
            location : "../node_modules/skylark-langx/dist/uncompressed/skylark-langx",
+            main: 'main'
+         },
+
+
+         {
+           name : "skylark-io-diskfs",
+           location : "../node_modules/skylark-io-diskfs/dist/uncompressed/skylark-io-diskfs",
             main: 'main'
          },
 
@@ -177,12 +209,7 @@ requirejs.config({
            location : "../node_modules/skylark-data-collection/dist/uncompressed/skylark-data-collection",
             main: 'main'
          },
-         {
-           name : "skylark-storages-diskfs" ,
-           location : "../node_modules/skylark-storages-diskfs/dist/uncompressed/skylark-storages-diskfs",
-//           location : "../../../storages/skylark-storages-diskfs/src",
-            main: 'main'
-         },
+
          {
            name : "skylark-domx-files" ,
            location : "../node_modules/skylark-domx-files/dist/uncompressed/skylark-domx-files",
